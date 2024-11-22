@@ -31,6 +31,10 @@ dev = [
     "pytest",
     "pytest-cov", # Used to report total code coverage
     "ruff", # Used for static linting of files
+	"sphinx-autoapi", # Read the docs
+	"nbsphinx",
+	"sphinx-copybutton",
+	"sphinx-rtd-theme",
 ]
 
 [build-system]
@@ -41,7 +45,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/tools/_version.py"
+write_to = "across/tools/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -105,4 +109,4 @@ ignore = [
 tools = ["py.typed"]
 
 [tool.coverage.run]
-omit=["src/tools/_version.py"]
+omit=["across/tools/_version.py"]
