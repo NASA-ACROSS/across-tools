@@ -1,4 +1,4 @@
-from tools import example_module
+from across.tools import example_module
 
 
 def test_greetings() -> None:
