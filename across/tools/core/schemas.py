@@ -17,7 +17,11 @@ class Coordinate:
         invalid_dec = dec < -90 or dec > 90
 
         if invalid_ra or invalid_dec:
-            raise ValueError
+            raise ValueError(
+                "Invalid Coordinate object. \
+                Coordinate.ra must be float (-360.0 >= a >= 360.0). \
+                Coordinate.dec must be float (-90 >= a >= 90)"
+            )
 
         self.ra = ra
         self.dec = dec
@@ -96,7 +100,7 @@ class RollAngle:
     def __init__(self, value: float) -> None:
         invalid_value = value < -360 or value > 360
         if invalid_value:
-            raise ValueError
+            raise ValueError("Invalid value for RollAngle. Must be float (-360.0 >= a >= 360.0)")
         self.value = value
 
 
@@ -111,5 +115,5 @@ class HealpixOrder:
     def __init__(self, value: int) -> None:
         invalid_value = value < 0 or value > 13
         if invalid_value:
-            raise ValueError
+            raise ValueError("Invalid value for HealpixOrder. Must be int (0 >= a >= 13)")
         self.value = value

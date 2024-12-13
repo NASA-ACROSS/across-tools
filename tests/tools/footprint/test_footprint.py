@@ -7,12 +7,13 @@ from across.tools import Coordinate, Footprint, Polygon
 
 def test_footprint_instantiation(simple_footprint: Footprint, simple_polygon: Polygon) -> None:
     """
-    Tests the instantiation of a Footprint object, and the equivalence
+    Tests the instantiation of a Footprint object, and its equivalence
     """
     footprint = Footprint(detectors=[simple_polygon])
     assert isinstance(footprint, Footprint), "Footprint instantiation type error"
     assert footprint == simple_footprint, "Footprint equivalence error"
 
+    # test the detector types
     with pytest.raises(ValueError):
         Footprint(detectors=42)  # type: ignore
     with pytest.raises(ValueError):
@@ -43,6 +44,14 @@ def test_footprint_projection_expectation(
 ) -> None:
     """
     Tests the projection of a footprint with precalculated projections
+        projection parameters:
+            Coordinate(45, 0), roll_angle 0
+            Coordinate(0, 45), roll_angle 0
+            Coordinate(0, 0), roll_angle 45
+        The `precalculated_projections` object is a pytest fixture with index fields:
+            [0] -> Coordinate
+            [1] -> RollAngle
+            [2] -> precalculated projected Footprint
     """
     projected_footprint = simple_footprint.project(precalculated_projections[0], precalculated_projections[1])
     assert projected_footprint == precalculated_projections[2]

@@ -54,7 +54,7 @@ def ra45_dec45_coordinate() -> Coordinate:
 
 def simple_footprint_projection_ra45_dec0_pos0() -> Footprint:
     """
-    Instantiates a coordinate at ra=0, dec=0
+    Instantiates a precalculated projected simple footprint at ra=45, dec=0, roll=0
     """
     return Footprint(
         [
@@ -73,7 +73,7 @@ def simple_footprint_projection_ra45_dec0_pos0() -> Footprint:
 
 def simple_footprint_projection_ra0_dec45_pos0() -> Footprint:
     """
-    Instantiates a coordinate at ra=0, dec=0
+    Instantiates a precalculated projected simple footprint at ra=0, dec=45, roll=0
     """
     return Footprint(
         [
@@ -92,7 +92,7 @@ def simple_footprint_projection_ra0_dec45_pos0() -> Footprint:
 
 def simple_footprint_projection_ra0_dec0_pos45() -> Footprint:
     """
-    Instantiates a coordinate at ra=0, dec=0
+    Instantiates a precalculated projected simple footprint at ra=0, dec=0, roll=45
     """
     return Footprint(
         [
@@ -118,7 +118,7 @@ def simple_footprint_projection_ra0_dec0_pos45() -> Footprint:
 )
 def precalculated_projections(request: pytest.FixtureRequest) -> Any:
     """
-    Parameters to be passed into the
+    Parameters to be passed into the projection tests
     """
     return request.param
 

@@ -21,11 +21,11 @@ class Footprint:
         assert that the detector initialization is a list of polygons and has a length
         """
         if not isinstance(detectors, list):
-            raise ValueError
+            raise ValueError("Invalid Footprint.detectors. Must be type list[Polygon]")
         if not len(detectors):
-            raise ValueError
+            raise ValueError("Invalid Footprint.detectors. Must be type list[Polygon]")
         if not isinstance(detectors[0], Polygon):
-            raise ValueError
+            raise ValueError("Invalid Footprint.detectors. Must be type list[Polygon]")
 
         self.detectors = detectors
         self.set_center()
@@ -60,7 +60,7 @@ class Footprint:
 
     def set_center(self) -> None:
         """
-        Method to find the center of the pointed footprint
+        Method to find the center of the pointed footprint -> mean center approximation
         """
         all_ras = []
         all_decs = []
@@ -73,7 +73,7 @@ class Footprint:
 
     def project(self, coordinate: Coordinate, roll_angle: float) -> Footprint:
         """
-        Method to project a footprint on a sphere.
+        Method to project an astronomical instrument footprint on a sphere.
         """
         angle = RollAngle(roll_angle)
 
@@ -86,7 +86,7 @@ class Footprint:
 
     def query_pixels(self, order: int = 10) -> list[int]:
         """
-        Method to query the healpix pixels in a footprint at a given order
+        Method to query the healpix pixels in a footprint at a given healpix order
         """
         hp_order = HealpixOrder(order)
 

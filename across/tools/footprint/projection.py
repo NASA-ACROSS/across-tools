@@ -48,7 +48,7 @@ class CartesianVector:
 
 def detector_to_cartesian_vectors(detector: Polygon) -> list[CartesianVector]:
     """
-    converts spherical detector to cartesian unit vectors
+    Method to convert spherical detector to a list of cartesian unit vectors
     """
     detector_ra_values = np.asarray([coord.ra for coord in detector.coordinates])
     detector_dec_values = np.asarray([coord.dec for coord in detector.coordinates])
