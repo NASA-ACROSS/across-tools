@@ -20,12 +20,17 @@ class Footprint(BaseSchema):
         Overrides the print statement
         """
         statement = f"{self.__class__.__name__}(\n"
+
         for detector in self.detectors:
             statement += f"\t{detector.__class__.__name__}(\n"
+
             for coordinate in detector.coordinates:
                 statement += f"\t\t{coordinate.__class__.__name__}({coordinate.ra}, {coordinate.dec}),\n"
+
             statement += "\t),\n"
+
         statement += ")"
+
         return statement
 
     def __eq__(self, other: object) -> bool:
@@ -50,9 +55,9 @@ class Footprint(BaseSchema):
         all_ras = []
         all_decs = []
         for detector in self.detectors:
-            unique_detector_coordinates = list(set(detector.coordinates))
-            all_ras.extend([coordinate.ra for coordinate in unique_detector_coordinates])
-            all_decs.extend([coordinate.dec for coordinate in unique_detector_coordinates])
+            unique_coordinates = list(set(detector.coordinates))
+            all_ras.extend([coordinate.ra for coordinate in unique_coordinates])
+            all_decs.extend([coordinate.dec for coordinate in unique_coordinates])
 
         self.center = Coordinate(ra=float(np.mean(all_ras)), dec=float(np.mean(all_decs)))
 
@@ -63,10 +68,12 @@ class Footprint(BaseSchema):
         angle = RollAngle(value=roll_angle)
 
         projected_detectors = []
+
         for detector in self.detectors:
             projected_detectors.append(
                 project_detector(detector=detector, coordinate=coordinate, roll_angle=angle.value)
             )
+
         return Footprint(detectors=projected_detectors)
 
     def query_pixels(self, order: int = 10) -> list[int]:
@@ -77,6 +84,7 @@ class Footprint(BaseSchema):
 
         pixels_in_footprint: list[int] = []
         nside = hp.order2nside(order=hp_order.value)
+
         for detector in self.detectors:
             detector_ra_values = np.deg2rad([coordinate.ra for coordinate in detector.coordinates][:-1])
             detector_dec_values = np.deg2rad([coordinate.dec for coordinate in detector.coordinates][:-1])

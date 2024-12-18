@@ -20,10 +20,13 @@ class CartesianVector(BaseSchema):
         Method that performs matrix rotations on a cartesian vector
         """
         vector_array = np.asarray([self.x, self.y, self.z])
+
         rotated_vector = (
             vector_array @ x_rot(-1.0 * roll_angle) @ y_rot(coordinate.dec) @ z_rot(-1.0 * coordinate.ra)
         )
+
         rotated_x_value, rotated_y_value, rotated_z_value = rotated_vector.flat
+
         return CartesianVector(x=float(rotated_x_value), y=float(rotated_y_value), z=float(rotated_z_value))
 
     def to_spherical_coordinate(self) -> Coordinate:
@@ -38,6 +41,7 @@ class CartesianVector(BaseSchema):
         phi = np.arccos(normalized_z)
         dec = round(90 - np.rad2deg(phi), 5)
         ra = round(360 + np.rad2deg(theta), 5) if theta < 0 else round(np.rad2deg(theta), 5)
+
         return Coordinate(ra=ra, dec=dec)
 
 
@@ -47,15 +51,19 @@ def detector_to_cartesian_vectors(detector: Polygon) -> list[CartesianVector]:
     """
     detector_ra_values = np.asarray([coord.ra for coord in detector.coordinates])
     detector_dec_values = np.asarray([coord.dec for coord in detector.coordinates])
+
     phi = np.deg2rad(90 - detector_dec_values)
     theta = np.deg2rad(detector_ra_values)
+
     x = np.cos(theta) * np.sin(phi)
     y = np.sin(theta) * np.sin(phi)
     z = np.cos(phi)
 
     cartesian_vectors: list[CartesianVector] = []
+
     for idx in range(x.shape[0]):
         cartesian_vectors.append(CartesianVector(x=x[idx], y=y[idx], z=z[idx]))
+
     return cartesian_vectors
 
 

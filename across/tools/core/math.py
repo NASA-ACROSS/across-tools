@@ -2,7 +2,7 @@ import numpy as np
 import numpy.typing as npt
 
 
-def find_duplicate_ints_in_list(input_list: list[int]) -> list[int]:
+def find_duplicates(input_list: list[int]) -> list[int]:
     """
     Finds duplicates in a list.
     Taken from https://stackoverflow.com/questions/9835762/
