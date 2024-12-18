@@ -3,10 +3,10 @@ from __future__ import annotations
 import numpy as np
 
 from ..core.math import x_rot, y_rot, z_rot
-from ..core.schemas import Coordinate, Polygon
+from ..core.schemas import BaseSchema, Coordinate, Polygon
 
 
-class CartesianVector:
+class CartesianVector(BaseSchema):
     """
     Class to represent a 3D cartesian vector
     """
@@ -14,11 +14,6 @@ class CartesianVector:
     x: float
     y: float
     z: float
-
-    def __init__(self, x: float, y: float, z: float) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
 
     def rotate(self, coordinate: Coordinate, roll_angle: float) -> CartesianVector:
         """
@@ -41,8 +36,8 @@ class CartesianVector:
         normalized_z = np.asarray(self.z / r)
         theta = np.arctan2(normalized_y, normalized_x)
         phi = np.arccos(normalized_z)
-        dec = round(90 - np.rad2deg(phi), 3)
-        ra = round(360 + np.rad2deg(theta), 3) if theta < 0 else round(np.rad2deg(theta), 3)
+        dec = round(90 - np.rad2deg(phi), 5)
+        ra = round(360 + np.rad2deg(theta), 5) if theta < 0 else round(np.rad2deg(theta), 5)
         return Coordinate(ra=ra, dec=dec)
 
 

@@ -11,13 +11,13 @@ def simple_polygon() -> Polygon:
     Returns a very simple polygon center at 0, 0 with side = 1.0
     """
     coordinates = [
-        Coordinate(-0.5, 0.5),
-        Coordinate(0.5, 0.5),
-        Coordinate(0.5, -0.5),
-        Coordinate(-0.5, -0.5),
-        Coordinate(-0.5, 0.5),
+        Coordinate(ra=-0.5, dec=0.5),
+        Coordinate(ra=0.5, dec=0.5),
+        Coordinate(ra=0.5, dec=-0.5),
+        Coordinate(ra=-0.5, dec=-0.5),
+        Coordinate(ra=-0.5, dec=0.5),
     ]
-    return Polygon(coordinates)
+    return Polygon(coordinates=coordinates)
 
 
 @pytest.fixture
@@ -26,13 +26,13 @@ def simple_footprint() -> Footprint:
     Instantiates  a simple footprint from a simple polygon
     """
     coordinates = [
-        Coordinate(-0.5, 0.5),
-        Coordinate(0.5, 0.5),
-        Coordinate(0.5, -0.5),
-        Coordinate(-0.5, -0.5),
-        Coordinate(-0.5, 0.5),
+        Coordinate(ra=-0.5, dec=0.5),
+        Coordinate(ra=0.5, dec=0.5),
+        Coordinate(ra=0.5, dec=-0.5),
+        Coordinate(ra=-0.5, dec=-0.5),
+        Coordinate(ra=-0.5, dec=0.5),
     ]
-    polygon = Polygon(coordinates)
+    polygon = Polygon(coordinates=coordinates)
     return Footprint(detectors=[polygon])
 
 
@@ -57,14 +57,14 @@ def simple_footprint_projection_ra45_dec0_pos0() -> Footprint:
     Instantiates a precalculated projected simple footprint at ra=45, dec=0, roll=0
     """
     return Footprint(
-        [
+        detectors=[
             Polygon(
-                [
-                    Coordinate(44.5, 0.5),
-                    Coordinate(45.5, 0.5),
-                    Coordinate(45.5, -0.5),
-                    Coordinate(44.5, -0.5),
-                    Coordinate(44.5, 0.5),
+                coordinates=[
+                    Coordinate(ra=44.5, dec=0.5),
+                    Coordinate(ra=45.5, dec=0.5),
+                    Coordinate(ra=45.5, dec=-0.5),
+                    Coordinate(ra=44.5, dec=-0.5),
+                    Coordinate(ra=44.5, dec=0.5),
                 ]
             ),
         ]
@@ -76,16 +76,16 @@ def simple_footprint_projection_ra0_dec45_pos0() -> Footprint:
     Instantiates a precalculated projected simple footprint at ra=0, dec=45, roll=0
     """
     return Footprint(
-        [
+        detectors=[
             Polygon(
-                [
-                    Coordinate(359.287, 45.498),
-                    Coordinate(0.713, 45.498),
-                    Coordinate(0.701, 44.498),
-                    Coordinate(359.299, 44.498),
-                    Coordinate(359.287, 45.498),
+                coordinates=[
+                    Coordinate(ra=359.28669, dec=45.4978),
+                    Coordinate(ra=0.71331, dec=45.4978),
+                    Coordinate(ra=0.70097, dec=44.49784),
+                    Coordinate(ra=359.29903, dec=44.49784),
+                    Coordinate(ra=359.28669, dec=45.4978),
                 ]
-            ),
+            )
         ]
     )
 
@@ -95,14 +95,14 @@ def simple_footprint_projection_ra0_dec0_pos45() -> Footprint:
     Instantiates a precalculated projected simple footprint at ra=0, dec=0, roll=45
     """
     return Footprint(
-        [
+        detectors=[
             Polygon(
-                [
-                    Coordinate(359.293, 0.0),
-                    Coordinate(360.0, 0.707),
-                    Coordinate(0.707, -0.0),
-                    Coordinate(0.0, -0.707),
-                    Coordinate(359.293, 0.0),
+                coordinates=[
+                    Coordinate(ra=359.2929, dec=1e-05),
+                    Coordinate(ra=359.99999, dec=0.7071),
+                    Coordinate(ra=0.7071, dec=0.0),
+                    Coordinate(ra=0.0, dec=-0.7071),
+                    Coordinate(ra=359.2929, dec=0.0),
                 ]
             ),
         ]

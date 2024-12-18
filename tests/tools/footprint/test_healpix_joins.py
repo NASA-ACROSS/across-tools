@@ -16,7 +16,7 @@ def test_healpix_inner_join(simple_footprint: Footprint) -> None:
     # Should return an empty list when the list of footprints do not overlap.
     non_overlapping_footprints = [
         simple_footprint,
-        simple_footprint.project(coordinate=Coordinate(10, 10), roll_angle=0.0),
+        simple_footprint.project(coordinate=Coordinate(ra=10, dec=10), roll_angle=0.0),
     ]
     non_overlapping_inner_join_pixels = inner(non_overlapping_footprints, order=9)
     assert len(non_overlapping_inner_join_pixels) == 0, "healpix_joins.inner non overlap should return empty"
@@ -40,7 +40,7 @@ def test_healpix_outer_join(simple_footprint: Footprint) -> None:
     # Should return a list of ints as healpix pixels when it is called with any non overlap.
     non_overlapping_footprints = [
         simple_footprint,
-        simple_footprint.project(coordinate=Coordinate(10, 10), roll_angle=0.0),
+        simple_footprint.project(coordinate=Coordinate(ra=10, dec=10), roll_angle=0.0),
     ]
     non_overlapping_outer_join_pixels = outer(non_overlapping_footprints, order=9)
     assert isinstance(non_overlapping_outer_join_pixels, list)
@@ -70,7 +70,7 @@ def test_healpix_union_join(simple_footprint: Footprint) -> None:
     # Should return a list of ints as healpix pixels when it is called.
     non_overlapping_footprints = [
         simple_footprint,
-        simple_footprint.project(coordinate=Coordinate(10, 10), roll_angle=0.0),
+        simple_footprint.project(coordinate=Coordinate(ra=10, dec=10), roll_angle=0.0),
     ]
     non_overlapping_outer_union_pixels = union(non_overlapping_footprints, order=9)
     assert isinstance(non_overlapping_outer_union_pixels, list)

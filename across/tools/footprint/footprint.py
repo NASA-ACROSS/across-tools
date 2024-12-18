@@ -1,34 +1,19 @@
 from __future__ import annotations
 
-import astropy.coordinates  # type: ignore
-import healpy as hp  # type: ignore
+import astropy.coordinates  # type: ignore[import-untyped]
+import healpy as hp  # type: ignore[import-untyped]
 import numpy as np
 
-from ..core.schemas import Coordinate, HealpixOrder, Polygon, RollAngle
+from ..core.schemas import BaseSchema, Coordinate, HealpixOrder, Polygon, RollAngle
 from .projection import project_detector
 
 
-class Footprint:
+class Footprint(BaseSchema):
     """
     Class to represent a astronomical instrument's imaging footprint
     """
 
     detectors: list[Polygon]
-    center: Coordinate
-
-    def __init__(self, detectors: list[Polygon]) -> None:
-        """
-        assert that the detector initialization is a list of polygons and has a length
-        """
-        if not isinstance(detectors, list):
-            raise ValueError("Invalid Footprint.detectors. Must be type list[Polygon]")
-        if not len(detectors):
-            raise ValueError("Invalid Footprint.detectors. Must be type list[Polygon]")
-        if not isinstance(detectors[0], Polygon):
-            raise ValueError("Invalid Footprint.detectors. Must be type list[Polygon]")
-
-        self.detectors = detectors
-        self.set_center()
 
     def __repr__(self) -> str:
         """
@@ -75,7 +60,7 @@ class Footprint:
         """
         Method to project an astronomical instrument footprint on a sphere.
         """
-        angle = RollAngle(roll_angle)
+        angle = RollAngle(value=roll_angle)
 
         projected_detectors = []
         for detector in self.detectors:
@@ -88,7 +73,7 @@ class Footprint:
         """
         Method to query the healpix pixels in a footprint at a given healpix order
         """
-        hp_order = HealpixOrder(order)
+        hp_order = HealpixOrder(value=order)
 
         pixels_in_footprint: list[int] = []
         nside = hp.order2nside(order=hp_order.value)
