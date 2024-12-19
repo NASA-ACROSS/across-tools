@@ -62,6 +62,26 @@ class Polygon(BaseSchema):
 
     coordinates: list[Coordinate]
 
+    def model_post_init(self, __context: Any) -> None:
+        """
+        Post-Init validations.
+            1.) a polygon must contain a list of coordinates
+            1.) a polygon's first and final coordinates must be the same (wrapping)
+            2.) a polygon has more than 3 unique coordinates
+        """
+
+        if not len(self.coordinates):
+            raise ValueError("Invalid polygon, coordinates cannot be empty.")
+
+        first_coordinate = self.coordinates[0]
+        last_coordinate = self.coordinates[len(self.coordinates) - 1]
+
+        if first_coordinate != last_coordinate:
+            self.coordinates.append(first_coordinate)
+
+        if len(self.coordinates) < 4:
+            raise ValueError("Invalid polygon, must contain more than 3 unique coordinates to be a polygon")
+
     def __repr__(self) -> str:
         """
         Overrides the print statement
