@@ -73,6 +73,7 @@ def project_detector(detector: Polygon, coordinate: Coordinate, roll_angle: floa
     """
     projected_coordinates: list[Coordinate] = []
     detector_cartesian_vectors = detector_to_cartesian_vectors(detector=detector)
+
     for vector in detector_cartesian_vectors:
         rotated_vector = vector.rotate(coordinate=coordinate, roll_angle=roll_angle)
         spherical_coordinate = rotated_vector.to_spherical_coordinate()

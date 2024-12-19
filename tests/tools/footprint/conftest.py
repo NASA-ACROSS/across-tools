@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 
 from across.tools import Coordinate, Footprint, Polygon
+from across.tools.core.schemas import BaseSchema
 
 
 @pytest.fixture
@@ -21,27 +22,35 @@ def simple_polygon() -> Polygon:
 
 
 @pytest.fixture
-def simple_footprint() -> Footprint:
+def simple_footprint(simple_polygon: Polygon) -> Footprint:
     """
     Instantiates  a simple footprint from a simple polygon
     """
-    coordinates = [
-        Coordinate(ra=-0.5, dec=0.5),
-        Coordinate(ra=0.5, dec=0.5),
-        Coordinate(ra=0.5, dec=-0.5),
-        Coordinate(ra=-0.5, dec=-0.5),
-        Coordinate(ra=-0.5, dec=0.5),
-    ]
-    polygon = Polygon(coordinates=coordinates)
-    return Footprint(detectors=[polygon])
+    return Footprint(detectors=[simple_polygon])
+
+
+@pytest.fixture(params=["bad detector", 42, [42, 42]])
+def invalid_detector(request: pytest.FixtureRequest) -> Any:
+    """
+    Parameters to be passed into the projection tests
+    """
+    return request.param
 
 
 @pytest.fixture
-def simple_coordinate() -> Coordinate:
+def origin_coordinate() -> Coordinate:
     """
     Instantiates a coordinate at ra=0, dec=0
     """
     return Coordinate(ra=0, dec=0)
+
+
+@pytest.fixture(params=["bad roll_angle", -361, 361])
+def invalid_roll_angle(request: pytest.FixtureRequest) -> Any:
+    """
+    Parameters to be passed into the projection tests
+    """
+    return request.param
 
 
 @pytest.fixture
@@ -109,11 +118,33 @@ def simple_footprint_projection_ra0_dec0_pos45() -> Footprint:
     )
 
 
+class PrecalculatedProjections(BaseSchema):
+    """
+    Class to represent a pre-calculated projection
+    """
+
+    coordinate: Coordinate
+    roll_angle: float
+    projection: Footprint
+
+
 @pytest.fixture(
     params=[
-        [Coordinate(ra=45, dec=0), 0, simple_footprint_projection_ra45_dec0_pos0()],
-        [Coordinate(ra=0, dec=45), 0, simple_footprint_projection_ra0_dec45_pos0()],
-        [Coordinate(ra=0, dec=0), 45, simple_footprint_projection_ra0_dec0_pos45()],
+        PrecalculatedProjections(
+            coordinate=Coordinate(ra=45, dec=0),
+            roll_angle=0,
+            projection=simple_footprint_projection_ra45_dec0_pos0(),
+        ),
+        PrecalculatedProjections(
+            coordinate=Coordinate(ra=0, dec=45),
+            roll_angle=0,
+            projection=simple_footprint_projection_ra0_dec45_pos0(),
+        ),
+        PrecalculatedProjections(
+            coordinate=Coordinate(ra=0, dec=0),
+            roll_angle=45,
+            projection=simple_footprint_projection_ra0_dec0_pos45(),
+        ),
     ]
 )
 def precalculated_projections(request: pytest.FixtureRequest) -> Any:
@@ -240,3 +271,11 @@ def precalculated_hp_query_polygon() -> list[int]:
         450540,
         450541,
     ]
+
+
+@pytest.fixture(params=["bad healpix_order", -5, 15])
+def invalid_healpix_order(request: pytest.FixtureRequest) -> Any:
+    """
+    Parameters to be passed into the projection tests
+    """
+    return request.param
