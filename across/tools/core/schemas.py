@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
-import pydantic as pyd
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class BaseSchema(pyd.BaseModel):
+class BaseSchema(BaseModel):
     """
     Base class for schemas.
 
@@ -15,7 +15,7 @@ class BaseSchema(pyd.BaseModel):
         own schema logic.
     """
 
-    model_config = pyd.ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
+    model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     def __hash__(self) -> int:
         return hash((type(self),) + tuple(self.__dict__.values()))
@@ -26,8 +26,8 @@ class Coordinate(BaseSchema):
     Class that represents a point in spherical space
     """
 
-    ra: float = pyd.Field(ge=-360, le=360)
-    dec: float = pyd.Field(ge=-90, le=90)
+    ra: float = Field(ge=-360, le=360)
+    dec: float = Field(ge=-90, le=90)
 
     def model_post_init(self, __context: Any) -> None:
         """
@@ -100,7 +100,7 @@ class RollAngle(BaseSchema):
         constraint: Must be (-360.0 >= a >= 360.0)
     """
 
-    value: float = pyd.Field(ge=-360, le=360)
+    value: float = Field(ge=-360, le=360)
 
 
 class HealpixOrder(BaseSchema):
@@ -109,4 +109,4 @@ class HealpixOrder(BaseSchema):
         constraint: Must be (0 >= a >= 13)
     """
 
-    value: int = pyd.Field(gt=0, lt=13, default=10)
+    value: int = Field(gt=0, lt=13, default=10)
