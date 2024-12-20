@@ -1,3 +1,5 @@
+from collections import Counter
+
 import numpy as np
 import numpy.typing as npt
 
@@ -7,12 +9,7 @@ def find_duplicates(input_list: list[int]) -> list[int]:
     Finds duplicates in a list.
     Taken from https://stackoverflow.com/questions/9835762/
     """
-    seen: set[int] = set()
-    seen_add = seen.add
-    # adds all elements it doesn't know yet to seen and all other to seen_twice
-    seen_twice = set(x for x in input_list if x in seen or seen_add(x))
-    # turn the set into a list (as requested)
-    return list(seen_twice)
+    return [item for item, count in Counter(input_list).items() if count > 1]
 
 
 def x_rot(theta_deg: float) -> npt.NDArray[np.float64]:
