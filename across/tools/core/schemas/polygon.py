@@ -13,6 +13,8 @@ class Polygon(BaseSchema):
 
     def model_post_init(self, __context: Any) -> None:
         """
+        Pydantic post-init hook
+
         Post-Init validations.
             1.) a polygon must contain a list of coordinates
             1.) a polygon's first and final coordinates must be the same (wrapping)

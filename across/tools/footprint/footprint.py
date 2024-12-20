@@ -48,19 +48,6 @@ class Footprint(BaseSchema):
                 equivalence.append(self.detectors[detector_iterable] == other.detectors[detector_iterable])
             return all(equivalence)
 
-    def set_center(self) -> None:
-        """
-        Method to find the center of the pointed footprint -> mean center approximation
-        """
-        all_ras = []
-        all_decs = []
-        for detector in self.detectors:
-            unique_coordinates = list(set(detector.coordinates))
-            all_ras.extend([coordinate.ra for coordinate in unique_coordinates])
-            all_decs.extend([coordinate.dec for coordinate in unique_coordinates])
-
-        self.center = Coordinate(ra=float(np.mean(all_ras)), dec=float(np.mean(all_decs)))
-
     def project(self, coordinate: Coordinate, roll_angle: float) -> Footprint:
         """
         Method to project an astronomical instrument footprint on a sphere.

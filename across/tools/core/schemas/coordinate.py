@@ -16,6 +16,8 @@ class Coordinate(BaseSchema):
 
     def model_post_init(self, __context: Any) -> None:
         """
+        Pydantic post-init hook
+
         Post-Init validations.
             Ensure the RA is positive, and rounded to an appropriate precision
         """
