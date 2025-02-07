@@ -20,7 +20,8 @@ dependencies = [
     "numpy",
     "healpy",
     "pydantic",
-    "astroquery"
+    "astroquery",
+    "sgp4"
 ]
 
 [project.urls]
