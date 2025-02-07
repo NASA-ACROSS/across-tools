@@ -20,8 +20,8 @@ from astroquery.jplhorizons import Horizons  # type: ignore
 from fastapi import HTTPException
 from sgp4.api import Satrec  # type: ignore[import-untyped]
 
+from ..core.enums import EphemType
 from ..core.schemas.tle import TLEEntry
-from .schema import EphemType
 
 # Define the radii of the Moon (as astropy doesn't)
 R_moon = 1737.4 * u.km
