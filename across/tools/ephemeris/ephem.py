@@ -333,8 +333,11 @@ class Ephem:
             self._tle_ephem()
         elif ephem_type == EphemType.space_jpl:
             self._jpl_horizons_ephem()
+        elif ephem_type == EphemType.space_spice:
+            raise NotImplementedError("SPICE Kernel ephemeris not yet implemented")
         else:
             raise Exception("Invalid ephemeris type")
+
         self._ephem_calc()
         return True
 
@@ -371,6 +374,8 @@ class Ephem:
             self._tle_ephem()
         elif ephem_type == EphemType.space_jpl:
             await self._jpl_horizons_ephem_async()
+        elif ephem_type == EphemType.space_spice:
+            raise NotImplementedError("SPICE Kernel ephemeris not yet implemented")
         else:
             raise Exception("Invalid ephemeris type")
         self._ephem_calc()
