@@ -17,7 +17,6 @@ from astropy.coordinates import (  # type: ignore[import-untyped]
 )
 from astropy.time import Time  # type: ignore[import-untyped]
 from astroquery.jplhorizons import Horizons  # type: ignore
-from fastapi import HTTPException
 from sgp4.api import Satrec  # type: ignore[import-untyped]
 
 from ..core.enums import EphemType
@@ -141,7 +140,7 @@ class Ephem:
             The index of the nearest time in the ephemeris.
         """
         if self.timestamp is None:
-            raise HTTPException(status_code=400, detail="Ephemeris not computed")
+            raise Exception("Ephemeris not computed")
         index = int(np.round((t.jd - self.timestamp[0].jd) // (self.stepsize / 86400)))
         assert index >= 0 and index < len(self), "Time outside of ephemeris of range"
         return index
@@ -149,7 +148,7 @@ class Ephem:
     def _ground_ephem(self) -> bool:
         # Calculate GCRS coordinates for ground-based observatory
         if self.earth_location is None:
-            raise HTTPException(status_code=400, detail="Location of observatory not set")
+            raise Exception("Location of observatory not set")
         self.gcrs = self.earth_location.get_gcrs(self.timestamp)
         self.itrs = self.earth_location.get_itrs(self.timestamp)
         return True
@@ -157,7 +156,7 @@ class Ephem:
     def _tle_ephem(self) -> bool:
         # Check if TLE is loaded
         if self.tle is None:
-            raise HTTPException(status_code=404, detail="No TLE available for this epoch")
+            raise Exception("No TLE available for this epoch")
 
         # Load in the TLE data
         satellite = Satrec.twoline2rv(self.tle.tle1, self.tle.tle2)
@@ -317,7 +316,7 @@ class Ephem:
             True if computation is successful
         Raises
         ------
-        HTTPException
+        Exception
             If an invalid ephemeris type is provided (status_code=400)
         Notes
         -----
@@ -335,7 +334,7 @@ class Ephem:
         elif ephem_type == EphemType.space_jpl:
             self._jpl_horizons_ephem()
         else:
-            raise HTTPException(status_code=400, detail="Invalid ephemeris type")
+            raise Exception("Invalid ephemeris type")
         self._ephem_calc()
         return True
 
@@ -352,7 +351,7 @@ class Ephem:
             True if computation is successful
         Raises
         ------
-        HTTPException
+        Exception
             If an invalid ephemeris type is provided (400 status code)
         Notes
         -----
@@ -373,7 +372,7 @@ class Ephem:
         elif ephem_type == EphemType.space_jpl:
             await self._jpl_horizons_ephem_async()
         else:
-            raise HTTPException(status_code=400, detail="Invalid ephemeris type")
+            raise Exception("Invalid ephemeris type")
         self._ephem_calc()
         return True
 
