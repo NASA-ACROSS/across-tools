@@ -23,7 +23,6 @@ class TLEEntry(BaseSchema):
     epoch
     """
 
-    __tablename__ = "acrossapi_tle"
     satname: str  # Partition Key
     tle1: str = Field(min_length=69, max_length=69)
     tle2: str = Field(min_length=69, max_length=69)
