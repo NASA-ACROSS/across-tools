@@ -189,7 +189,7 @@ class Ephem:
             id=self.horizons_id,
             location="500@399",
             epochs=horizons_range,
-            id_type="majorbody",
+            id_type=None,
         )
         horizons_vectors = horizons_ephem.vectors(refplane="earth")
 
