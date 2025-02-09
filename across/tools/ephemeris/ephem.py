@@ -262,7 +262,7 @@ class Ephem:
             if downloads:
                 await asyncio.gather(*downloads)
 
-        self._load_kernel_files()
+        await self._load_kernel_files_async()
 
     def _load_kernel_files(self) -> None:
         if self.spice_kernel_url is None:
@@ -285,7 +285,30 @@ class Ephem:
         if earth_params_file not in loaded_kernels:
             spice.furnsh(earth_params_file)  # High-precision Earth orientation
         if spice_kernel_file not in loaded_kernels:
-            spice.furnsh(spice_kernel_file)  # JWST trajectory kernel
+            spice.furnsh(spice_kernel_file)  # spacecraft trajectory kernel
+
+    async def _load_kernel_files_async(self) -> None:
+        if self.spice_kernel_url is None:
+            raise Exception("No SPICE kernel URL provided")
+        # Helper method to load the kernel files after download
+        cache_dir = os.path.expanduser("~/.cache/across/spice")
+        leap_seconds_file = os.path.join(cache_dir, os.path.basename(NAIF_LEAP_SECONDS_URL))
+        planetary_ephem_file = os.path.join(cache_dir, os.path.basename(NAIF_PLANETARY_EPHEMERIS_URL))
+        earth_params_file = os.path.join(cache_dir, os.path.basename(NAIF_EARTH_ORIENTATION_PARAMETERS_URL))
+        spice_kernel_file = os.path.join(cache_dir, os.path.basename(self.spice_kernel_url))
+
+        # Check if kernels are already loaded
+        loaded_kernels = [str(spice.kdata(i, "all")[0]) for i in range(spice.ktotal("all"))]
+
+        # Load local cached kernel files if not already loaded
+        if leap_seconds_file not in loaded_kernels:
+            await asyncio.to_thread(spice.furnsh, leap_seconds_file)  # Leap seconds
+        if planetary_ephem_file not in loaded_kernels:
+            await asyncio.to_thread(spice.furnsh, planetary_ephem_file)  # Planetary ephemeris
+        if earth_params_file not in loaded_kernels:
+            await asyncio.to_thread(spice.furnsh, earth_params_file)  # High-precision Earth orientation
+        if spice_kernel_file not in loaded_kernels:
+            await asyncio.to_thread(spice.furnsh, spice_kernel_file)  # spacecraft trajectory kernel
 
     def _spice_kernel_ephem(self) -> bool:
         # Load SPICE kernels
