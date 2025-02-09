@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
+import aiofiles
 import astropy.units as u  # type: ignore
 import httpx
 import numpy as np
@@ -199,26 +200,30 @@ class Ephem:
         return True
 
     def _load_spice_kernels(self) -> None:
-        # Synchronous version of loading spice kernels
+        """Synchronous version of loading spice kernels"""
         if self.spice_kernel_url is None:
             raise Exception("No SPICE kernel URL provided")
 
-        # Create cache directory if it doesn't exist
+        # Create cache directory
         cache_dir = os.path.expanduser("~/.cache/across/spice")
         os.makedirs(cache_dir, exist_ok=True)
 
-        # Download spice kernels if they don't exist
-        for url in [
+        # Download all required kernels in one pass
+        urls = [
             NAIF_LEAP_SECONDS_URL,
             NAIF_PLANETARY_EPHEMERIS_URL,
             NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
             self.spice_kernel_url,
-        ]:
-            local_file = os.path.join(cache_dir, os.path.basename(url))
-            if not os.path.exists(local_file):
-                response = httpx.get(url)
-                with open(local_file, "wb") as f:
-                    f.write(response.content)
+        ]
+
+        with httpx.Client() as client:
+            for url in urls:
+                local_file = os.path.join(cache_dir, os.path.basename(url))
+                if not os.path.exists(local_file):
+                    response = client.get(url)
+                    response.raise_for_status()
+                    with open(local_file, "wb") as f:
+                        f.write(response.content)
 
         self._load_kernel_files()
 
@@ -231,19 +236,22 @@ class Ephem:
         cache_dir = os.path.expanduser("~/.cache/across/spice")
         os.makedirs(cache_dir, exist_ok=True)
 
+        # Download all required kernels in one pass
+        urls = [
+            NAIF_LEAP_SECONDS_URL,
+            NAIF_PLANETARY_EPHEMERIS_URL,
+            NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
+            self.spice_kernel_url,
+        ]
         # Download spice kernels if they don't exist
         async with httpx.AsyncClient() as client:
-            for url in [
-                NAIF_LEAP_SECONDS_URL,
-                NAIF_PLANETARY_EPHEMERIS_URL,
-                NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
-                self.spice_kernel_url,
-            ]:
+            for url in urls:
                 local_file = os.path.join(cache_dir, os.path.basename(url))
                 if not os.path.exists(local_file):
                     response = await client.get(url)
-                    with open(local_file, "wb") as f:
-                        f.write(response.content)
+                    response.raise_for_status()
+                    async with aiofiles.open(local_file, "wb") as f:
+                        await f.write(response.content)
 
         self._load_kernel_files()
 
