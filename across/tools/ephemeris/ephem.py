@@ -20,7 +20,7 @@ from astroquery.jplhorizons import Horizons  # type: ignore
 from sgp4.api import Satrec  # type: ignore[import-untyped]
 
 from ..core.enums import EphemType
-from ..core.schemas.tle import TLEEntry
+from ..core.schemas.tle import TLE
 
 # Define the radii of the Moon (as astropy doesn't)
 R_moon = 1737.4 * u.km
@@ -45,7 +45,7 @@ class Ephem:
         Custom Earth radius value in km (default: None)
     earth_location : EarthLocation
         Location on Earth for ground-based calculations
-    tle : TLEEntry, optional
+    tle : TLE, optional
         Two-line element set for satellite calculations
     horizons_id : str
         JPL Horizons ID for solar system body calculations
@@ -113,7 +113,7 @@ class Ephem:
     sun_size: u.Quantity
     # Ephemeris attributes
     earth_location: EarthLocation
-    tle: Optional[TLEEntry]
+    tle: Optional[TLE]
     horizons_id: str
 
     def __init__(self, **kwargs: Any) -> None:
@@ -409,7 +409,7 @@ def compute_ground_ephem(
     return ephem
 
 
-def compute_tle_ephem(begin: datetime, end: datetime, stepsize: int, tle: TLEEntry) -> Ephem:
+def compute_tle_ephem(begin: datetime, end: datetime, stepsize: int, tle: TLE) -> Ephem:
     """
     Compute the ephemeris for a space object using Two-Line Element (TLE) data.
     Parameters
@@ -420,7 +420,7 @@ def compute_tle_ephem(begin: datetime, end: datetime, stepsize: int, tle: TLEEnt
         The end time for the ephemeris computation.
     stepsize : int
         The time step size in seconds for the ephemeris computation.
-    tle : TLEEntry
+    tle : TLE
         The TLE data entry for the space object.
     Returns
     -------
