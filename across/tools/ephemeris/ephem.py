@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timedelta
 from typing import Any, Optional
@@ -227,6 +228,12 @@ class Ephem:
 
         self._load_kernel_files()
 
+    async def _download_file(self, client: httpx.AsyncClient, url: str, local_file: str) -> None:
+        response = await client.get(url)
+        response.raise_for_status()
+        async with aiofiles.open(local_file, "wb") as f:
+            await f.write(response.content)
+
     async def _load_spice_kernels_async(self) -> None:
         # Async version of loading spice kernels
         if self.spice_kernel_url is None:
@@ -243,15 +250,17 @@ class Ephem:
             NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
             self.spice_kernel_url,
         ]
-        # Download spice kernels if they don't exist
+
+        # Download spice kernels if they don't exist locally
         async with httpx.AsyncClient() as client:
+            downloads = []
             for url in urls:
                 local_file = os.path.join(cache_dir, os.path.basename(url))
+
                 if not os.path.exists(local_file):
-                    response = await client.get(url)
-                    response.raise_for_status()
-                    async with aiofiles.open(local_file, "wb") as f:
-                        await f.write(response.content)
+                    downloads.append(self._download_file(client, url, local_file))
+            if downloads:
+                await asyncio.gather(*downloads)
 
         self._load_kernel_files()
 
