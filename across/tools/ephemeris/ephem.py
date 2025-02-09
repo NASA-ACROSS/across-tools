@@ -35,6 +35,7 @@ NAIF_PLANETARY_EPHEMERIS_URL = "https://naif.jpl.nasa.gov/pub/naif/generic_kerne
 NAIF_EARTH_ORIENTATION_PARAMETERS_URL = (
     "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_latest_high_prec.bpc"
 )
+SPICE_KERNEL_CACHE_DIR = os.path.expanduser("~/.cache/across/spice")
 
 
 class Ephem:
@@ -206,8 +207,7 @@ class Ephem:
             raise Exception("No SPICE kernel URL provided")
 
         # Create cache directory
-        cache_dir = os.path.expanduser("~/.cache/across/spice")
-        os.makedirs(cache_dir, exist_ok=True)
+        os.makedirs(SPICE_KERNEL_CACHE_DIR, exist_ok=True)
 
         # Download all required kernels in one pass
         urls = [
@@ -219,7 +219,7 @@ class Ephem:
 
         with httpx.Client() as client:
             for url in urls:
-                local_file = os.path.join(cache_dir, os.path.basename(url))
+                local_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(url))
                 if not os.path.exists(local_file):
                     response = client.get(url)
                     response.raise_for_status()
@@ -240,8 +240,7 @@ class Ephem:
             raise Exception("No SPICE kernel URL provided")
 
         # Create cache directory if it doesn't exist
-        cache_dir = os.path.expanduser("~/.cache/across/spice")
-        os.makedirs(cache_dir, exist_ok=True)
+        os.makedirs(SPICE_KERNEL_CACHE_DIR, exist_ok=True)
 
         # Download all required kernels in one pass
         urls = [
@@ -255,7 +254,7 @@ class Ephem:
         async with httpx.AsyncClient() as client:
             downloads = []
             for url in urls:
-                local_file = os.path.join(cache_dir, os.path.basename(url))
+                local_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(url))
 
                 if not os.path.exists(local_file):
                     downloads.append(self._download_file(client, url, local_file))
@@ -268,11 +267,15 @@ class Ephem:
         if self.spice_kernel_url is None:
             raise Exception("No SPICE kernel URL provided")
         # Helper method to load the kernel files after download
-        cache_dir = os.path.expanduser("~/.cache/across/spice")
-        leap_seconds_file = os.path.join(cache_dir, os.path.basename(NAIF_LEAP_SECONDS_URL))
-        planetary_ephem_file = os.path.join(cache_dir, os.path.basename(NAIF_PLANETARY_EPHEMERIS_URL))
-        earth_params_file = os.path.join(cache_dir, os.path.basename(NAIF_EARTH_ORIENTATION_PARAMETERS_URL))
-        spice_kernel_file = os.path.join(cache_dir, os.path.basename(self.spice_kernel_url))
+
+        leap_seconds_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_LEAP_SECONDS_URL))
+        planetary_ephem_file = os.path.join(
+            SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_PLANETARY_EPHEMERIS_URL)
+        )
+        earth_params_file = os.path.join(
+            SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_EARTH_ORIENTATION_PARAMETERS_URL)
+        )
+        spice_kernel_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(self.spice_kernel_url))
 
         # Check if kernels are already loaded
         loaded_kernels = [str(spice.kdata(i, "all")[0]) for i in range(spice.ktotal("all"))]
@@ -290,12 +293,15 @@ class Ephem:
     async def _load_kernel_files_async(self) -> None:
         if self.spice_kernel_url is None:
             raise Exception("No SPICE kernel URL provided")
-        # Helper method to load the kernel files after download
-        cache_dir = os.path.expanduser("~/.cache/across/spice")
-        leap_seconds_file = os.path.join(cache_dir, os.path.basename(NAIF_LEAP_SECONDS_URL))
-        planetary_ephem_file = os.path.join(cache_dir, os.path.basename(NAIF_PLANETARY_EPHEMERIS_URL))
-        earth_params_file = os.path.join(cache_dir, os.path.basename(NAIF_EARTH_ORIENTATION_PARAMETERS_URL))
-        spice_kernel_file = os.path.join(cache_dir, os.path.basename(self.spice_kernel_url))
+
+        leap_seconds_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_LEAP_SECONDS_URL))
+        planetary_ephem_file = os.path.join(
+            SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_PLANETARY_EPHEMERIS_URL)
+        )
+        earth_params_file = os.path.join(
+            SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_EARTH_ORIENTATION_PARAMETERS_URL)
+        )
+        spice_kernel_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(self.spice_kernel_url))
 
         # Check if kernels are already loaded
         loaded_kernels = [str(spice.kdata(i, "all")[0]) for i in range(spice.ktotal("all"))]
