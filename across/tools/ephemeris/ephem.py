@@ -425,9 +425,9 @@ class Ephem:
             id=self.naif_id,
             location="500@399",
             epochs=horizons_range,
-            id_type="majorbody",
+            id_type=None,
         )
-        horizons_vectors = await horizons_ephem.vectors_async(refplane="earth")
+        horizons_vectors = await asyncio.to_thread(horizons_ephem.vectors, refplane="earth")
 
         # Create a GCRS SkyCoord object from the ephemeris data
         gcrs_p = CartesianRepresentation(
