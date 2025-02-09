@@ -1,8 +1,11 @@
+import os
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
 import astropy.units as u  # type: ignore
+import httpx
 import numpy as np
+import spiceypy as spice  # type: ignore[import-untyped]
 from astropy.constants import R_earth, R_sun  # type: ignore[import-untyped]
 from astropy.coordinates import (  # type: ignore[import-untyped]
     GCRS,
@@ -24,6 +27,12 @@ from ..core.schemas.tle import TLE
 
 # Define the radii of the Moon (as astropy doesn't)
 R_moon = 1737.4 * u.km
+
+NAIF_LEAP_SECONDS_URL = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls"
+NAIF_PLANETARY_EPHEMERIS_URL = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de442s.bsp"
+NAIF_EARTH_ORIENTATION_PARAMETERS_URL = (
+    "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_latest_high_prec.bpc"
+)
 
 
 class Ephem:
@@ -47,7 +56,7 @@ class Ephem:
         Location on Earth for ground-based calculations
     tle : TLE, optional
         Two-line element set for satellite calculations
-    horizons_id : str
+    naif_id : int
         JPL Horizons ID for solar system body calculations
 
     Attributes itrs : SkyCoord
@@ -81,6 +90,18 @@ class Ephem:
         Compute ephemeris data asynchronously
     ephindex(t: Time)
         Get index of nearest time in ephemeris
+    timestamp
+        Get array of timestamps based on time interval and step size
+    _ephem_calc
+        Calculate final ephemeris data
+    _ground_ephem
+        Calculate ground-based observatory coordinates
+    _tle_ephem
+        Calculate satellite position using TLE data
+    _spice_kernel_ephem
+        Calculate satellite position using SPICE kernel
+    _jpl_horizons_ephem
+        Calculate solar system body position using JPL Horizons
 
     Notes
     -----
@@ -114,7 +135,8 @@ class Ephem:
     # Ephemeris attributes
     earth_location: EarthLocation
     tle: Optional[TLE]
-    horizons_id: str
+    naif_id: int
+    spice_kernel_url: Optional[str] = None
 
     def __init__(self, **kwargs: Any) -> None:
         self.__dict__.update(kwargs)
@@ -176,6 +198,138 @@ class Ephem:
         self.gcrs = self.itrs.transform_to(GCRS)
         return True
 
+    def _load_spice_kernels(self) -> None:
+        # Synchronous version of loading spice kernels
+        if self.spice_kernel_url is None:
+            raise Exception("No SPICE kernel URL provided")
+
+        # Create cache directory if it doesn't exist
+        cache_dir = os.path.expanduser("~/.cache/across/spice")
+        os.makedirs(cache_dir, exist_ok=True)
+
+        # Download spice kernels if they don't exist
+        for url in [
+            NAIF_LEAP_SECONDS_URL,
+            NAIF_PLANETARY_EPHEMERIS_URL,
+            NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
+            self.spice_kernel_url,
+        ]:
+            local_file = os.path.join(cache_dir, os.path.basename(url))
+            if not os.path.exists(local_file):
+                response = httpx.get(url)
+                with open(local_file, "wb") as f:
+                    f.write(response.content)
+
+        self._load_kernel_files()
+
+    async def _load_spice_kernels_async(self) -> None:
+        # Async version of loading spice kernels
+        if self.spice_kernel_url is None:
+            raise Exception("No SPICE kernel URL provided")
+
+        # Create cache directory if it doesn't exist
+        cache_dir = os.path.expanduser("~/.cache/across/spice")
+        os.makedirs(cache_dir, exist_ok=True)
+
+        # Download spice kernels if they don't exist
+        async with httpx.AsyncClient() as client:
+            for url in [
+                NAIF_LEAP_SECONDS_URL,
+                NAIF_PLANETARY_EPHEMERIS_URL,
+                NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
+                self.spice_kernel_url,
+            ]:
+                local_file = os.path.join(cache_dir, os.path.basename(url))
+                if not os.path.exists(local_file):
+                    response = await client.get(url)
+                    with open(local_file, "wb") as f:
+                        f.write(response.content)
+
+        self._load_kernel_files()
+
+    def _load_kernel_files(self) -> None:
+        if self.spice_kernel_url is None:
+            raise Exception("No SPICE kernel URL provided")
+        # Helper method to load the kernel files after download
+        cache_dir = os.path.expanduser("~/.cache/across/spice")
+        leap_seconds_file = os.path.join(cache_dir, os.path.basename(NAIF_LEAP_SECONDS_URL))
+        planetary_ephem_file = os.path.join(cache_dir, os.path.basename(NAIF_PLANETARY_EPHEMERIS_URL))
+        earth_params_file = os.path.join(cache_dir, os.path.basename(NAIF_EARTH_ORIENTATION_PARAMETERS_URL))
+        spice_kernel_file = os.path.join(cache_dir, os.path.basename(self.spice_kernel_url))
+
+        # Check if kernels are already loaded
+        loaded_kernels = [str(spice.kdata(i, "all")[0]) for i in range(spice.ktotal("all"))]
+
+        # Load local cached kernel files if not already loaded
+        if leap_seconds_file not in loaded_kernels:
+            spice.furnsh(leap_seconds_file)  # Leap seconds
+        if planetary_ephem_file not in loaded_kernels:
+            spice.furnsh(planetary_ephem_file)  # Planetary ephemeris
+        if earth_params_file not in loaded_kernels:
+            spice.furnsh(earth_params_file)  # High-precision Earth orientation
+        if spice_kernel_file not in loaded_kernels:
+            spice.furnsh(spice_kernel_file)  # JWST trajectory kernel
+
+    def _spice_kernel_ephem(self) -> bool:
+        # Load SPICE kernels
+        self._load_spice_kernels()
+
+        start_et = spice.str2et(str(self.begin))
+        end_et = spice.str2et(str(self.end))
+
+        # Generate array of times (one-minute intervals)
+        time_intervals = np.arange(start_et, end_et, 60)  # 60s = 1 min
+
+        # Compute full state vector (position + velocity) in batch for J2000 (GCRS)
+        states = np.array(
+            [spice.spkezr(str(self.naif_id), et, "J2000", "NONE", "399")[0] for et in time_intervals]
+        )
+
+        # Extract position and velocity from state vectors
+        positions_gcrs = states[:, :3]  # First three elements (X, Y, Z) [km]
+        velocities_gcrs = states[:, 3:]  # Last three elements (Vx, Vy, Vz) [km/s]
+
+        # Create GCRS coordinates
+        gcrs_p = CartesianRepresentation(positions_gcrs.T * u.km)
+        gcrs_v = CartesianDifferential(velocities_gcrs.T * u.km / u.s)
+        self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
+
+        # Transform to ITRS and get Earth location
+        self.itrs = self.gcrs.transform_to("itrs")
+        self.earth_location = self.itrs.earth_location
+
+        return True
+
+    async def _spice_kernel_ephem_async(self) -> bool:
+        # Load SPICE kernels
+        await self._load_spice_kernels_async()
+
+        start_et = spice.str2et(str(self.begin))
+        end_et = spice.str2et(str(self.end))
+
+        # Generate array of times (one-minute intervals)
+        time_intervals = np.arange(start_et, end_et, 60)  # 60s = 1 min
+
+        # Compute full state vector (position + velocity) in batch for J2000 (GCRS)
+        states = np.array(
+            [spice.spkezr(str(self.naif_id), et, "J2000", "NONE", "399")[0] for et in time_intervals]
+        )
+
+        # Extract position and velocity from state vectors
+        positions_gcrs = states[:, :3]  # First three elements (X, Y, Z) [km]
+        velocities_gcrs = states[:, 3:]  # Last three elements (Vx, Vy, Vz) [km/s]
+
+        # Create GCRS coordinates
+        gcrs_p = CartesianRepresentation(positions_gcrs.T * u.km)
+        gcrs_v = CartesianDifferential(velocities_gcrs.T * u.km / u.s)
+        self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
+
+        # Transform to ITRS and get Earth location
+        self.itrs = self.gcrs.transform_to("itrs")
+        self.earth_location = self.itrs.earth_location
+
+        return True
+
     def _jpl_horizons_ephem(self) -> bool:
         # Create a time range dictionary for Horizons
         horizons_range = {
@@ -186,7 +340,7 @@ class Ephem:
 
         # Fetch the ephemeris vector data from Horizons
         horizons_ephem = Horizons(
-            id=self.horizons_id,
+            id=self.naif_id,
             location="500@399",
             epochs=horizons_range,
             id_type=None,
@@ -222,7 +376,7 @@ class Ephem:
 
         # Fetch the ephemeris vector data from Horizons
         horizons_ephem = Horizons(
-            id=self.horizons_id,
+            id=self.naif_id,
             location="500@399",
             epochs=horizons_range,
             id_type="majorbody",
@@ -334,7 +488,7 @@ class Ephem:
         elif ephem_type == EphemType.space_jpl:
             self._jpl_horizons_ephem()
         elif ephem_type == EphemType.space_spice:
-            raise NotImplementedError("SPICE Kernel ephemeris not yet implemented")
+            self._spice_kernel_ephem()
         else:
             raise Exception("Invalid ephemeris type")
 
@@ -375,7 +529,7 @@ class Ephem:
         elif ephem_type == EphemType.space_jpl:
             await self._jpl_horizons_ephem_async()
         elif ephem_type == EphemType.space_spice:
-            raise NotImplementedError("SPICE Kernel ephemeris not yet implemented")
+            await self._spice_kernel_ephem_async()
         else:
             raise Exception("Invalid ephemeris type")
         self._ephem_calc()
@@ -432,7 +586,7 @@ def compute_tle_ephem(begin: datetime, end: datetime, stepsize: int, tle: TLE) -
     return ephem
 
 
-def compute_jpl_ephem(begin: datetime, end: datetime, stepsize: int, horizons_id: str) -> Ephem:
+def compute_jpl_ephem(begin: datetime, end: datetime, stepsize: int, naif_id: int) -> Ephem:
     """
     Compute space ephemeris data using JPL Horizons system.
 
@@ -444,8 +598,8 @@ def compute_jpl_ephem(begin: datetime, end: datetime, stepsize: int, horizons_id
         End date and time for ephemeris computation
     stepsize : int
         Time step size in seconds between ephemeris points
-    horizons_id : str
-        JPL Horizons object identifier (e.g., 'Sun', '301' for Moon)
+    naif_id : int
+        NAIF object identifier (e.g., 301 for Moon. -48 for HST)
 
     Returns
     -------
@@ -463,12 +617,12 @@ def compute_jpl_ephem(begin: datetime, end: datetime, stepsize: int, horizons_id
     >>> end = datetime(2023, 1, 2)
     >>> moon_ephem = compute_jpl_ephem(begin, end, 60, '301')
     """
-    ephem = Ephem(horizons_id=horizons_id, begin=begin, end=end, stepsize=stepsize)
+    ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize)
     ephem.compute(ephem_type=EphemType.space_jpl)
     return ephem
 
 
-async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int, horizons_id: str) -> Ephem:
+async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int, naif_id: str) -> Ephem:
     """
     Compute space ephemeris data using JPL Horizons system. Async version (as
     JPL Horizons requires use of blocking IO).
@@ -481,8 +635,8 @@ async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int,
         End date and time for ephemeris computation
     stepsize : int
         Time step size in seconds between ephemeris points
-    horizons_id : str
-        JPL Horizons object identifier (e.g., 'Sun', '301' for Moon)
+    naif_id : int
+        NAIF object identifier (e.g., 301 for Moon, -48 for HST)
 
     Returns
     -------
@@ -500,6 +654,87 @@ async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int,
     >>> end = datetime(2023, 1, 2)
     >>> moon_ephem = compute_jpl_ephem(begin, end, 60, '301')
     """
-    ephem = Ephem(horizons_id=horizons_id, begin=begin, end=end, stepsize=stepsize)
+    ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize)
     await ephem.compute_async(ephem_type=EphemType.space_jpl)
+    return ephem
+
+
+def compute_spice_ephem(
+    begin: datetime, end: datetime, stepsize: int, spice_kernel_url: str, naif_id: int
+) -> Ephem:
+    """
+    Compute space ephemeris data using SPICE kernels.
+
+    Parameters
+    ----------
+    begin : datetime
+        Start date and time for ephemeris computation
+    end : datetime
+        End date and time for ephemeris computation
+    stepsize : int
+        Time step size in seconds between ephemeris points
+    spice_kernel_url : str
+        URL to the SPICE kernel file
+    naif_id : int
+        NAIF object identifier (e.g., 301 for Moon, -48 for HST)
+
+    Returns
+    -------
+    Ephem
+        An Ephem object containing the computed ephemeris data
+
+    Notes
+    -----
+    This function uses the SPICE system to compute high-precision
+    ephemeris data for celestial bodies in space-based reference frame.
+    Examples
+    --------
+    >>> from datetime import datetime
+    >>> begin = datetime(2023, 1, 1)
+    >>> end = datetime(2023, 1, 2)
+    >>> moon_ephem = compute_spice_ephem(begin, end, 60, 'https://path/to/spice_kernel.bsp', 301)
+    """
+    ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize, spice_kernel_url=spice_kernel_url)
+    ephem.compute(ephem_type=EphemType.space_spice)
+    return ephem
+
+
+async def compute_spice_ephem_async(
+    begin: datetime, end: datetime, stepsize: int, spice_kernel_url: str, naif_id: int
+) -> Ephem:
+    """
+    Compute space ephemeris data using SPICE kernels. Async version (as
+    SPICE requires use of blocking IO).
+
+    Parameters
+    ----------
+    begin : datetime
+        Start date and time for ephemeris computation
+    end : datetime
+        End date and time for ephemeris computation
+    stepsize : int
+        Time step size in seconds between ephemeris points
+    spice_kernel_url : str
+        URL to the SPICE kernel file
+    naif_id : int
+        NAIF object identifier (e.g., 301 for Moon, -48 for HST)
+
+    Returns
+    -------
+    Ephem
+        An Ephem object containing the computed ephemeris data
+
+    Notes
+    -----
+    This function uses the SPICE system to compute high-precision
+    ephemeris data for celestial bodies in space-based reference frame.
+    Examples
+    --------
+    >>> from datetime import datetime
+    >>> begin = datetime(2023, 1, 1)
+    >>> end = datetime(2023, 1, 2)
+    >>> moon_ephem = compute_spice_ephem(begin, end, 60, 'https://path/to/spice_kernel.bsp', 301)
+    """
+    ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize, spice_kernel_url=spice_kernel_url)
+    await ephem.compute_async(ephem_type=EphemType.space_spice)
     return ephem
