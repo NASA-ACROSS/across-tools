@@ -335,7 +335,7 @@ class Ephem:
         step = timedelta(seconds=self.stepsize)
         return Time(np.arange(self.begin, self.end + step, step))
 
-    def _ephem_calc(self, ephem_type: EphemType = EphemType.space_tle) -> bool:
+    def _ephem_calc(self) -> bool:
         # Calculate the position of the Moon relative to the spacecraft
         self.moon = get_body("moon", self.timestamp, location=self.earth_location)
 
