@@ -1,9 +1,9 @@
 import asyncio
 import os
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
-import aiofiles
 import astropy.units as u  # type: ignore[import-untyped]
 import httpx
 import numpy as np
@@ -66,10 +66,6 @@ class Ephem:
         Position in International Terrestrial Reference System
     gcrs : SkyCoord
         Position in Geocentric Celestial Reference System
-    posvec : CartesianRepresentation
-        Position vector in cartesian coordinates
-    velvec : CartesianDifferential
-        Velocity vector in cartesian coordinates
     moon : SkyCoord
         Moon position relative to observer
     sun : SkyCoord
@@ -123,10 +119,7 @@ class Ephem:
     stepsize: int = 60
 
     timestamp: Time
-    itrs: SkyCoord
     gcrs: SkyCoord
-    posvec: CartesianRepresentation
-    velvec: CartesianDifferential
     moon: SkyCoord
     sun: SkyCoord
     earth: SkyCoord
@@ -181,7 +174,6 @@ class Ephem:
 
         # Calculate GCRS and ITRS coordinates of the observatory
         self.gcrs = self.earth_location.get_gcrs(self.timestamp)
-        self.itrs = self.earth_location.get_itrs(self.timestamp)
         return True
 
     def _tle_ephem(self) -> bool:
@@ -198,13 +190,13 @@ class Ephem:
         # Convert SGP4 TEME data to astropy ITRS SkyCoord
         teme_p = CartesianRepresentation(temes_p.T * u.km)
         teme_v = CartesianDifferential(temes_v.T * u.km / u.s)
-        self.itrs = SkyCoord(teme_p.with_differentials(teme_v), frame=TEME(obstime=self.timestamp)).itrs
-        self.earth_location = self.itrs.earth_location
+        itrs = SkyCoord(teme_p.with_differentials(teme_v), frame=TEME(obstime=self.timestamp)).itrs
+        self.earth_location = itrs.earth_location
 
         # Calculate satellite position in GCRS coordinate system vector as
         # array of x,y,z vectors in units of km, and velocity vector as array
         # of x,y,z vectors in units of km/s
-        self.gcrs = self.itrs.transform_to(GCRS)
+        self.gcrs = itrs.transform_to(GCRS)
         return True
 
     def _load_spice_kernels(self) -> None:
@@ -234,41 +226,6 @@ class Ephem:
 
         self._load_kernel_files()
 
-    async def _download_file(self, client: httpx.AsyncClient, url: str, local_file: str) -> None:
-        response = await client.get(url)
-        response.raise_for_status()
-        async with aiofiles.open(local_file, "wb") as f:
-            await f.write(response.content)
-
-    async def _load_spice_kernels_async(self) -> None:
-        # Async version of loading spice kernels
-        if self.spice_kernel_url is None:
-            raise Exception("No SPICE kernel URL provided")
-
-        # Create cache directory if it doesn't exist
-        os.makedirs(SPICE_KERNEL_CACHE_DIR, exist_ok=True)
-
-        # Download all required kernels in one pass
-        urls = [
-            NAIF_LEAP_SECONDS_URL,
-            NAIF_PLANETARY_EPHEMERIS_URL,
-            NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
-            self.spice_kernel_url,
-        ]
-
-        # Download spice kernels if they don't exist locally
-        async with httpx.AsyncClient() as client:
-            downloads = []
-            for url in urls:
-                local_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(url))
-
-                if not os.path.exists(local_file):
-                    downloads.append(self._download_file(client, url, local_file))
-            if downloads:
-                await asyncio.gather(*downloads)
-
-        await self._load_kernel_files_async()
-
     def _load_kernel_files(self) -> None:
         if self.spice_kernel_url is None:
             raise Exception("No SPICE kernel URL provided")
@@ -296,32 +253,6 @@ class Ephem:
         if spice_kernel_file not in loaded_kernels:
             spice.furnsh(spice_kernel_file)  # spacecraft trajectory kernel
 
-    async def _load_kernel_files_async(self) -> None:
-        if self.spice_kernel_url is None:
-            raise Exception("No SPICE kernel URL provided")
-
-        leap_seconds_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_LEAP_SECONDS_URL))
-        planetary_ephem_file = os.path.join(
-            SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_PLANETARY_EPHEMERIS_URL)
-        )
-        earth_params_file = os.path.join(
-            SPICE_KERNEL_CACHE_DIR, os.path.basename(NAIF_EARTH_ORIENTATION_PARAMETERS_URL)
-        )
-        spice_kernel_file = os.path.join(SPICE_KERNEL_CACHE_DIR, os.path.basename(self.spice_kernel_url))
-
-        # Check if kernels are already loaded
-        loaded_kernels = [str(spice.kdata(i, "all")[0]) for i in range(spice.ktotal("all"))]
-
-        # Load local cached kernel files if not already loaded
-        if leap_seconds_file not in loaded_kernels:
-            await asyncio.to_thread(spice.furnsh, leap_seconds_file)  # Leap seconds
-        if planetary_ephem_file not in loaded_kernels:
-            await asyncio.to_thread(spice.furnsh, planetary_ephem_file)  # Planetary ephemeris
-        if earth_params_file not in loaded_kernels:
-            await asyncio.to_thread(spice.furnsh, earth_params_file)  # High-precision Earth orientation
-        if spice_kernel_file not in loaded_kernels:
-            await asyncio.to_thread(spice.furnsh, spice_kernel_file)  # spacecraft trajectory kernel
-
     def _spice_kernel_ephem(self) -> bool:
         # Load SPICE kernels
         self._load_spice_kernels()
@@ -347,38 +278,8 @@ class Ephem:
         self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
 
         # Transform to ITRS and get Earth location
-        self.itrs = self.gcrs.transform_to("itrs")
-        self.earth_location = self.itrs.earth_location
-
-        return True
-
-    async def _spice_kernel_ephem_async(self) -> bool:
-        # Load SPICE kernels
-        await self._load_spice_kernels_async()
-
-        start_et = spice.str2et(str(self.begin))
-        end_et = spice.str2et(str(self.end))
-
-        # Generate array of times (one-minute intervals)
-        time_intervals = np.arange(start_et, end_et, 60)  # 60s = 1 min
-
-        # Compute full state vector (position + velocity) in batch for J2000 (GCRS)
-        states = np.array(
-            [spice.spkezr(str(self.naif_id), et, "J2000", "NONE", "399")[0] for et in time_intervals]
-        )
-
-        # Extract position and velocity from state vectors
-        positions_gcrs = states[:, :3]  # First three elements (X, Y, Z) [km]
-        velocities_gcrs = states[:, 3:]  # Last three elements (Vx, Vy, Vz) [km/s]
-
-        # Create GCRS coordinates
-        gcrs_p = CartesianRepresentation(positions_gcrs.T * u.km)
-        gcrs_v = CartesianDifferential(velocities_gcrs.T * u.km / u.s)
-        self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
-
-        # Transform to ITRS and get Earth location
-        self.itrs = self.gcrs.transform_to("itrs")
-        self.earth_location = self.itrs.earth_location
+        itrs = self.gcrs.transform_to("itrs")
+        self.earth_location = itrs.earth_location
 
         return True
 
@@ -413,44 +314,8 @@ class Ephem:
         self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
 
         # Calculate the ITRS coordinates and Earth Location
-        self.itrs = self.gcrs.itrs
-        self.earth_location = self.itrs.earth_location
-
-        return True
-
-    async def _jpl_horizons_ephem_async(self) -> bool:
-        # Create a time range dictionary for Horizons
-        horizons_range = {
-            "start": str(Time(self.begin).tdb),
-            "stop": str(Time(self.end).tdb),
-            "step": f"{self.stepsize / 60:.0f}m",
-        }
-
-        # Fetch the ephemeris vector data from Horizons
-        horizons_ephem = Horizons(
-            id=self.naif_id,
-            location="500@399",
-            epochs=horizons_range,
-            id_type=None,
-        )
-        horizons_vectors = await asyncio.to_thread(horizons_ephem.vectors, refplane="earth")
-
-        # Create a GCRS SkyCoord object from the ephemeris data
-        gcrs_p = CartesianRepresentation(
-            horizons_vectors["x"].to(u.km),
-            horizons_vectors["y"].to(u.km),
-            horizons_vectors["z"].to(u.km),
-        )
-        gcrs_v = CartesianDifferential(
-            horizons_vectors["vx"],
-            horizons_vectors["vy"],
-            horizons_vectors["vz"],
-        )
-        self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
-
-        # Calculate the ITRS coordinates and Earth Location
-        self.itrs = self.gcrs.itrs
-        self.earth_location = self.itrs.earth_location
+        itrs = self.gcrs.itrs
+        self.earth_location = itrs.earth_location
 
         return True
 
@@ -471,10 +336,6 @@ class Ephem:
         return Time(np.arange(self.begin, self.end + step, step))
 
     def _ephem_calc(self, ephem_type: EphemType = EphemType.space_tle) -> bool:
-        # Calculate the postion and velocity vectors
-        self.posvec = self.gcrs.cartesian.without_differentials()
-        self.velvec = self.gcrs.velocity.to_cartesian()
-
         # Calculate the position of the Moon relative to the spacecraft
         self.moon = get_body("moon", self.timestamp, location=self.earth_location)
 
@@ -489,7 +350,7 @@ class Ephem:
         self.longitude = self.earth_location.lon
         self.latitude = self.earth_location.lat
         self.height = self.earth_location.height
-        self.distance = self.posvec.norm()
+        self.distance = self.gcrs.distance
 
         # Calculate the Earth radius in degrees
         self.earthsize = np.arcsin(R_earth / self.distance)
@@ -546,48 +407,6 @@ class Ephem:
         self._ephem_calc()
         return True
 
-    async def compute_async(self, ephem_type: EphemType) -> bool:
-        """
-        Asynchronously compute ephemeris based on the specified type.
-        Parameters
-        ----------
-        ephem_type : EphemType
-            The type of ephemeris calculation to perform (ground_based, space_tle, or space_jpl)
-        Returns
-        -------
-        bool
-            True if computation is successful
-        Raises
-        ------
-        Exception
-            If an invalid ephemeris type is provided (400 status code)
-        Notes
-        -----
-        This method performs different ephemeris calculations based on the type:
-        - For ground_based: Calculates ground-based observatory coordinates
-        - For space_tle: Computes satellite positions using TLE data
-        - For space_jpl: Gets positions using JPL HORIZONS system asynchronously
-        The results are stored in instance variables and final calculations are
-        performed via _ephem_calc() after the initial computations.
-        """
-        # Compute timestamps
-        self.timestamp = self._compute_timestamp()
-
-        # Calculate GCRS/ITRS and EarthLocation coordinates of Observatory
-        # based on type of Ephemeris being calculated
-        if ephem_type == EphemType.ground_based:
-            self._ground_ephem()
-        elif ephem_type == EphemType.space_tle:
-            self._tle_ephem()
-        elif ephem_type == EphemType.space_jpl:
-            await self._jpl_horizons_ephem_async()
-        elif ephem_type == EphemType.space_spice:
-            await self._spice_kernel_ephem_async()
-        else:
-            raise Exception("Invalid ephemeris type")
-        self._ephem_calc()
-        return True
-
 
 def compute_ground_ephem(
     begin: datetime,
@@ -628,6 +447,43 @@ def compute_ground_ephem(
     return ephem
 
 
+async def compute_ground_ephem_async(
+    begin: datetime,
+    end: datetime,
+    stepsize: int,
+    latitude: Latitude,
+    longitude: Longitude,
+    height: u.Quantity,
+) -> Ephem:
+    """
+    Compute ground-based ephemeris for a given time range and location. Async version.
+
+    Parameters
+    ----------
+    begin : datetime
+        The start time of the ephemeris computation.
+    end : datetime
+        The end time of the ephemeris computation.
+    stepsize : int
+        The step size in seconds for the ephemeris computation.
+    latitude : Latitude
+        The latitude of the ground-based observatory.
+    longitude : Longitude
+        The longitude of the ground-based observatory.
+    height : u.Quantity
+        The height of the ground-based observatory above sea level.
+
+    Returns
+    -------
+    Ephem
+        An Ephem object containing the computed ephemeris data.
+    """
+    with ProcessPoolExecutor() as executor:
+        return await asyncio.get_event_loop().run_in_executor(
+            executor, compute_ground_ephem, begin, end, stepsize, latitude, longitude, height
+        )
+
+
 def compute_tle_ephem(begin: datetime, end: datetime, stepsize: int, tle: TLE) -> Ephem:
     """
     Compute the ephemeris for a space object using Two-Line Element (TLE) data.
@@ -649,6 +505,31 @@ def compute_tle_ephem(begin: datetime, end: datetime, stepsize: int, tle: TLE) -
     ephem = Ephem(tle=tle, begin=begin, end=end, stepsize=stepsize)
     ephem.compute(ephem_type=EphemType.space_tle)
     return ephem
+
+
+async def compute_tle_ephem_async(begin: datetime, end: datetime, stepsize: int, tle: TLE) -> Ephem:
+    """
+    Compute the ephemeris for a space object using Two-Line Element (TLE) data.
+    Async version (as TLE calculations require use of blocking IO).
+    Parameters
+    ----------
+    begin : datetime
+        The start time for the ephemeris computation.
+    end : datetime
+        The end time for the ephemeris computation.
+    stepsize : int
+        The time step size in seconds for the ephemeris computation.
+    tle : TLE
+        The TLE data entry for the space object.
+    Returns
+    -------
+    Ephem
+        The computed ephemeris object containing the position and velocity data.
+    """
+    with ProcessPoolExecutor() as executor:
+        return await asyncio.get_event_loop().run_in_executor(
+            executor, compute_tle_ephem, begin, end, stepsize, tle
+        )
 
 
 def compute_jpl_ephem(begin: datetime, end: datetime, stepsize: int, naif_id: int) -> Ephem:
@@ -719,9 +600,10 @@ async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int,
     >>> end = datetime(2023, 1, 2)
     >>> moon_ephem = compute_jpl_ephem(begin, end, 60, 301)
     """
-    ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize)
-    await ephem.compute_async(ephem_type=EphemType.space_jpl)
-    return ephem
+    with ThreadPoolExecutor() as executor:
+        return await asyncio.get_event_loop().run_in_executor(
+            executor, compute_jpl_ephem, begin, end, stepsize, naif_id
+        )
 
 
 def compute_spice_ephem(
@@ -800,6 +682,7 @@ async def compute_spice_ephem_async(
     >>> end = datetime(2023, 1, 2)
     >>> moon_ephem = compute_spice_ephem(begin, end, 60, 'https://path/to/spice_kernel.bsp', 301)
     """
-    ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize, spice_kernel_url=spice_kernel_url)
-    await ephem.compute_async(ephem_type=EphemType.space_spice)
-    return ephem
+    with ProcessPoolExecutor() as executor:
+        return await asyncio.get_event_loop().run_in_executor(
+            executor, compute_spice_ephem, begin, end, stepsize, spice_kernel_url, naif_id
+        )
