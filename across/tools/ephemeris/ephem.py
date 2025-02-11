@@ -1,6 +1,6 @@
 import asyncio
 import os
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
@@ -120,17 +120,18 @@ class Ephem:
 
     timestamp: Time
     gcrs: SkyCoord
+    earth_location: EarthLocation
     moon: SkyCoord
     sun: SkyCoord
     earth: SkyCoord
-    longitude: Longitude
-    latitude: Latitude
-    height: u.Quantity
+    longitude: Optional[Longitude] = None
+    latitude: Optional[Latitude] = None
+    height: Optional[u.Quantity] = None
     earth_size: u.Quantity
     moon_size: u.Quantity
     sun_size: u.Quantity
     # Ephemeris attributes
-    earth_location: EarthLocation
+
     tle: Optional[TLE]
     naif_id: int
     spice_kernel_url: Optional[str] = None
@@ -165,12 +166,12 @@ class Ephem:
         return index
 
     def _ground_ephem(self) -> bool:
-        # Check if EarthLocation is set, if not, set it based on latitude, longitude, and height.
-        if self.earth_location is None:
-            if self.latitude is None or self.longitude is None or self.height is None:
-                raise Exception("Location of observatory not set")
-            else:
-                self.earth_location = EarthLocation.from_geodetic(self.latitude, self.longitude, self.height)
+        # Check if location of observatory is set.
+        if self.latitude is None or self.longitude is None or self.height is None:
+            raise Exception("Location of observatory not set")
+        self.earth_location = EarthLocation.from_geodetic(
+            lat=self.latitude, lon=self.longitude, height=self.height
+        )
 
         # Calculate GCRS and ITRS coordinates of the observatory
         self.gcrs = self.earth_location.get_gcrs(self.timestamp)
@@ -478,7 +479,7 @@ async def compute_ground_ephem_async(
     Ephem
         An Ephem object containing the computed ephemeris data.
     """
-    with ProcessPoolExecutor() as executor:
+    with ThreadPoolExecutor() as executor:
         return await asyncio.get_event_loop().run_in_executor(
             executor, compute_ground_ephem, begin, end, stepsize, latitude, longitude, height
         )
@@ -526,7 +527,7 @@ async def compute_tle_ephem_async(begin: datetime, end: datetime, stepsize: int,
     Ephem
         The computed ephemeris object containing the position and velocity data.
     """
-    with ProcessPoolExecutor() as executor:
+    with ThreadPoolExecutor() as executor:
         return await asyncio.get_event_loop().run_in_executor(
             executor, compute_tle_ephem, begin, end, stepsize, tle
         )
@@ -682,7 +683,7 @@ async def compute_spice_ephem_async(
     >>> end = datetime(2023, 1, 2)
     >>> moon_ephem = compute_spice_ephem(begin, end, 60, 'https://path/to/spice_kernel.bsp', 301)
     """
-    with ProcessPoolExecutor() as executor:
+    with ThreadPoolExecutor() as executor:
         return await asyncio.get_event_loop().run_in_executor(
             executor, compute_spice_ephem, begin, end, stepsize, spice_kernel_url, naif_id
         )
