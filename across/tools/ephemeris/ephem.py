@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 import aiofiles
-import astropy.units as u  # type: ignore
+import astropy.units as u  # type: ignore[import-untyped]
 import httpx
 import numpy as np
 import spiceypy as spice  # type: ignore[import-untyped]
@@ -21,7 +21,7 @@ from astropy.coordinates import (  # type: ignore[import-untyped]
     get_body,
 )
 from astropy.time import Time  # type: ignore[import-untyped]
-from astroquery.jplhorizons import Horizons  # type: ignore
+from astroquery.jplhorizons import Horizons  # type: ignore[import-untyped]
 from sgp4.api import Satrec  # type: ignore[import-untyped]
 
 from ..core.enums import EphemType
@@ -121,8 +121,8 @@ class Ephem:
     begin: datetime
     end: datetime
     stepsize: int = 60
-    earth_radius: Optional[float] = None
 
+    timestamp: Time
     itrs: SkyCoord
     gcrs: SkyCoord
     posvec: CartesianRepresentation
@@ -132,7 +132,8 @@ class Ephem:
     earth: SkyCoord
     longitude: Longitude
     latitude: Latitude
-    earthsize: u.Quantity
+    height: u.Quantity
+    earth_size: u.Quantity
     moon_size: u.Quantity
     sun_size: u.Quantity
     # Ephemeris attributes
@@ -171,9 +172,14 @@ class Ephem:
         return index
 
     def _ground_ephem(self) -> bool:
-        # Calculate GCRS coordinates for ground-based observatory
+        # Check if EarthLocation is set, if not, set it based on latitude, longitude, and height.
         if self.earth_location is None:
-            raise Exception("Location of observatory not set")
+            if self.latitude is None or self.longitude is None or self.height is None:
+                raise Exception("Location of observatory not set")
+            else:
+                self.earth_location = EarthLocation.from_geodetic(self.latitude, self.longitude, self.height)
+
+        # Calculate GCRS and ITRS coordinates of the observatory
         self.gcrs = self.earth_location.get_gcrs(self.timestamp)
         self.itrs = self.earth_location.get_itrs(self.timestamp)
         return True
@@ -448,8 +454,7 @@ class Ephem:
 
         return True
 
-    @property
-    def timestamp(self) -> Time:
+    def _compute_timestamp(self) -> Time:
         """
         Get array of timestamps based on time interval and step size.
         Returns
@@ -483,13 +488,11 @@ class Ephem:
         # Earth of the satellite
         self.longitude = self.earth_location.lon
         self.latitude = self.earth_location.lat
+        self.height = self.earth_location.height
         self.distance = self.posvec.norm()
 
         # Calculate the Earth radius in degrees
-        if self.earth_radius is not None:
-            self.earthsize = self.earth_radius * np.ones(len(self))
-        else:
-            self.earthsize = np.arcsin(R_earth / self.distance)
+        self.earthsize = np.arcsin(R_earth / self.distance)
 
         # Similarly calculate the angular radii of the Sun and the Moon
         self.moon_size = np.arcsin(R_moon / self.moon.distance)
@@ -524,6 +527,8 @@ class Ephem:
         1. Calculates GCRS/ITRS coordinates based on ephemeris type
         2. Computes final ephemeris calculations through _ephem_calc()
         """
+        # Compute timestamps
+        self.timestamp = self._compute_timestamp()
 
         # Calculate GCRS/ITRS and EarthLocation coordinates of Observatory
         # based on type of Ephemeris being calculated
@@ -565,6 +570,8 @@ class Ephem:
         The results are stored in instance variables and final calculations are
         performed via _ephem_calc() after the initial computations.
         """
+        # Compute timestamps
+        self.timestamp = self._compute_timestamp()
 
         # Calculate GCRS/ITRS and EarthLocation coordinates of Observatory
         # based on type of Ephemeris being calculated
@@ -583,7 +590,12 @@ class Ephem:
 
 
 def compute_ground_ephem(
-    begin: datetime, end: datetime, stepsize: int, earth_location: EarthLocation
+    begin: datetime,
+    end: datetime,
+    stepsize: int,
+    latitude: Latitude,
+    longitude: Longitude,
+    height: u.Quantity,
 ) -> Ephem:
     """
     Compute ground-based ephemeris for a given time range and location.
@@ -596,15 +608,22 @@ def compute_ground_ephem(
         The end time of the ephemeris computation.
     stepsize : int
         The step size in seconds for the ephemeris computation.
-    earth_location : EarthLocation
-        The location on Earth for which to compute the ephemeris.
+    latitude : Latitude
+        The latitude of the ground-based observatory.
+    longitude : Longitude
+        The longitude of the ground-based observatory.
+    height : u.Quantity
+        The height of the ground-based observatory above sea level.
 
     Returns
     -------
     Ephem
         An Ephem object containing the computed ephemeris data.
     """
-    ephem = Ephem(earth_location=earth_location, begin=begin, end=end, stepsize=stepsize)
+
+    ephem = Ephem(
+        begin=begin, end=end, stepsize=stepsize, latitude=latitude, longitude=longitude, height=height
+    )
     ephem.compute(ephem_type=EphemType.ground_based)
     return ephem
 
@@ -661,14 +680,14 @@ def compute_jpl_ephem(begin: datetime, end: datetime, stepsize: int, naif_id: in
     >>> from datetime import datetime
     >>> begin = datetime(2023, 1, 1)
     >>> end = datetime(2023, 1, 2)
-    >>> moon_ephem = compute_jpl_ephem(begin, end, 60, '301')
+    >>> moon_ephem = compute_jpl_ephem(begin, end, 60, 301)
     """
     ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize)
     ephem.compute(ephem_type=EphemType.space_jpl)
     return ephem
 
 
-async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int, naif_id: str) -> Ephem:
+async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int, naif_id: int) -> Ephem:
     """
     Compute space ephemeris data using JPL Horizons system. Async version (as
     JPL Horizons requires use of blocking IO).
@@ -698,7 +717,7 @@ async def compute_jpl_ephem_async(begin: datetime, end: datetime, stepsize: int,
     >>> from datetime import datetime
     >>> begin = datetime(2023, 1, 1)
     >>> end = datetime(2023, 1, 2)
-    >>> moon_ephem = compute_jpl_ephem(begin, end, 60, '301')
+    >>> moon_ephem = compute_jpl_ephem(begin, end, 60, 301)
     """
     ephem = Ephem(naif_id=naif_id, begin=begin, end=end, stepsize=stepsize)
     await ephem.compute_async(ephem_type=EphemType.space_jpl)

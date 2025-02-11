@@ -77,7 +77,8 @@ class TLE(TLEBase):
     @property
     """
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     def epoch(self) -> datetime:
         """
         Calculate the Epoch of the TLE file. See
