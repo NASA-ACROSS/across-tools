@@ -9,6 +9,14 @@ from numpy.typing import NDArray
 from across.tools.ephemeris import Ephemeris
 
 
+class MockEphemeris(Ephemeris):
+    """Mock class for testing the Ephemeris class."""
+
+    def prepare_data(self) -> None:
+        """Mock method to prepare data."""
+        pass
+
+
 class TestEphemeris:
     """Test the Ephemeris class."""
 
