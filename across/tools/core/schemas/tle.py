@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import Field, computed_field
+from pydantic import Field, model_validator
 
 from .base import BaseSchema
 
@@ -29,8 +29,8 @@ class TLEBase(BaseSchema):
 
     norad_id: Optional[int] = None
     satellite_name: Optional[str] = None
-    tle1: str = Field(min_length=69, max_length=69)
-    tle2: str = Field(min_length=69, max_length=69)
+    tle1: str = Field(min_length=69, max_length=69, pattern=r"1 .{67}")
+    tle2: str = Field(min_length=69, max_length=69, pattern=r"2 .{67}")
 
 
 class TLE(TLEBase):
@@ -50,9 +50,6 @@ class TLE(TLEBase):
         First line of the TLE, must be exactly 69 characters
     tle2 : str
         Second line of the TLE, must be exactly 69 characters
-
-    Attributes
-    ----------
     epoch : datetime
         The epoch timestamp calculated from the TLE data
 
@@ -77,22 +74,34 @@ class TLE(TLEBase):
     @property
     """
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def epoch(self) -> datetime:
+    epoch: datetime = datetime(2000, 1, 1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_tle(cls, values: dict[str, Any]) -> dict[str, Any]:
         """
-        Calculate the Epoch of the TLE file. See
-        https://celestrak.org/columns/v04n03/#FAQ04 for more information on how
-        the year / epoch encoding works.
+        Validate the TLE data.
+        This checks whether the TLE lines are correctly formatted and contain
+        valid information, as well as calculate the epoch.
         Returns
         -------
             The calculated epoch of the TLE.
         """
         # Extract year and days from TLE
-        tleepoch = self.tle1.split()[3]
+        tleepoch = values["tle1"].split()[3]
         tleyear = int(tleepoch[:2])
         days = float(tleepoch[2:]) - 1
 
         # Calculate epoch date
         year = 2000 + tleyear if tleyear < 57 else 1900 + tleyear
-        return datetime(year, 1, 1) + timedelta(days=days)
+        tle_epoch = datetime(year, 1, 1) + timedelta(days=days)
+
+        # If epoch isn't set in input, set it
+        if not values.get("epoch"):
+            values["epoch"] = tle_epoch
+        else:
+            # Check that epoch given matches one derived from TLE
+            if values["epoch"] != tle_epoch:
+                raise ValueError("Epoch derived from TLE does not match given epoch.")
+
+        return values

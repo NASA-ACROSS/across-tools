@@ -1,10 +1,16 @@
 from datetime import datetime
 from unittest.mock import patch
 
-import astropy.units as u  # type: ignore[import-untyped]
+import astropy.units as u  # type: ignore[import-untyped]  # type: ignore[import-untyped]
 import numpy as np
 import pytest
+from astropy.coordinates import (  # type: ignore[import-untyped]
+    Latitude,
+    Longitude,
+)
 from astropy.table import Table  # type: ignore[import-untyped]
+from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
+from astropy.units import Quantity as uQuantity
 from numpy.typing import NDArray
 
 from across.tools.core.schemas.tle import TLE
@@ -15,26 +21,61 @@ from across.tools.ephemeris import (
     compute_spice_ephemeris,
     compute_tle_ephemeris,
 )
+from across.tools.ephemeris.ground_ephem import GroundEphemeris
 
-# import across.tools.ephemeris.ephemeris.Horizons
+
+class MockEphemeris(Ephemeris):
+    """Mock class for testing the Ephemeris class."""
+
+    def prepare_data(self) -> None:
+        """Mock method to prepare data."""
+        pass
+
+
+class NotImplementedEphemeris(Ephemeris):
+    """Mock class for testing the Ephemeris class."""
+
+    def prepare_data(self) -> None:
+        """Mock method to prepare data."""
+        super().prepare_data()  # type: ignore[safe-super]
 
 
 @pytest.fixture
-def ephemeris_begin() -> datetime:
+def mock_ephemeris_class() -> type[MockEphemeris]:
+    """Fixture for the MockEphemeris class."""
+    return MockEphemeris
+
+
+@pytest.fixture
+def not_implemented_ephemeris_class() -> type[NotImplementedEphemeris]:
+    """Fixture for the NotImplementedEphemeris class."""
+    return NotImplementedEphemeris
+
+
+@pytest.fixture
+def ephemeris_begin() -> Time:
     """Fixture to provide a begin datetime for testing."""
-    return datetime(2025, 2, 12, 0, 0, 0)
+    return Time("2025-02-12 00:00:00", scale="utc")
 
 
 @pytest.fixture
-def ephemeris_end() -> datetime:
+def ephemeris_end() -> Time:
     """Fixture to provide an end datetime for testing."""
-    return datetime(2025, 2, 12, 0, 5, 0)
+    return Time("2025-02-12 00:05:00", scale="utc")
 
 
 @pytest.fixture
-def ephemeris_step_size() -> int:
+def mock_ephemeris(
+    ephemeris_begin: Time, ephemeris_end: Time, ephemeris_step_size: TimeDelta
+) -> MockEphemeris:
+    """Fixture to provide a MockEphemeris instance."""
+    return MockEphemeris(begin=ephemeris_begin, end=ephemeris_end, step_size=ephemeris_step_size)
+
+
+@pytest.fixture
+def ephemeris_step_size() -> TimeDelta:
     """Fixture to provide a step_size for testing."""
-    return 60
+    return TimeDelta(60 * u.s)
 
 
 @pytest.fixture
@@ -325,11 +366,11 @@ def hubble_spice_ephemeris(
     mock_end_et = 7.92590769e08
 
     with (
-        patch("across.tools.ephemeris.ephemeris.spice.furnsh") as mock_furnsh,
-        patch("across.tools.ephemeris.ephemeris.download_file") as mock_download_file,
-        patch("across.tools.ephemeris.ephemeris.spice.str2et") as mock_str2et,
-        patch("across.tools.ephemeris.ephemeris.spice.spkezr") as mock_spkezr,
-        patch("across.tools.ephemeris.ephemeris.spice.str2et") as mock_str2et,
+        patch("across.tools.ephemeris.spice_ephem.spice.furnsh") as mock_furnsh,
+        patch("across.tools.ephemeris.spice_ephem.download_file") as mock_download_file,
+        patch("across.tools.ephemeris.spice_ephem.spice.str2et") as mock_str2et,
+        patch("across.tools.ephemeris.spice_ephem.spice.spkezr") as mock_spkezr,
+        patch("across.tools.ephemeris.spice_ephem.spice.str2et") as mock_str2et,
     ):
         mock_furnsh.return_value = None
         mock_download_file.return_value = None
@@ -360,7 +401,7 @@ def hubble_jpl_ephemeris(
     hubble_horizons_vectors: Table,
 ) -> Ephemeris:
     """Fixture to provide the JPL ephemeris for the Hubble satellite."""
-    with patch("across.tools.ephemeris.ephemeris.jpl.Horizons") as mock_horizons_class:
+    with patch("across.tools.ephemeris.jpl_ephem.jpl.Horizons") as mock_horizons_class:
         mock_instance = mock_horizons_class.return_value
         mock_instance.vectors.return_value = hubble_horizons_vectors
 
@@ -370,3 +411,26 @@ def hubble_jpl_ephemeris(
             step_size=ephemeris_step_size,
             naif_id=hubble_naif_id,
         )
+
+
+@pytest.fixture
+def ground_ephemeris_params() -> tuple[str, str, int, Latitude, Longitude, uQuantity]:
+    """Fixture for ground ephemeris parameters."""
+    begin = "2023-01-01T00:00:00"
+    end = "2023-01-01T00:01:00"
+    step_size = 60
+    latitude = Latitude(34.2 * u.deg)
+    longitude = Longitude(-118.2 * u.deg)
+    height = 100 * u.m
+    return begin, end, step_size, latitude, longitude, height
+
+
+@pytest.fixture
+def ground_ephemeris(
+    ground_ephemeris_params: tuple[str, str, int, Latitude, Longitude, uQuantity],
+) -> GroundEphemeris:
+    """Fixture for a GroundEphemeris object with prepared data."""
+    begin, end, step_size, latitude, longitude, height = ground_ephemeris_params
+    ephemeris = GroundEphemeris(begin, end, step_size, latitude, longitude, height)
+    ephemeris.prepare_data()
+    return ephemeris
