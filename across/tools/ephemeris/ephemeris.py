@@ -188,14 +188,14 @@ class Ephemeris:
         # Check if location of observatory is set.
         if self.latitude is None or self.longitude is None or self.height is None:
             raise Exception("Location of observatory not set")
-        
+
         self.earth_location = EarthLocation.from_geodetic(
             lat=self.latitude, lon=self.longitude, height=self.height
         )
 
         # Calculate GCRS and ITRS coordinates of the observatory
         self.gcrs = self.earth_location.get_gcrs(self.timestamp)
-        
+
         return True
 
     def _tle_ephemeris(self) -> bool:
