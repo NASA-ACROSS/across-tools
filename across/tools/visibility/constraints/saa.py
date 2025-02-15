@@ -1,0 +1,60 @@
+from typing import Literal
+
+import numpy as np
+from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.time import Time  # type: ignore[import-untyped]
+from shapely import Polygon, points
+
+from ...ephemeris import Ephemeris
+from .base import get_slice
+from .polygon import PolygonConstraint
+
+
+class SAAPolygonConstraint(PolygonConstraint):
+    """
+    Polygon based SAA constraint. The SAA is defined by a Shapely Polygon, and
+    this constraint will calculate for a given set of times and a given
+    ephemeris whether the spacecraft is in that SAA polygon.
+
+    Attributes
+    ----------
+    polygon
+        Shapely Polygon object defining the SAA polygon.
+    """
+
+    polygon: Polygon | None = None
+    name: Literal["South Atlantic Anomaly"] = "South Atlantic Anomaly"
+    short_name: Literal["SAA"] = "SAA"
+
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+        """
+        Evaluate the constraint at the given time(s) and ephemeris position(s).
+
+        Parameters
+        ----------
+        time : Time
+            The time(s) at which to evaluate the constraint.
+        ephemeris : Ephemeris
+            The ephemeris position(s) at which to evaluate the constraint.
+        skycoord : SkyCoord
+            The sky coordinate(s) at which to evaluate the constraint.
+
+        Returns
+        -------
+        ndarray
+            A boolean array indicating whether the constraint is satisfied at
+            the given time(s) and position(s). If time is scalar, returns a
+            single boolean value.
+        """
+        # Find a slice what the part of the ephemeris that we're using
+        i = get_slice(time, ephemeris)
+        if ephemeris.longitude is None or ephemeris.latitude is None:
+            raise ValueError("Ephemeris must contain longitude and latitude")
+        in_constraint = np.zeros(len(ephemeris.longitude[i]), dtype=bool)
+        if self.polygon is not None:
+            in_constraint |= self.polygon.contains(points(ephemeris.longitude[i], ephemeris.latitude[i]))
+
+        if self.polygon is not None:
+            in_constraint |= self.polygon.contains(points(ephemeris.longitude[i], ephemeris.latitude[i]))
+        # Return the result as True or False, or an array of True/False
+        return in_constraint[0] if time.isscalar else in_constraint

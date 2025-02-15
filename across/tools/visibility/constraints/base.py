@@ -1,0 +1,81 @@
+from abc import ABC, abstractmethod
+
+import numpy as np
+from astropy.coordinates import SkyCoord  # type: ignore[import]
+from astropy.time import Time  # type: ignore[import]
+
+from ...ephemeris import Ephemeris
+
+
+def get_slice(time: Time, ephemeris: Ephemeris) -> slice:
+    """
+    Return a slice for what the part of the ephemeris that we're using.
+
+    Arguments
+    ---------
+    time : Time
+        The time to calculate the slice for
+    ephemeris : Ephemeris
+        The spacecraft ephemeris
+
+    Returns
+    -------
+        The slice for the ephemeris
+    """
+    # If we're just passing a single time, we can just find the index for that
+    if time.isscalar:
+        # Find the index for the time and return a slice for that index
+        index = ephemeris.index(time)
+        return slice(index, index + 1)
+    else:
+        # Find the indices for the start and end of the time range and return a
+        # slice for that range
+        return slice(ephemeris.index(time[0]), ephemeris.index(time[-1]) + 1)
+
+
+class Constraint(ABC):
+    """
+    Base class for constraints. Constraints are used to determine if a given
+    coordinate is inside the constraint. This is done by checking if the
+    separation between the constraint and the coordinate is less than a given
+    value.
+
+    Parameters
+    ----------
+    min_angle
+        The minimum angle from the constraint that the spacecraft can point.
+    max_angle
+        The maximum angle from the constraint that the spacecraft can point.
+
+    Methods
+    -------
+    __call__(coord, ephemeris)
+        Checks if a given coordinate is inside the constraint.
+    """
+
+    short_name: str
+    name: str
+    min_angle: float | None = None
+    max_angle: float | None = None
+
+    @abstractmethod
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+        """
+        Check for a given time, ephemeris and coordinate if positions given are
+        inside the constraint.
+
+        Parameters
+        ----------
+        time : Time
+            The time to check.
+        ephemeris : Ephemeris
+            The ephemeris object.
+        skycoord : SkyCoord
+            The coordinate to check.
+
+        Returns
+        -------
+        bool
+            `True` if the coordinate is inside the constraint, `False`
+            otherwise.
+        """

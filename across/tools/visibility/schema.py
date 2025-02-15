@@ -1,5 +1,5 @@
-from ..core.enums import VisibilityType
 from ..core.schemas.base import BaseSchema
+from ..core.schemas.coordinate import DateRangeSchema
 from .constraints import (
     AirMassConstraint,
     AltAzConstraint,
@@ -27,7 +27,6 @@ class ObservatoryConstraints(BaseSchema):
     # created_on: datetime | None = None
     # modified_on: datetime | None = None
     # modified_by: str | None = Field(None, exclude=True)
-    visibility_type: VisibilityType | None = None
     objvissap_url: str | None = None
     objvissap_default_params: dict | None = None
     # Loaded constraints
@@ -44,3 +43,26 @@ class ObservatoryConstraints(BaseSchema):
         | DayConstraint
         | SpaceCraftDayConstraint
     ] = []
+
+
+class VisWindow(DateRangeSchema):
+    """
+    Represents a visibility window.
+
+    Parameters
+    ----------
+    begin
+        The beginning of the window.
+    end
+        The end of the window.
+    initial
+        The main constraint that ends at the beginning of the window.
+    final
+        The main constraint that begins at the end of the window.
+    visibility
+        The amount of seconds in the window that the object is visible.
+    """
+
+    visibility: int
+    initial: str
+    final: str
