@@ -1,8 +1,8 @@
 from typing import Literal
 
 import numpy as np
-from astropy.coordinates import SkyCoord  # type: ignore[import]
-from astropy.time import Time  # type: ignore[import]
+from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.time import Time  # type: ignore[import-untyped]
 
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
@@ -32,7 +32,7 @@ class SpaceCraftDayConstraint(Constraint):
 
     Methods
     -------
-    __call__(time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray
+    __call__(time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]
         Evaluates the daytime constraint at given time(s)
 
     Notes
@@ -47,7 +47,7 @@ class SpaceCraftDayConstraint(Constraint):
     short_name: Literal["Day"] = "Day"
     whole_sun: bool = True
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         For a given time, ephemeris, check if the observatory is in daytime.
         Daytime is defined as the time when any part of the Sun is above the
@@ -83,10 +83,12 @@ class SpaceCraftDayConstraint(Constraint):
             and ephemeris.sun_radius_angle is not None
             and ephemeris.earth_location is not None
         )
-        # Calculate the seperation between the Earth and the Sun
+        # Calculate the separation between the Earth and the Sun
         sun_earth_sep = ephemeris.sun[i].separation(ephemeris.earth[i])
         if self.whole_sun:
-            in_constraint = sun_earth_sep > ephemeris.earth_radius_angle - ephemeris.sun_radius_angle
+            in_constraint = np.array(
+                sun_earth_sep > (ephemeris.earth_radius_angle - ephemeris.sun_radius_angle)
+            )
         else:
             in_constraint = sun_earth_sep > ephemeris.earth_radius_angle
 

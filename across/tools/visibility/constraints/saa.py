@@ -26,7 +26,7 @@ class SAAPolygonConstraint(PolygonConstraint):
     name: Literal["South Atlantic Anomaly"] = "South Atlantic Anomaly"
     short_name: Literal["SAA"] = "SAA"
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate the constraint at the given time(s) and ephemeris position(s).
 

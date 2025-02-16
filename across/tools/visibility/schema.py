@@ -1,3 +1,5 @@
+from typing import Any, Union
+
 from ..core.schemas.base import BaseSchema
 from ..core.schemas.coordinate import DateRangeSchema
 from .constraints import (
@@ -7,7 +9,7 @@ from .constraints import (
     EarthLimbConstraint,
     MoonConstraint,
     MoonPhaseConstraint,
-    PoleConstraint,
+    OrbitPoleConstraint,
     RamConstraint,
     SAAPolygonConstraint,
     SpaceCraftDayConstraint,
@@ -28,7 +30,7 @@ class ObservatoryConstraints(BaseSchema):
     # modified_on: datetime | None = None
     # modified_by: str | None = Field(None, exclude=True)
     objvissap_url: str | None = None
-    objvissap_default_params: dict | None = None
+    objvissap_default_params: Union[dict[str, Any], None] = None
     # Loaded constraints
     constraints: list[
         EarthLimbConstraint
@@ -36,7 +38,7 @@ class ObservatoryConstraints(BaseSchema):
         | SAAPolygonConstraint
         | RamConstraint
         | SunConstraint
-        | PoleConstraint
+        | OrbitPoleConstraint
         | AirMassConstraint
         | MoonPhaseConstraint
         | AltAzConstraint

@@ -64,9 +64,9 @@ class EphemerisVisibility(Visibility):
     constraints: list[Constraint]
 
     # Computed values
-    timestamp: np.typing.NDArray = Field(np.array([]), exclude=True)
-    calculated_constraints: dict[str, np.typing.NDArray] = Field({}, exclude=True)
-    inconstraint: np.typing.NDArray = Field(np.array([]), exclude=True)
+    timestamp: Time = Field(np.array([]), exclude=True)
+    calculated_constraints: dict[str, np.typing.NDArray[np.bool_]] = Field({}, exclude=True)
+    inconstraint: np.typing.NDArray[np.bool_] = Field(np.array([]), exclude=True)
     ephemeris: Optional[Ephemeris] = Field(None, exclude=True)
 
     @cached_property
@@ -127,10 +127,17 @@ class EphemerisVisibility(Visibility):
         # Calculate the times to calculate the visibility
         self.timestamp = self.ephemeris.timestamp[self.ephstart : self.ephstop]
 
+        # Check constraints are array-like
+        for con in self.constraints:
+            if not isinstance(con, (np.typing.NDArray)):
+                raise ValueError("Constraints must be an array-like structure.")
+
         # Calculate all the individual constraints
         self.calculated_constraints = {
-            cons.short_name: cons(time=self.timestamp, ephemeris=self.ephemeris, skycoord=self.skycoord)
-            for cons in self.constraints
+            constraint.short_name: constraint(
+                time=self.timestamp, ephemeris=self.ephemeris, skycoord=self.skycoord
+            )
+            for constraint in self.constraints
         }
 
         # self.inconstraint is the logical or of all constraints
@@ -169,7 +176,7 @@ class EphemerisVisibility(Visibility):
 
         return "Unknown"
 
-    async def make_windows(self, inconstraint: np.typing.NDArray) -> list:
+    async def make_windows(self, inconstraint: np.typing.NDArray[np.bool_]) -> list[VisWindow]:
         """
         Record SAAEntry from array of booleans and timestamps
 
@@ -177,8 +184,6 @@ class EphemerisVisibility(Visibility):
         ----------
         inconstraint : list
             list of booleans indicating if the spacecraft is in the SAA
-        wintype : VisWindow
-            Type of window to create (default: VisWindow)
 
         Returns
         -------
@@ -187,7 +192,7 @@ class EphemerisVisibility(Visibility):
         """
 
         # Find the start and end of the visibility windows
-        buff: np.typing.NDArray = np.concatenate(([False], np.logical_not(inconstraint), [False]))
+        buff: np.typing.NDArray[np.bool_] = np.concatenate(([False], np.logical_not(inconstraint), [False]))
         begin = np.flatnonzero(~buff[:-1] & buff[1:])
         end = np.flatnonzero(buff[:-1] & ~buff[1:])
         indices = np.column_stack((begin, end - 1))

@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-from astropy.coordinates import SkyCoord  # type: ignore[import]
-from astropy.time import Time  # type: ignore[import]
+from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.time import Time  # type: ignore[import-untyped]
 
+from ...core.schemas.base import BaseSchema
 from ...ephemeris import Ephemeris
 
 
@@ -22,18 +23,16 @@ def get_slice(time: Time, ephemeris: Ephemeris) -> slice:
     -------
         The slice for the ephemeris
     """
-    # If we're just passing a single time, we can just find the index for that
+    # Ensure that time is an array-like object
     if time.isscalar:
-        # Find the index for the time and return a slice for that index
-        index = ephemeris.index(time)
-        return slice(index, index + 1)
-    else:
-        # Find the indices for the start and end of the time range and return a
-        # slice for that range
-        return slice(ephemeris.index(time[0]), ephemeris.index(time[-1]) + 1)
+        raise NotImplementedError("Scalar time not supported")
+
+    # Find the indices for the start and end of the time range and return a
+    # slice for that range
+    return slice(ephemeris.index(time[0]), ephemeris.index(time[-1]) + 1)
 
 
-class Constraint(ABC):
+class Constraint(BaseSchema, ABC):
     """
     Base class for constraints. Constraints are used to determine if a given
     coordinate is inside the constraint. This is done by checking if the
@@ -59,7 +58,7 @@ class Constraint(ABC):
     max_angle: float | None = None
 
     @abstractmethod
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the constraint.

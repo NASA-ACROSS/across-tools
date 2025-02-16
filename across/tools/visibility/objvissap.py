@@ -1,8 +1,9 @@
 import io
+from typing import Any
 
 import httpx
 import numpy as np
-from astropy.io.votable import parse_single_table  # type: ignore
+from astropy.io.votable import parse_single_table  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
 
@@ -30,11 +31,11 @@ class ObjVisSAPVisibilityBase(Visibility):
     """
 
     objvissap_url: str | None = Field(None, exclude=True)
-    objvissap_default_params: dict = Field({}, exclude=True)
-    inconstraint: np.typing.NDArray = Field(np.array([]), exclude=True)
-    timestamp: np.typing.NDArray = Field(np.array([]), exclude=True)
+    objvissap_default_params: dict[str, Any] = Field({}, exclude=True)
+    inconstraint: np.typing.NDArray[np.bool_] = Field(np.array([]), exclude=True)
+    timestamp: np.typing.NDArray[np.bool_] = Field(np.array([]), exclude=True)
 
-    async def get_objvissap(self):
+    async def get_objvissap(self) -> None:
         """
         Asynchronously retrieves object visibility data from the ObjVisSAP service.
 
@@ -49,6 +50,10 @@ class ObjVisSAPVisibilityBase(Visibility):
             If the ObjVisSAP service returns a non-200 status code,
             indicating that the service is offline or unavailable.
         """
+        # Check that the ObjVisSAP URL is set
+        if self.objvissap_url is None:
+            raise ValueError("ObjVisSAP URL not set.")
+
         # Construct the ObjVisSAP query parameters
         params = {
             "s_ra": self.ra,
@@ -72,7 +77,7 @@ class ObjVisSAPVisibilityBase(Visibility):
             votablefile = io.BytesIO(xmlvo.encode())
             votable = parse_single_table(votablefile)
 
-            for i in range(len(votable.array.data)):  # type: ignore
+            for i in range(len(votable.array.data)):
                 vw = VisWindow(
                     begin=Time(votable.array.data["t_start"][i], format="mjd").datetime,
                     end=Time(votable.array.data["t_stop"][i], format="mjd").datetime,
@@ -82,6 +87,4 @@ class ObjVisSAPVisibilityBase(Visibility):
                 )
                 self.entries.append(vw)
         else:
-            raise ValueError(
-                detail="Visibility tool offline.",
-            )
+            raise ValueError("Visibility tool offline.")

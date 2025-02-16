@@ -26,7 +26,7 @@ class MoonPhaseConstraint(Constraint):
     min_phase_angle: float | None = None
     max_phase_angle: float | None = None
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Calculate the Moon phase constraint for a given time and ephemeris.
 

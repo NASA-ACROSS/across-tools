@@ -1,9 +1,9 @@
 from typing import Literal
 
-import astropy.units as u  # type: ignore[import]
+import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
-from astropy.coordinates import SkyCoord  # type: ignore[import]
-from astropy.time import Time  # type: ignore[import]
+from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.time import Time  # type: ignore[import-untyped]
 
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
@@ -31,7 +31,7 @@ class MoonConstraint(Constraint):
     min_angle: float | None = None
     max_angle: float | None = None
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the Moon constraint. This is done by checking if the
@@ -76,4 +76,4 @@ class MoonConstraint(Constraint):
             )
 
         # Return the result as True or False, or an array of True/False
-        return in_constraint[0] if time.isscalar and skycoord.isscalar else in_constraint
+        return in_constraint

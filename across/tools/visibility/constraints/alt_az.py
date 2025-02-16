@@ -1,10 +1,9 @@
-
 from typing import Literal
 
-import astropy.units as u  # type: ignore[import]
+import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
-from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import]
-from astropy.time import Time  # type: ignore[import]
+from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
+from astropy.time import Time  # type: ignore[import-untyped]
 from shapely import Polygon, points
 
 from ...ephemeris import Ephemeris
@@ -36,7 +35,7 @@ class AltAzConstraint(PolygonConstraint):
     alt_min: float | None
     alt_max: float | None
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Calculate the Alt/Az constraint for a given time, ephemeris, and sky coordinates.
 
@@ -75,5 +74,4 @@ class AltAzConstraint(PolygonConstraint):
             in_constraint |= self.polygon.contains(points(alt_az.alt, alt_az.az))
 
         # Return the value as a scalar or array
-        return in_constraint[0] if time.isscalar and skycoord.isscalar else in_constraint
-
+        return in_constraint

@@ -1,9 +1,9 @@
 from typing import Literal
 
-import astropy.units as u  # type: ignore[import]
+import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
-from astropy.coordinates import AltAz  # type: ignore[import]
-from astropy.time import Time  # type: ignore[import]
+from astropy.coordinates import AltAz  # type: ignore[import-untyped]
+from astropy.time import Time  # type: ignore[import-untyped]
 
 from ...core.enums import TwilightType
 from ...ephemeris import Ephemeris
@@ -29,7 +29,7 @@ class DayConstraint(Constraint):
         ephemeris: Ephemeris,
         twilight_type: TwilightType,
         horizon_dip: bool = False,
-    ) -> np.ndarray:
+    ) -> np.typing.NDArray[np.bool_]:
         """
         For a given time, ephemeris, check if it is daytime at the observatory.
         Daytime is defined by the twilight type, and whether the Sun is above
@@ -85,13 +85,13 @@ class DayConstraint(Constraint):
 
         # Depending on the twilight type, calculate if it is considered day time
         if twilight_type == TwilightType.ASTRONOMICAL:
-            in_constraint = sun_alt > (-18 * u.deg - dip_horizon_degrees)
+            in_constraint = np.array(sun_alt > (-18 * u.deg - dip_horizon_degrees))
         elif twilight_type == TwilightType.NAUTICAL:
-            in_constraint = sun_alt > (-12 * u.deg - dip_horizon_degrees)
+            in_constraint = np.array(sun_alt > (-12 * u.deg - dip_horizon_degrees))
         elif twilight_type == TwilightType.CIVIL:
-            in_constraint = sun_alt > (-6 * u.deg - dip_horizon_degrees)
+            in_constraint = np.array(sun_alt > (-6 * u.deg - dip_horizon_degrees))
         elif twilight_type == TwilightType.SUNRISE:
-            in_constraint = sun_alt > 0 * u.deg
+            in_constraint = np.array(sun_alt > 0 * u.deg)
 
         # Return the
         return in_constraint[0] if time.isscalar else in_constraint

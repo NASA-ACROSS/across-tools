@@ -1,5 +1,8 @@
 from datetime import datetime
 from typing import Optional
+
+from across.tools.visibility.constraints.base import Constraint
+
 from .base import BaseSchema
 
 
@@ -29,17 +32,25 @@ class VisWindow(BaseSchema):
 
 
 class ConstrainedDate(BaseSchema):
+    """
+    Represents a constrained date.
+    """
+
     datetime: datetime
     constraint: Constraint
     observatory_id: int
 
 
 class Window(BaseSchema):
+    """Visibility Window"""
+
     begin: ConstrainedDate
     end: ConstrainedDate
 
 
 class VisibilityWindow(BaseSchema):
+    """Visibility Window"""
+
     window: Window
     max_visibility_duration: int
 

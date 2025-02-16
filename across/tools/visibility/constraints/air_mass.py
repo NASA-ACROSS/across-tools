@@ -1,3 +1,11 @@
+from typing import Literal
+
+import numpy as np
+from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
+from astropy.time import Time  # type: ignore[import-untyped]
+
+from ...ephemeris import Ephemeris
+from .base import Constraint, get_slice
 
 
 class AirMassConstraint(Constraint):
@@ -17,7 +25,7 @@ class AirMassConstraint(Constraint):
     airmass_max: float | None = None
     airmass_min: float | None = None
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.ndarray:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Calculate the Alt/Az constraint for a given time, ephemeris, and sky coordinates.
 
@@ -32,7 +40,7 @@ class AirMassConstraint(Constraint):
 
         Returns
         -------
-        np.ndarray
+        np.typing.NDArray[np.bool_] | np.bool_
             The calculated constraint values as a NumPy array.
         """
         # Get the range of the ephemeris that we're using
@@ -52,4 +60,4 @@ class AirMassConstraint(Constraint):
             in_constraint |= alt_az.secz > self.airmass_min
 
         # Return the value as a scalar or array
-        return in_constraint[0] if time.isscalar and skycoord.isscalar else in_constraint
+        return in_constraint

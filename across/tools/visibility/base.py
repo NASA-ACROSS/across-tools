@@ -24,6 +24,7 @@ class Visibility(ABC):
     hires: bool = True
 
     # Computed values
+    timestamp: Time
     entries: list[VisWindow] = []
 
     def __init__(
@@ -36,20 +37,20 @@ class Visibility(ABC):
         self.hires = hires
         self.min_vis = min_vis
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> VisWindow:
         return self.entries[i]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.timestamp)
 
     @cached_property
-    def skycoord(self):
+    def skycoord(self) -> SkyCoord:
         """
-        Create array of RA/Dec and vector of these.
+        Coordinates as an astropy SkyCoord object.
 
         Returns
         -------
-        numpy.ndarray
+        SkyCoord
             Array of RA/Dec coordinates.
         """
         return SkyCoord(self.ra * u.deg, self.dec * u.deg)
@@ -70,7 +71,7 @@ class Visibility(ABC):
         return any(t >= win.begin and t <= win.end for win in self.entries)
 
     @abstractmethod
-    async def get(self):
+    async def get(self) -> None:
         """
         Abstract method to perform visibility calculation.
         """
