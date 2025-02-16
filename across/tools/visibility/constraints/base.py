@@ -48,7 +48,7 @@ class Constraint(BaseSchema, ABC):
 
     Methods
     -------
-    __call__(coord, ephemeris)
+    __call__(time, ephemeris, coord)
         Checks if a given coordinate is inside the constraint.
     """
 
