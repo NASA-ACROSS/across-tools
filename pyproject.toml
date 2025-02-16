@@ -113,3 +113,6 @@ tools = ["py.typed"]
 
 [tool.coverage.run]
 omit = ["across/tools/_version.py"]
+
+[tool.mypy]
+strict = true
