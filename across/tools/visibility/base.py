@@ -150,14 +150,12 @@ class Visibility(ABC, BaseSchema):
         """
         For a given index, return the constraint at that time.
         """
-        raise NotImplementedError
 
     @abstractmethod
     def prepare_data(self) -> None:
         """
         Abstract method to perform visibility calculation.
         """
-        raise NotImplementedError
 
     def _make_windows(self) -> list[VisWindow]:
         """

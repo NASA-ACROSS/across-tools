@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -40,6 +40,18 @@ def test_step_size() -> TimeDelta:
 
 
 @pytest.fixture
+def test_step_size_int() -> int:
+    """Return a step size for testing"""
+    return 60
+
+
+@pytest.fixture
+def test_step_size_datetime_timedelta() -> timedelta:
+    """Return a step size for testing"""
+    return timedelta(seconds=60)
+
+
+@pytest.fixture
 def mock_visibility(
     test_coords: tuple[float, float], test_time_range: tuple[Time, Time], test_step_size: TimeDelta
 ) -> MockVisibility:
@@ -56,11 +68,46 @@ def mock_visibility(
 
 
 @pytest.fixture
+def mock_visibility_step_size_int(
+    test_coords: tuple[float, float], test_time_range: tuple[Time, Time], test_step_size_int: int
+) -> MockVisibility:
+    """Return a MockVisibility object for testing"""
+    ra, dec = test_coords
+    begin, end = test_time_range
+    return MockVisibility(
+        ra=ra,
+        dec=dec,
+        begin=begin,
+        end=end,
+        step_size=test_step_size_int,
+    )
+
+
+@pytest.fixture
+def mock_visibility_step_size_datetime_timedelta(
+    test_coords: tuple[float, float],
+    test_time_range: tuple[Time, Time],
+    test_step_size_datetime_timedelta: timedelta,
+) -> MockVisibility:
+    """Return a MockVisibility object for testing"""
+    ra, dec = test_coords
+    begin, end = test_time_range
+    return MockVisibility(
+        ra=ra,
+        dec=dec,
+        begin=begin,
+        end=end,
+        step_size=test_step_size_datetime_timedelta,
+    )
+
+
+@pytest.fixture
 def test_time_range() -> tuple[Time, Time]:
     """Return a begin and end time for testing"""
     return Time(datetime(2023, 1, 1)), Time(datetime(2023, 1, 2))
 
 
+@pytest.fixture
 def bad_mock_visibility(
     test_coords: tuple[float, float], test_time_range: tuple[Time, Time]
 ) -> MockVisibility:
