@@ -92,7 +92,7 @@ class TestVisibility:
                     return "test"
 
                 def prepare_data(self) -> None:
-                    pass
+                    """Fake data preparation"""
 
             begin, end = Time(datetime(2023, 1, 1)), Time(datetime(2023, 1, 2))
 
