@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
-from typing import Any, Optional, Union
+from datetime import timedelta
+from typing import Optional, Union
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, model_validator
 
 from ..core.schemas.base import BaseSchema
 from .schema import VisWindow
@@ -43,17 +43,17 @@ class Visibility(ABC, BaseSchema):
     """
 
     # Parameters
-    ra: float = Field(ge=0, lt=360)
-    dec: float = Field(ge=-90, le=90)
+    ra: Optional[float] = Field(default=None, ge=0, lt=360)
+    dec: Optional[float] = Field(default=None, ge=-90, le=90)
     step_size: TimeDelta = TimeDelta(60 * u.s)
-    skycoord: SkyCoord = Field(..., exclude=True)
+    skycoord: Optional[SkyCoord] = Field(default=None, exclude=True)
     begin: Time
     end: Time
     min_vis: int = 0
 
     # Computed values
     timestamp: Optional[Time] = None
-    inconstraint: np.typing.NDArray[np.bool_] = Field(np.array([]), exclude=True)
+    inconstraint: np.typing.NDArray[np.bool_] = Field(default=np.array([]), exclude=True)
     constraint_windows: Optional[dict[str, list[VisWindow]]] = None
     entries: list[VisWindow] = []
 
@@ -69,53 +69,39 @@ class Visibility(ABC, BaseSchema):
         """
         if not isinstance(values, dict):
             values = values.__dict__
+
+        # Check that either skycoord or ra/dec values are present
         if not values.get("skycoord") and values.get("ra") and values.get("dec"):
             values["skycoord"] = SkyCoord(ra=values["ra"] * u.deg, dec=values["dec"] * u.deg)
-        if not values.get("ra") and values.get("skycoord"):
+        elif not values.get("dec") and not values.get("ra") and values.get("skycoord"):
             values["ra"] = values["skycoord"].icrs.ra.deg
-        if not values.get("dec") and values.get("skycoord"):
             values["dec"] = values["skycoord"].icrs.dec.deg
-        return values
+        else:
+            raise ValueError("Must supply either skycoord or ra/dec values")
 
-    @field_validator("step_size", mode="before")
-    @classmethod
-    def validate_step_size(cls, v: Union[int, timedelta, TimeDelta]) -> TimeDelta:
-        """
-        Ensure that step_size is an astropy.time.TimeDelta, that step_size
-        is a positive value.
-        """
-        # convert to TimeDelta
-        if isinstance(v, timedelta):
-            v = TimeDelta(v)
-        elif isinstance(v, int):
-            v = TimeDelta(v * u.s)
+        # Extract TimeDelta from values
+        if values.get("step_size") is None:
+            values["step_size"] = cls.model_fields["step_size"].default
 
-        if v < TimeDelta(0 * u.s):
+        # convert to step_size TimeDelta
+        if isinstance(values["step_size"], timedelta):
+            values["step_size"] = TimeDelta(values["step_size"])
+        elif isinstance(values["step_size"], int):
+            values["step_size"] = TimeDelta(values["step_size"] * u.s)
+
+        # Check that step_size is a positive value
+        if values["step_size"] < TimeDelta(0 * u.s):
             raise ValueError("Step size must be a positive value")
-        return v
 
-    @field_validator("begin", "end", mode="before")
-    @classmethod
-    def validate_time_steps(cls, v: Time, info: Any) -> Time:
-        """Ensure begin and end times start on whole number of step_size."""
+        # Round begin/end to step_size
+        begin = Time(values["begin"]).unix
+        end = Time(values["end"]).unix
+        step_size = values["step_size"].to_value(u.s)
 
-        # Convert datetimes into astropy Time objects
-        if isinstance(v, datetime):
-            v = Time(v)
+        values["begin"] = Time(begin // step_size * step_size, format="unix")  # floor division for begin
+        values["end"] = Time(((end // step_size) + 1) * step_size, format="unix")  # ceil for end
 
-        # Ensure that begin and end times are rounded to the nearest step_size.
-        # begin should be rounded down, end should be rounded up, to ensure
-        # that the visibility is calculated for the requested time range.
-        unix_time = v.unix
-
-        step_size = info.get("step_size", TimeDelta(60 * u.s)).to_value(u.s)
-        if unix_time % step_size != 0:
-            if info.field_name == "begin":
-                rounded = (unix_time // step_size) * step_size  # floor division for begin
-            else:  # end
-                rounded = ((unix_time // step_size) + 1) * step_size  # ceil for end
-            v = Time(rounded, format="unix")
-        return v
+        return values
 
     def visible(self, t: Time) -> bool:
         """
@@ -136,7 +122,9 @@ class Visibility(ABC, BaseSchema):
         """
         Compute timestamp array for visibility calculation.
         """
-        self.timestamp = Time(np.arange(self.begin.unix, self.end.unix, self.step_size), format="unix")
+        self.timestamp = Time(
+            np.arange(self.begin.unix, self.end.unix, self.step_size.to_value(u.s)), format="unix"
+        )
 
     def index(self, t: Time) -> int:
         """
