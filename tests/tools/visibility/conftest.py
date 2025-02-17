@@ -22,6 +22,12 @@ class MockVisibility(Visibility):
 
 
 @pytest.fixture
+def mock_visibility_class() -> type[MockVisibility]:
+    """Return the MockVisibility class for testing"""
+    return MockVisibility
+
+
+@pytest.fixture
 def test_coords() -> tuple[float, float]:
     """Return RA and Dec coordinates for testing"""
     return 100.0, 45.0
@@ -112,12 +118,10 @@ def bad_mock_visibility(
     test_coords: tuple[float, float], test_time_range: tuple[Time, Time]
 ) -> MockVisibility:
     """Return a MockVisibility object with invalid step size for testing."""
-    ra, dec = test_coords
-    begin, end = test_time_range
     return MockVisibility(
-        ra=ra,
-        dec=dec,
-        begin=begin,
-        end=end,
+        ra=test_coords[0],
+        dec=test_coords[1],
+        begin=test_time_range[0],
+        end=test_time_range[1],
         step_size=TimeDelta(-60 * u.s),
     )

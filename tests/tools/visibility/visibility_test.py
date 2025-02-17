@@ -81,22 +81,14 @@ class TestVisibility:
         with pytest.raises(ValueError):
             mock_visibility._make_windows()
 
-    def test_step_size_cannot_be_negative(self, test_skycoord: SkyCoord) -> None:
+    def test_step_size_cannot_be_negative(
+        self, test_skycoord: SkyCoord, mock_visibility_class: type[Visibility]
+    ) -> None:
         """Test that step size cannot be negative"""
         with pytest.raises(ValidationError) as excinfo:
-
-            class Dog(Visibility):
-                pass
-
-                def _constraint(self, i: int) -> str:
-                    return "test"
-
-                def prepare_data(self) -> None:
-                    """Fake data preparation"""
-
             begin, end = Time(datetime(2023, 1, 1)), Time(datetime(2023, 1, 2))
 
-            Dog(begin=begin, end=end, skycoord=test_skycoord, step_size=TimeDelta(-1 * u.s))
+            mock_visibility_class(begin=begin, end=end, skycoord=test_skycoord, step_size=TimeDelta(-1 * u.s))
         assert "must be a positive" in str(excinfo.value)
 
     def test_step_size_int(self, mock_visibility_step_size_int: Visibility) -> None:
@@ -108,3 +100,23 @@ class TestVisibility:
     ) -> None:
         """Test that step size argument can be a datetime timedelta"""
         assert isinstance(mock_visibility_step_size_datetime_timedelta.step_size, TimeDelta)
+
+    def test_no_coordinate_given(
+        self, test_time_range: tuple[Time, Time], mock_visibility_class: type[Visibility]
+    ) -> None:
+        """Test that step size cannot be negative"""
+        with pytest.raises(ValidationError) as excinfo:
+            begin, end = test_time_range
+            mock_visibility_class(begin=begin, end=end, step_size=TimeDelta(1 * u.s))
+        assert "Must supply either skycoord" in str(excinfo.value)
+
+    def test_no_step_size_given_gives_default(
+        self,
+        test_time_range: tuple[Time, Time],
+        test_skycoord: SkyCoord,
+        mock_visibility_class: type[Visibility],
+    ) -> None:
+        """Test that step size is set to default if not given"""
+
+        dog = mock_visibility_class(begin=test_time_range[0], end=test_time_range[1], skycoord=test_skycoord)
+        assert dog.step_size == TimeDelta(60 * u.s)
