@@ -23,6 +23,14 @@ class DummyConstraint(Constraint):
         return np.array([True])
 
 
+class MockEphemeris(Ephemeris):
+    """Mock class for testing the Ephemeris class."""
+
+    def prepare_data(self) -> None:
+        """Mock method to prepare data."""
+        pass
+
+
 class TestConstraint:
     """Test the Constraint base class"""
 
@@ -131,3 +139,20 @@ class TestConstraint:
         """
         with pytest.raises(ValidationError):
             DummyConstraint(max_angle="invalid")  # type: ignore
+
+
+def test_get_slice_scalar_time() -> None:
+    """Test that scalar time raises NotImplementedError"""
+    scalar_time = Time(datetime(2023, 1, 1))
+    with pytest.raises(NotImplementedError, match="Scalar time not supported"):
+        get_slice(scalar_time, MagicMock())
+
+
+def test_get_slice_time_array() -> None:
+    """Test that array time returns correct slice"""
+    time_array = Time([datetime(2023, 1, 1), datetime(2023, 1, 2)])
+    mock_ephemeris: MockEphemeris = MockEphemeris(begin=time_array[0], end=time_array[1], step_size=60)
+    result = get_slice(time_array, mock_ephemeris)
+    assert isinstance(result, slice)
+    assert result.start == 0
+    assert result.stop == 1440
