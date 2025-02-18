@@ -21,7 +21,62 @@ R_moon = 1737.4 * u.km
 
 class Ephemeris(ABC):
     """
-    Abstract base class for calculating and managing ephemeris data.
+    A base class for calculating ephemerides of Astronomical Observatories both
+    ground and space-based. This abstract class provides the core functionality
+    for computing positions and angular sizes of celestial bodies (Sun, Moon,
+    Earth) relative to a spacecraft or observation point. It handles time
+    series calculations with specified time intervals and step sizes.
+
+    Parameters
+    ----------
+    begin : datetime or Time
+        Start time of ephemeris calculation
+    end : datetime or Time
+        End time of ephemeris calculation
+    step_size : int, TimeDelta, or timedelta, optional
+        Time step between calculations in seconds, by default 60
+
+    Attributes
+    ----------
+    begin : Time
+        Start time of ephemeris calculation
+    end : Time
+        End time of ephemeris calculation
+    step_size : TimeDelta
+        Step size of ephemeris calculation
+    timestamp : Time
+        Array of calculation timestamps
+    gcrs : SkyCoord
+        Spacecraft position in Geocentric Celestial Reference System (GCRS)
+        coordinates
+    earth_location : EarthLocation
+        Spacecraft position relative to Earth
+    moon : SkyCoord
+        Moon position relative to spacecraft
+    sun : SkyCoord
+        Sun position relative to spacecraft
+    earth : SkyCoord
+        Earth position relative to spacecraft
+    longitude : Longitude, optional
+        Spacecraft longitude
+    latitude : Latitude, optional
+        Spacecraft latitude
+    height : Quantity, optional
+        Spacecraft height above Earth's surface
+    earth_radius_angle : Angle
+        Angular radius of Earth as seen from spacecraft
+    moon_radius_angle : Angle
+        Angular radius of Moon as seen from spacecraft
+    sun_radius_angle : Angle
+        Angular radius of Sun as seen from spacecraft
+    distance : Quantity
+        Distance from spacecraft to Earth center
+
+    Notes
+    -----
+    This is an abstract base class that must be subclassed. Subclasses must implement
+    the prepare_data() method to set up the spacecraft position before ephemeris
+    calculations can be performed.
     """
 
     # Parameters
@@ -50,7 +105,7 @@ class Ephemeris(ABC):
         end: Union[datetime, Time],
         step_size: Union[int, TimeDelta, timedelta] = 60,
     ) -> None:
-        # Convert start and stop to astropy Time natively
+        # Convert begin and end to astropy Time
         self.begin = begin if isinstance(begin, Time) else Time(begin)
         self.end = end if isinstance(end, Time) else Time(end)
 
@@ -62,6 +117,10 @@ class Ephemeris(ABC):
         elif isinstance(step_size, (int, float)):
             self.step_size = TimeDelta(step_size * u.s)
 
+        # Round the end time to the nearest step size
+        steps = np.ceil(self.end.unix / self.step_size.to_value(u.s))
+        self.end = Time(steps * self.step_size.to_value(u.s), format="unix")
+
         # Compute range of timestamps
         self.timestamp = self._compute_timestamp()
 
@@ -71,7 +130,7 @@ class Ephemeris(ABC):
     def index(self, t: Time) -> int:
         """
         For a given time, return an index for the nearest time in the
-        ephemeris. Note that internally converting from Time to datetime makes
+        ephemeris. Note that internally converting from Time to unix makes
         this run way faster.
 
         Parameters
@@ -98,17 +157,11 @@ class Ephemeris(ABC):
             If begin equals end, returns single timestamp.
             Otherwise returns array of timestamps from begin to end with specified step_size.
         """
-
-        # Create array of timestamps
-        if self.begin == self.end:
-            return Time([self.begin])
-
         return Time(
             np.arange(
-                self.begin.datetime,
-                self.end.datetime + self.step_size.to_datetime(),
-                self.step_size.to_datetime(),
-            )
+                self.begin.unix, self.end.unix + self.step_size.to_value(u.s), self.step_size.to_value(u.s)
+            ),
+            format="unix",
         )
 
     def _calc(self) -> None:
@@ -132,12 +185,12 @@ class Ephemeris(ABC):
         self.height = self.earth_location.height
         self.distance = self.gcrs.distance
 
-        # Calculate the Earth angular radius as seen from the spacecraft
-        self.earth_radius_angle = np.arcsin(R_earth / self.distance)
+        # Calculate Earth's angular radius from observatory, capped at 90 degrees
+        self.earth_radius_angle = np.arcsin(np.minimum(R_earth / self.distance, 1))
 
-        # Similarly calculate the angular radii of the Sun and the Moon
-        self.moon_radius_angle = np.arcsin(R_moon / self.moon.distance)
-        self.sun_radius_angle = np.arcsin(R_sun / self.sun.distance)
+        # Similarly calculate the angular radii of the Sun and the Moon, capped at 90 degrees
+        self.moon_radius_angle = np.arcsin(np.minimum(R_moon / self.moon.distance, 1))
+        self.sun_radius_angle = np.arcsin(np.minimum(R_sun / self.sun.distance, 1))
 
     @abstractmethod
     def prepare_data(self) -> None:

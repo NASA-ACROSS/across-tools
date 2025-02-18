@@ -16,10 +16,54 @@ from ..core.schemas.tle import TLE
 from .base import Ephemeris
 
 
-# Define the radii of the M
 class TLEEphemeris(Ephemeris):
     """
-    Ephemeris for space objects using TLE data.
+    TLE (Two-Line Element) based satellite ephemeris calculator.
+
+    This class implements satellite position and velocity calculations using
+    TLE data through the SGP4 propagator. It converts TEME (True Equator Mean
+    Equinox) coordinates to ITRS (International Terrestrial Reference System)
+    and GCRS (Geocentric Celestial Reference System). ITRS coordinates are
+    stored as astropy EarthLocation objects, while GCRS coordinates are stored as
+    astropy SkyCoord objects.
+
+    Parameters
+    ----------
+    begin : Union[datetime, Time]
+        Start time for ephemeris calculations
+    end : Union[datetime, Time]
+        End time for ephemeris calculations
+    step_size : Union[int, TimeDelta, timedelta], optional
+        Time step between calculations, defaults to 60 seconds
+    tle : Optional[TLE], optional
+        TLE data object containing orbital elements, defaults to None
+
+    Attributes
+    ----------
+    tle : Optional[TLE]
+        TLE data object used for calculations
+    earth_location : EarthLocation
+        Satellite positions in ITRS coordinates
+    gcrs : SkyCoord
+        Satellite positions in GCRS coordinates
+
+    Methods
+    -------
+    prepare_data()
+        Calculates satellite ephemeris using TLE data and SGP4 propagator
+
+    Raises
+    ------
+    ValueError
+        If no TLE data is provided when preparing calculations
+
+    Notes
+    -----
+    The calculation process involves:
+    1. Converting TLE to Satrec object
+    2. Calculating TEME positions using SGP4
+    3. Converting TEME to ITRS coordinates
+    4. Converting ITRS to GCRS coordinates
     """
 
     # TLE for calculating LEO satellites
@@ -44,13 +88,15 @@ class TLEEphemeris(Ephemeris):
         # Load in the TLE data
         satellite = Satrec.twoline2rv(self.tle.tle1, self.tle.tle2)
 
-        # Calculate TEME position and velocity for Satellite
-        _, temes_p, temes_v = satellite.sgp4_array(self.timestamp.jd1, self.timestamp.jd2)
-
-        # Convert SGP4 TEME data to astropy ITRS SkyCoord
-        teme_p = CartesianRepresentation(temes_p.T * u.km)
-        teme_v = CartesianDifferential(temes_v.T * u.km / u.s)
-        itrs = SkyCoord(teme_p.with_differentials(teme_v), frame=TEME(obstime=self.timestamp)).itrs
+        # Calculate TEME position/velocity and convert to ITRS
+        _, pos, vel = satellite.sgp4_array(self.timestamp.jd1, self.timestamp.jd2)
+        teme = SkyCoord(
+            CartesianRepresentation(pos.T * u.km).with_differentials(
+                CartesianDifferential(vel.T * u.km / u.s)
+            ),
+            frame=TEME(obstime=self.timestamp),
+        )
+        itrs = teme.transform_to("itrs")
         self.earth_location = itrs.earth_location
 
         # Calculate satellite position in GCRS coordinate system vector as
@@ -66,7 +112,7 @@ def compute_tle_ephemeris(
     tle: TLE,
 ) -> Ephemeris:
     """
-    Compute the ephemeris for a space object using Two-Line Element (TLE) data.
+    Compute the ephemeris for a space object using TLE data.
 
     Parameters
     ----------

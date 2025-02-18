@@ -15,10 +15,48 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from .base import Ephemeris
 
 
-# Define the radii of the M
 class JPLEphemeris(Ephemeris):
     """
-    Ephemeris for space objects using JPL Horizons.
+    JPL Horizons-based ephemeris calculation.
+
+    This class provides functionality to calculate ephemeris data using JPL
+    Horizons system. It requires a Navigation and Ancillary Information
+    Facility (NAIF) ID to identify the celestial object of interest.
+
+    Parameters
+    ----------
+    begin : datetime or Time
+        Start time of the ephemeris calculation
+    end : datetime or Time
+        End time of the ephemeris calculation
+    step_size : int or TimeDelta or timedelta, default=60
+        Time step between ephemeris points in seconds
+    naif_id : int, optional
+        NAIF ID of the celestial object for JPL Horizons query
+
+    Attributes
+    ----------
+    naif_id : int
+        NAIF ID of object for JPL Horizons or Spice Kernel
+    gcrs : SkyCoord
+        Geocentric celestial reference system coordinates
+    earth_location : EarthLocation
+        Earth-fixed coordinates of the object
+
+    Methods
+    -------
+    prepare_data()
+        Calculate ephemeris based on JPL Horizons data
+
+    Notes
+    -----
+    The class uses the JPL Horizons API to fetch vector data for the specified
+    celestial object and converts it to both GCRS and ITRS coordinate frames.
+
+    Raises
+    ------
+    ValueError
+        If no NAIF ID is provided when preparing the data
     """
 
     # NAIF ID of object for JPL Horizons or Spice Kernel
@@ -40,11 +78,14 @@ class JPLEphemeris(Ephemeris):
         if self.naif_id is None:
             raise ValueError("No NAIF ID provided")
 
+        # Calculate the number of steps between start and stop
+        num_steps = len(self.timestamp) - 1
+
         # Create a time range dictionary for Horizons
         horizons_range = {
-            "start": str(self.begin.tdb),
-            "stop": str(self.end.tdb),
-            "step": f"{self.step_size.to_value(u.min):.0f}m",
+            "start": str(self.begin.tdb.datetime),
+            "stop": str(self.end.tdb.datetime),
+            "step": str(num_steps),
         }
 
         # Fetch the ephemeris vector data from Horizons
@@ -57,17 +98,20 @@ class JPLEphemeris(Ephemeris):
         horizons_vectors = horizons_ephemeris.vectors(refplane="earth")
 
         # Create a GCRS SkyCoord object from the ephemeris data
-        gcrs_p = CartesianRepresentation(
-            horizons_vectors["x"].to(u.km),
-            horizons_vectors["y"].to(u.km),
-            horizons_vectors["z"].to(u.km),
+        self.gcrs = SkyCoord(
+            CartesianRepresentation(
+                horizons_vectors["x"].to(u.km),
+                horizons_vectors["y"].to(u.km),
+                horizons_vectors["z"].to(u.km),
+            ).with_differentials(
+                CartesianDifferential(
+                    horizons_vectors["vx"],
+                    horizons_vectors["vy"],
+                    horizons_vectors["vz"],
+                )
+            ),
+            frame=GCRS(obstime=self.timestamp),
         )
-        gcrs_v = CartesianDifferential(
-            horizons_vectors["vx"],
-            horizons_vectors["vy"],
-            horizons_vectors["vz"],
-        )
-        self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
 
         # Calculate the ITRS coordinates and Earth Location
         itrs = self.gcrs.transform_to(ITRS(obstime=self.timestamp))
@@ -92,7 +136,8 @@ def compute_jpl_ephemeris(
     step_size : Union[int, timedelta, TimeDelta]
         Time step size between ephemeris points, in seconds if int
     naif_id : int
-        NAIF object identifier (e.g., 301 for Moon. -48 for HST)
+        Navigation and Ancillary Information Facility (NAIF) object identifier
+        (e.g., 301 for Moon. -48 for HST)
 
     Returns
     -------

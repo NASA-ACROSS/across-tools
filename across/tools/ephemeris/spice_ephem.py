@@ -1,4 +1,3 @@
-import os
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
@@ -21,13 +20,55 @@ NAIF_PLANETARY_EPHEMERIS_URL = "https://naif.jpl.nasa.gov/pub/naif/generic_kerne
 NAIF_EARTH_ORIENTATION_PARAMETERS_URL = (
     "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/earth_latest_high_prec.bpc"
 )
-SPICE_KERNEL_CACHE_DIR = os.path.expanduser("~/.cache/across/spice")
 
 
-# Define the radii of the M
 class SPICEEphemeris(Ephemeris):
     """
-    Ephemeris for space objects using SPICE kernels.
+    SPICEEphemeris class for calculating spacecraft ephemeris using SPICE
+    (Spacecraft Planet Instrument C-matrix Events) kernels.
+
+    This class extends the base Ephemeris class to provide specialized
+    functionality for computing spacecraft trajectories using  kernels.
+
+    Parameters
+    ----------
+    begin : datetime or Time
+        Start time of the ephemeris calculation
+    end : datetime or Time
+        End time of the ephemeris calculation
+    step_size : int or TimeDelta or timedelta, default=60
+        Time step between ephemeris points in seconds
+    spice_kernel_url : str, optional
+        URL to download the spacecraft SPICE kernel
+    naif_id : int, optional
+        Navigation and Ancillary Information Facility (NAIF) ID of the
+        spacecraft/object in JPL Horizons or SPICE kernel
+
+    Attributes
+    ----------
+    naif_id : int
+        NAIF ID of object for JPL Horizons or SPICE Kernel
+    spice_kernel_url : str
+        URL of spacecraft SPICE Kernel
+    gcrs : SkyCoord
+        Calculated positions in GCRS frame
+    earth_location : EarthLocation
+        Calculated positions in ITRS frame
+
+    Methods
+    -------
+    prepare_data()
+        Loads necessary SPICE kernels and calculates spacecraft trajectory
+
+    Notes
+    -----
+    Requires SPICE kernels for:
+    - Leap seconds
+    - Planetary ephemeris
+    - Earth orientation parameters
+    - Spacecraft trajectory
+    The class automatically handles downloading and caching of required SPICE
+    kernels.
     """
 
     # NAIF ID of object for JPL Horizons or Spice Kernel
@@ -56,48 +97,40 @@ class SPICEEphemeris(Ephemeris):
         if self.naif_id is None:
             raise ValueError("No NAIF ID provided")
 
-        # Helper method to load the kernel files after download
-        leap_seconds_file = download_file(NAIF_LEAP_SECONDS_URL, cache=True)
-        planetary_ephemeris_file = download_file(NAIF_PLANETARY_EPHEMERIS_URL, cache=True)
-        earth_params_file = download_file(NAIF_EARTH_ORIENTATION_PARAMETERS_URL, cache=True)
-        spice_kernel_file = download_file(self.spice_kernel_url, cache=True)
-
-        # Check if kernels are already loaded
+        # Download and load SPICE kernels if not already loaded
+        kernel_urls = [
+            NAIF_LEAP_SECONDS_URL,
+            NAIF_PLANETARY_EPHEMERIS_URL,
+            NAIF_EARTH_ORIENTATION_PARAMETERS_URL,
+            self.spice_kernel_url,
+        ]
         loaded_kernels = [str(spice.kdata(i, "all")[0]) for i in range(spice.ktotal("all"))]
 
-        # Load local cached kernel files if not already loaded
-        if leap_seconds_file not in loaded_kernels:
-            spice.furnsh(leap_seconds_file)  # Leap seconds
-        if planetary_ephemeris_file not in loaded_kernels:
-            spice.furnsh(planetary_ephemeris_file)  # Planetary ephemeris
-        if earth_params_file not in loaded_kernels:
-            spice.furnsh(earth_params_file)  # High-precision Earth orientation
-        if spice_kernel_file not in loaded_kernels:
-            spice.furnsh(spice_kernel_file)  # spacecraft trajectory kernel
+        for url in kernel_urls:
+            kernel_file = download_file(url, cache=True)
+            if kernel_file not in loaded_kernels:
+                spice.furnsh(kernel_file)
 
+        # Generate array of times for ephemeris calculation in Ephemeris time (ET) format
         start_et = spice.str2et(str(self.begin.datetime))
         end_et = start_et + self.step_size.to_value(u.s) * len(self.timestamp)
+        time_intervals = np.arange(start_et, end_et, self.step_size.to_value(u.s))
 
-        # Generate array of times (one-minute intervals)
-        time_intervals = np.arange(start_et, end_et, 60)  # 60s = 1 min
-
-        # Compute full state vector (position + velocity) in batch for J2000 (GCRS)
+        # Get position and velocity vectors (states) in GCRS/J2000 frame
         states = np.array(
             [spice.spkezr(str(self.naif_id), et, "J2000", "NONE", "399")[0] for et in time_intervals]
         )
 
-        # Extract position and velocity from state vectors
-        positions_gcrs = states[:, :3]  # First three elements (X, Y, Z) [km]
-        velocities_gcrs = states[:, 3:]  # Last three elements (Vx, Vy, Vz) [km/s]
-
-        # Create GCRS coordinates
-        gcrs_p = CartesianRepresentation(positions_gcrs.T * u.km)
-        gcrs_v = CartesianDifferential(velocities_gcrs.T * u.km / u.s)
-        self.gcrs = SkyCoord(gcrs_p.with_differentials(gcrs_v), frame=GCRS(obstime=self.timestamp))
+        # Create GCRS SkyCoord from states array
+        self.gcrs = SkyCoord(
+            CartesianRepresentation(states[:, :3].T * u.km).with_differentials(
+                CartesianDifferential(states[:, 3:].T * u.km / u.s)
+            ),
+            frame=GCRS(obstime=self.timestamp),
+        )
 
         # Transform to ITRS and get Earth location
-        itrs = self.gcrs.transform_to("itrs")
-        self.earth_location = itrs.earth_location
+        self.earth_location = self.gcrs.transform_to("itrs").earth_location
 
 
 def compute_spice_ephemeris(
@@ -121,7 +154,8 @@ def compute_spice_ephemeris(
     spice_kernel_url : str
         URL to the SPICE kernel file
     naif_id : int
-        NAIF object identifier (e.g., 301 for Moon, -48 for HST)
+        Navigation and Ancillary Information Facility (NAIF) object identifier
+        (e.g., 301 for Moon, -48 for HST)
 
     Returns
     -------

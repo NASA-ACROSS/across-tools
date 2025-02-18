@@ -12,10 +12,52 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from .base import Ephemeris
 
 
-# Define the radii of the M
 class GroundEphemeris(Ephemeris):
     """
-    Ephemeris for ground-based observations.
+    Ground-based ephemeris calculator.
+
+    This class extends the base Ephemeris class to calculate ephemeris data for ground-based observations
+    from a specific location on Earth's surface.
+
+    Parameters
+    ----------
+    begin : Union[datetime, Time]
+        Start time of the ephemeris calculation
+    end : Union[datetime, Time]
+        End time of the ephemeris calculation
+    step_size : Union[int, TimeDelta, timedelta], optional
+        Time step between ephemeris points in seconds, by default 60
+    latitude : Optional[Latitude], optional
+        Latitude of the observatory, by default None
+    longitude : Optional[Longitude], optional
+        Longitude of the observatory, by default None
+    height : Optional[u.Quantity], optional
+        Height of the observatory above sea level, by default None
+
+    Attributes
+    ----------
+    latitude : Optional[Latitude]
+        Latitude of the observatory
+    longitude : Optional[Longitude]
+        Longitude of the observatory
+    height : Optional[u.Quantity]
+        Height of the observatory
+    earth_location : EarthLocation
+        Location of the observatory on the Earth in astropy's
+        EarthLocation class.
+    gcrs : SkyCoord
+        Observatory position in Geocentric Celestial Reference System (GCRS)
+        coordinates
+
+    Raises
+    ------
+    ValueError
+        If observatory location (latitude, longitude, or height) is not set
+
+    Notes
+    -----
+    The class calculates the position of a ground-based observatory in GCRS
+    coordinates, which is necessary for various astronomical calculations.
     """
 
     # Longitude of Observatory on Earth
