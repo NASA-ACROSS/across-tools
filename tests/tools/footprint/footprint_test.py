@@ -177,3 +177,11 @@ class TestFootprintQueryPixels:
         """
         with pytest.raises(ValueError):
             self.simple_footprint.query_pixels(order=invalid_healpix_order)
+
+    def test_should_return_false_on_footprint_with_different_length(self, simple_polygon: Polygon) -> None:
+        """
+        Should return False when comparing footprints with different number of detectors
+        """
+        footprint1 = Footprint(detectors=[simple_polygon])
+        footprint2 = Footprint(detectors=[simple_polygon, simple_polygon])
+        assert footprint1 != footprint2
