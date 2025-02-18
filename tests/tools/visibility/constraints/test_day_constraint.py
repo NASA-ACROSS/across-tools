@@ -9,43 +9,58 @@ from across.tools.visibility.constraints.day import DayConstraint
 class TestDayConstraint:
     """Test the DayConstraint class."""
 
-    def test_day_constraint_astronomical(self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord) -> None:
-        """Test the DayConstraint with astronomical twilight."""
+    def test_astronomical_constraint_returns_true(
+        self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that astronomical twilight constraint returns True."""
         constraint = DayConstraint(twilight_type=TwilightType.ASTRONOMICAL)
         result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
         assert result.all() is np.True_
 
-    def test_day_constraint_nautical(self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord) -> None:
-        """Test the DayConstraint with nautical twilight."""
+    def test_nautical_constraint_returns_true(
+        self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that nautical twilight constraint returns True."""
         constraint = DayConstraint(twilight_type=TwilightType.NAUTICAL)
         result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
         assert result.all() is np.True_
 
-    def test_day_constraint_civil(self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord) -> None:
-        """Test the DayConstraint with civil twilight."""
+    def test_civil_constraint_returns_true(
+        self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that civil twilight constraint returns True."""
         constraint = DayConstraint(twilight_type=TwilightType.CIVIL)
         result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
         assert result.all() is np.True_
 
-    def test_day_constraint_sunrise(self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord) -> None:
-        """Test the DayConstraint with sunrise."""
+    def test_sunrise_constraint_returns_true(
+        self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that sunrise constraint returns True."""
         constraint = DayConstraint(twilight_type=TwilightType.SUNRISE)
         result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
         assert result.all() is np.True_
 
-    def test_day_constraint_with_horizon_dip(
+    def test_horizon_dip_constraint_returns_true(
         self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord
     ) -> None:
-        """Test the DayConstraint with horizon dip."""
+        """Test that constraint with horizon dip returns True."""
         constraint = DayConstraint(twilight_type=TwilightType.SUNRISE, horizon_dip=True)
         result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
         assert result.all() is np.True_
 
-    def test_day_constraint_array_time(self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord) -> None:
-        """Test the DayConstraint with an array of times."""
-        times = keck_ground_ephemeris.timestamp
-        keck_ground_ephemeris.timestamp = times
+    def test_array_time_returns_numpy_array(
+        self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that using array of times returns numpy array."""
         constraint = DayConstraint(twilight_type=TwilightType.SUNRISE)
-        result = constraint(times, keck_ground_ephemeris, sky_coord)
+        result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
         assert isinstance(result, np.ndarray)
+
+    def test_array_time_returns_correct_length(
+        self, keck_ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that array result has correct length."""
+        constraint = DayConstraint(twilight_type=TwilightType.SUNRISE)
+        result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
         assert len(result) == 5
