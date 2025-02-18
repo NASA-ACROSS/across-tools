@@ -1,13 +1,77 @@
 from datetime import datetime
 from typing import Literal
 
+import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
 from across.tools.ephemeris import Ephemeris
+from across.tools.ephemeris.ground_ephem import compute_ground_ephemeris
 from across.tools.visibility.constraints.base import Constraint
+
+
+@pytest.fixture
+def sky_coord() -> SkyCoord:
+    """Create a basic SkyCoord instance."""
+    return SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
+
+
+@pytest.fixture
+def ephemeris_begin() -> datetime:
+    """Fixture to provide a begin datetime for testing."""
+    return datetime(2025, 2, 12, 0, 0, 0)
+
+
+@pytest.fixture
+def ephemeris_end() -> datetime:
+    """Fixture to provide an end datetime for testing."""
+    return datetime(2025, 2, 12, 0, 5, 0)
+
+
+@pytest.fixture
+def ephemeris_step_size() -> int:
+    """Fixture to provide a step_size for testing."""
+    return 60
+
+
+@pytest.fixture
+def keck_latitude() -> u.Quantity:
+    """Fixture to provide a latitude for testing."""
+    return 20.879 * u.deg
+
+
+@pytest.fixture
+def keck_longitude() -> u.Quantity:
+    """Fixture to provide a longitude for testing."""
+    return 155.6655 * u.deg
+
+
+@pytest.fixture
+def keck_height() -> u.Quantity:
+    """Fixture to provide a height for testing."""
+    return 4160 * u.m
+
+
+@pytest.fixture
+def keck_ground_ephemeris(
+    ephemeris_begin: datetime,
+    ephemeris_end: datetime,
+    ephemeris_step_size: int,
+    keck_latitude: u.Quantity,
+    keck_longitude: u.Quantity,
+    keck_height: u.Quantity,
+) -> Ephemeris:
+    """Fixture to provide the ground ephemeris for the Keck Observatory."""
+    return compute_ground_ephemeris(
+        begin=ephemeris_begin,
+        end=ephemeris_end,
+        step_size=ephemeris_step_size,
+        latitude=keck_latitude,
+        longitude=keck_longitude,
+        height=keck_height,
+    )
 
 
 class DummyConstraint(Constraint):

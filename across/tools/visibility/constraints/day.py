@@ -2,7 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
-from astropy.coordinates import AltAz  # type: ignore[import-untyped]
+from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
 from ...core.enums import TwilightType
@@ -17,19 +17,21 @@ class DayConstraint(Constraint):
 
     Parameters
     ----------
-    None
+    twilight_type : TwilightType
+        The type of twilight to consider bounding "daytime". Options are
+        "astronomical", "nautical", "civil", and "sunrise".
+    horizon_dip : bool, optional
+        If True, consider the dip of the horizon due to the elevation of
+        the observatory. Default is False.
+
     """
 
     short_name: Literal["Day"] = "Day"
     name: Literal["Daytime"] = "Daytime"
+    twilight_type: TwilightType
+    horizon_dip: bool = False
 
-    def __call__(
-        self,
-        time: Time,
-        ephemeris: Ephemeris,
-        twilight_type: TwilightType,
-        horizon_dip: bool = False,
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         For a given time, ephemeris, check if it is daytime at the observatory.
         Daytime is defined by the twilight type, and whether the Sun is above
@@ -43,12 +45,6 @@ class DayConstraint(Constraint):
             The time to check.
         ephemeris : Ephemeris
             The ephemeris object.
-        twilight_type : TwilightType
-            The type of twilight to consider bounding "daytime". Options are
-            "astronomical", "nautical", "civil", and "sunrise".
-        horizon_dip : bool, optional
-            If True, consider the dip of the horizon due to the elevation of
-            the observatory. Default is False.
 
         Returns
         -------
@@ -77,20 +73,20 @@ class DayConstraint(Constraint):
         )
 
         # Calculate the horizon dip due to elevation of the observatory
-        if horizon_dip:
+        if self.horizon_dip:
             height = ephemeris.earth_location.height.to_value(u.m)
             dip_horizon_degrees = np.sqrt(2 * height) * 0.034 * u.deg
         else:
             dip_horizon_degrees = 0 * u.deg
 
         # Depending on the twilight type, calculate if it is considered day time
-        if twilight_type == TwilightType.ASTRONOMICAL:
+        if self.twilight_type == TwilightType.ASTRONOMICAL:
             in_constraint = np.array(sun_alt > (-18 * u.deg - dip_horizon_degrees))
-        elif twilight_type == TwilightType.NAUTICAL:
+        elif self.twilight_type == TwilightType.NAUTICAL:
             in_constraint = np.array(sun_alt > (-12 * u.deg - dip_horizon_degrees))
-        elif twilight_type == TwilightType.CIVIL:
+        elif self.twilight_type == TwilightType.CIVIL:
             in_constraint = np.array(sun_alt > (-6 * u.deg - dip_horizon_degrees))
-        elif twilight_type == TwilightType.SUNRISE:
+        elif self.twilight_type == TwilightType.SUNRISE:
             in_constraint = np.array(sun_alt > 0 * u.deg)
 
         # Return the
