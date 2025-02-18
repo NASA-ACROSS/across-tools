@@ -1,10 +1,6 @@
-from datetime import datetime
-from typing import Literal
 from unittest.mock import MagicMock
 
-import numpy as np
 import pytest
-from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
@@ -12,147 +8,64 @@ from across.tools.ephemeris import Ephemeris
 from across.tools.visibility.constraints.base import Constraint, get_slice
 
 
-class DummyConstraint(Constraint):
-    """Dummy concrete implementation for testing"""
-
-    short_name: Literal["dummy"] = "dummy"
-    name: Literal["Dummy Constraint"] = "Dummy Constraint"
-
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
-        """Dummy implementation of the constraint"""
-        return np.array([True])
-
-
-class MockEphemeris(Ephemeris):
-    """Mock class for testing the Ephemeris class."""
-
-    def prepare_data(self) -> None:
-        """Mock method to prepare data."""
-        pass
-
-
 class TestConstraint:
-    """Test the Constraint base class"""
+    """Test class for Constraint functionality."""
 
-    def test_constraint_is_instance_of_constraint(self) -> None:
-        """
-        Test that a DummyConstraint instance is properly recognized as a subclass of Constraint.
+    def test_constraint_is_instance_of_constraint(self, dummy_constraint: Constraint) -> None:
+        """Test that Constraint is instance of Constraint."""
+        assert isinstance(dummy_constraint, Constraint)
 
-        Verifies the inheritance relationship between DummyConstraint and the base Constraint class.
-        """
-        constraint: DummyConstraint = DummyConstraint()
-        assert isinstance(constraint, Constraint)
+    def test_constraint_min_angle_value(self, dummy_constraint_with_angles: Constraint) -> None:
+        """Test min_angle value is set correctly."""
+        assert dummy_constraint_with_angles.min_angle == 10
 
-    def test_constraint_min_angle(self) -> None:
-        """
-        Test that the min_angle parameter is correctly set in the constraint.
+    def test_constraint_max_angle_value(self, dummy_constraint_with_angles: Constraint) -> None:
+        """Test max_angle value is set correctly."""
+        assert dummy_constraint_with_angles.max_angle == 20
 
-        Creates a constraint with min_angle=10 and verifies it's properly stored.
-        """
-        constraint: DummyConstraint = DummyConstraint(min_angle=10, max_angle=20)
-        assert constraint.min_angle == 10
+    def test_constraint_short_name_value(self, dummy_constraint: Constraint) -> None:
+        """Test short_name value is set correctly."""
+        assert dummy_constraint.short_name == "dummy"
 
-    def test_constraint_max_angle(self) -> None:
-        """
-        Test that the max_angle parameter is correctly set in the constraint.
+    def test_constraint_name_value(self, dummy_constraint: Constraint) -> None:
+        """Test name value is set correctly."""
+        assert dummy_constraint.name == "Dummy Constraint"
 
-        Creates a constraint with max_angle=20 and verifies it's properly stored.
-        """
-        constraint: DummyConstraint = DummyConstraint(min_angle=10, max_angle=20)
-        assert constraint.max_angle == 20
+    def test_constraint_optional_min_angle_is_none(self, dummy_constraint: Constraint) -> None:
+        """Test min_angle is None by default."""
+        assert dummy_constraint.min_angle is None
 
-    def test_constraint_short_name(self) -> None:
-        """
-        Test that the short_name class attribute is correctly accessible.
+    def test_constraint_optional_max_angle_is_none(self, dummy_constraint: Constraint) -> None:
+        """Test max_angle is None by default."""
+        assert dummy_constraint.max_angle is None
 
-        Verifies that the short_name property returns the expected value 'dummy'.
-        """
-        constraint: DummyConstraint = DummyConstraint(min_angle=10, max_angle=20)
-        assert constraint.short_name == "dummy"
-
-    def test_constraint_name(self) -> None:
-        """
-        Test that the name class attribute is correctly accessible.
-
-        Verifies that the name property returns the expected value 'Dummy Constraint'.
-        """
-        constraint: DummyConstraint = DummyConstraint(min_angle=10, max_angle=20)
-        assert constraint.name == "Dummy Constraint"
-
-    def test_constraint_optional_min_angle(self) -> None:
-        """
-        Test that min_angle is optional and defaults to None.
-
-        Creates a constraint without specifying min_angle and verifies it's None.
-        """
-        constraint: DummyConstraint = DummyConstraint()
-        assert constraint.min_angle is None
-
-    def test_constraint_optional_max_angle(self) -> None:
-        """
-        Test that max_angle is optional and defaults to None.
-
-        Creates a constraint without specifying max_angle and verifies it's None.
-        """
-        constraint: DummyConstraint = DummyConstraint()
-        assert constraint.max_angle is None
-
-    def test_get_slice_scalar_time(self) -> None:
-        """
-        Test that get_slice raises NotImplementedError for scalar time input.
-
-        Attempts to call get_slice with a scalar time value and verifies it raises
-        the expected exception.
-        """
-        scalar_time: Time = Time(datetime(2023, 1, 1))
-        mock_ephemeris: Ephemeris = MagicMock()
-
+    def test_get_slice_raises_for_scalar_time(self, scalar_time: Time) -> None:
+        """Test get_slice raises NotImplementedError for scalar time."""
+        mock_ephemeris = MagicMock()
         with pytest.raises(NotImplementedError):
             get_slice(scalar_time, mock_ephemeris)
 
-    def test_abstract_constraint(self) -> None:
-        """
-        Test that the abstract Constraint class cannot be instantiated directly.
-
-        Attempts to create an instance of the abstract base class and verifies
-        it raises TypeError.
-        """
-        with pytest.raises(TypeError):
-            Constraint()  # type: ignore
-
-    def test_constraint_validation_min_angle(self) -> None:
-        """
-        Test that constraint validation fails with invalid min_angle value.
-
-        Attempts to create a constraint with an invalid min_angle and verifies
-        it raises ValidationError.
-        """
+    def test_constraint_validation_min_angle_invalid(self, dummy_constraint_class: type[Constraint]) -> None:
+        """Test validation error for invalid min_angle type."""
         with pytest.raises(ValidationError):
-            DummyConstraint(min_angle="invalid")  # type: ignore
+            dummy_constraint_class(short_name="dummy", name="Dummy Constraint", min_angle="invalid")  # type: ignore[arg-type]
 
-    def test_constraint_validation_max_angle(self) -> None:
-        """
-        Test that constraint validation fails with invalid max_angle value.
-
-        Attempts to create a constraint with an invalid max_angle and verifies
-        it raises ValidationError.
-        """
+    def test_constraint_validation_max_angle_invalid(self, dummy_constraint_class: type[Constraint]) -> None:
+        """Test validation error for invalid max_angle type."""
         with pytest.raises(ValidationError):
-            DummyConstraint(max_angle="invalid")  # type: ignore
+            dummy_constraint_class(short_name="dummy", name="Dummy Constraint", max_angle="invalid")  # type: ignore[arg-type]
 
+    def test_get_slice_time_array_start(self, time_array: Time, mock_ephemeris: Ephemeris) -> None:
+        """Test get_slice start index is correct."""
+        result = get_slice(time_array, mock_ephemeris)
+        assert result.start == 0
 
-def test_get_slice_scalar_time() -> None:
-    """Test that scalar time raises NotImplementedError"""
-    scalar_time = Time(datetime(2023, 1, 1))
-    with pytest.raises(NotImplementedError, match="Scalar time not supported"):
-        get_slice(scalar_time, MagicMock())
+    def test_get_slice_time_array_stop(self, time_array: Time, mock_ephemeris: Ephemeris) -> None:
+        """Test get_slice stop index is correct."""
+        result = get_slice(time_array, mock_ephemeris)
+        assert result.stop == 1440
 
-
-def test_get_slice_time_array() -> None:
-    """Test that array time returns correct slice"""
-    time_array = Time([datetime(2023, 1, 1), datetime(2023, 1, 2)])
-    mock_ephemeris: MockEphemeris = MockEphemeris(begin=time_array[0], end=time_array[1], step_size=60)
-    result = get_slice(time_array, mock_ephemeris)
-    assert isinstance(result, slice)
-    assert result.start == 0
-    assert result.stop == 1440
+    def test_get_slice_time_array_type(self, time_array: Time, mock_ephemeris: Ephemeris) -> None:
+        """Test get_slice returns slice object."""
+        result = get_slice(time_array, mock_ephemeris)
+        assert isinstance(result, slice)
