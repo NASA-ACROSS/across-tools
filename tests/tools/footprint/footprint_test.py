@@ -42,6 +42,23 @@ class TestFootprintInstantiation:
         footprint = Footprint(detectors=[self.simple_polygon])
         assert footprint == self.simple_footprint
 
+    def test_repr(self) -> None:
+        """
+        Should return a string representation of the Footprint object
+        """
+        assert (
+            repr(self.simple_footprint)
+            == "Footprint(\n\tPolygon(\n\t\tCoordinate(359.5, 0.5),\n\t\tCoordinate(0.5, 0.5),"
+            + "\n\t\tCoordinate(0.5, -0.5),\n\t\tCoordinate(359.5, -0.5),"
+            + "\n\t\tCoordinate(359.5, 0.5),\n\t),\n)"
+        )
+
+    def test_should_raise_not_implemented_when_comparing_with_other_objects(self) -> None:
+        """
+        Should return `NotImplemented` when comparing with other objects
+        """
+        assert self.simple_footprint != "NotImplemented"
+
 
 class TestFootprintProjection:
     """
