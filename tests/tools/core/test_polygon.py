@@ -6,23 +6,6 @@ from across.tools.core.schemas.coordinate import Coordinate
 from across.tools.core.schemas.polygon import Polygon
 
 
-@pytest.fixture
-def valid_coordinates() -> list[Coordinate]:
-    """Return a list of valid coordinates."""
-    return [
-        Coordinate(ra=0, dec=0),
-        Coordinate(ra=1, dec=1),
-        Coordinate(ra=1, dec=0),
-        Coordinate(ra=0, dec=0),
-    ]
-
-
-@pytest.fixture
-def valid_polygon_data(valid_coordinates: list[Coordinate]) -> dict[str, Any]:
-    """Return a dictionary containing valid polygon data."""
-    return {"coordinates": valid_coordinates}
-
-
 class TestPolygonSchema:
     """Test suite for the Polygon schema."""
 

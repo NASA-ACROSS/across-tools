@@ -1,37 +1,4 @@
-import pytest
-from pydantic import BaseModel
-
 from across.tools.core.schemas.base import BaseSchema
-
-
-class DummyModel(BaseSchema):
-    """Test model for BaseSchema."""
-
-    pass
-
-
-class DummyModelTwo(BaseSchema):
-    """Test model for BaseSchema."""
-
-    pass
-
-
-@pytest.fixture
-def test_model_class() -> type[DummyModel]:
-    """Return a DummyModel class."""
-    return DummyModel
-
-
-@pytest.fixture
-def test_model() -> BaseSchema:
-    """Return a DummyModel instance."""
-    return DummyModel()
-
-
-@pytest.fixture
-def test_model_two() -> BaseSchema:
-    """Return a DummyModel instance."""
-    return DummyModelTwo()
 
 
 class TestBaseSchema:
@@ -49,10 +16,10 @@ class TestBaseSchema:
         """Test that different BaseSchema objects have different hashes."""
         assert hash(test_model) != hash(test_model_two)
 
-    def test_base_schema_config_from_attributes(self, test_model_class: type[BaseModel]) -> None:
+    def test_base_schema_config_from_attributes(self, test_model_class: type[BaseSchema]) -> None:
         """Test that BaseSchema has correct model config."""
         assert test_model_class.model_config["from_attributes"] is True
 
-    def test_base_schema_config_arbitrary_types_allowed(self, test_model_class: type[BaseModel]) -> None:
+    def test_base_schema_config_arbitrary_types_allowed(self, test_model_class: type[BaseSchema]) -> None:
         """Test that BaseSchema has correct model config."""
         assert test_model_class.model_config["arbitrary_types_allowed"] is True

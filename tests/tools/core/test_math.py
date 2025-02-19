@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from across.tools.core.math import find_duplicates, x_rot, y_rot, z_rot
 
@@ -6,120 +7,87 @@ from across.tools.core.math import find_duplicates, x_rot, y_rot, z_rot
 class TestXRotation:
     """Test suite for x_rot function"""
 
-    def test_x_rot_zero_degrees(self) -> None:
-        """Test rotation matrix for 0 degrees"""
-        expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        actual = x_rot(0)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_x_rot_90_degrees(self) -> None:
-        """Test rotation matrix for 90 degrees"""
-        expected = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])
-        actual = x_rot(90)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_x_rot_180_degrees(self) -> None:
-        """Test rotation matrix for 180 degrees"""
-        expected = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-        actual = x_rot(180)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_x_rot_360_degrees(self) -> None:
-        """Test rotation matrix for 360 degrees"""
-        expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        actual = x_rot(360)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_x_rot_negative_angle(self) -> None:
-        """Test rotation matrix for -90 degrees"""
-        expected = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]])
-        actual = x_rot(-90)
+    @pytest.mark.parametrize(
+        "angle,expected",
+        [
+            (0, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])),
+            (90, np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]])),
+            (180, np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])),
+            (360, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])),
+            (-90, np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]])),
+        ],
+    )
+    def test_x_rot_angles(self, angle: float, expected: np.typing.NDArray[np.float64]) -> None:
+        """Test rotation matrix for various angles"""
+        actual = x_rot(angle)
         np.testing.assert_array_almost_equal(actual, expected)
 
     def test_x_rot_return_type(self) -> None:
         """Test return type is numpy array"""
         result = x_rot(45)
         assert isinstance(result, np.ndarray)
+
+    def test_x_rot_dtype(self) -> None:
+        """Test array dtype is float64"""
+        result = x_rot(45)
         assert result.dtype == np.float64
 
 
 class TestZRotation:
     """Test suite for z_rot function"""
 
-    def test_z_rot_zero_degrees(self) -> None:
-        """Test rotation matrix for 0 degrees"""
-        expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        actual = z_rot(0)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_z_rot_90_degrees(self) -> None:
-        """Test rotation matrix for 90 degrees"""
-        expected = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
-        actual = z_rot(90)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_z_rot_180_degrees(self) -> None:
-        """Test rotation matrix for 180 degrees"""
-        expected = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
-        actual = z_rot(180)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_z_rot_360_degrees(self) -> None:
-        """Test rotation matrix for 360 degrees"""
-        expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        actual = z_rot(360)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_z_rot_negative_angle(self) -> None:
-        """Test rotation matrix for -90 degrees"""
-        expected = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
-        actual = z_rot(-90)
+    @pytest.mark.parametrize(
+        "angle,expected",
+        [
+            (0, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])),
+            (90, np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])),
+            (180, np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])),
+            (360, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])),
+            (-90, np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])),
+        ],
+    )
+    def test_z_rot_angles(self, angle: float, expected: np.typing.NDArray[np.float64]) -> None:
+        """Test rotation matrix for various angles"""
+        actual = z_rot(angle)
         np.testing.assert_array_almost_equal(actual, expected)
 
     def test_z_rot_return_type(self) -> None:
         """Test return type is numpy array"""
         result = z_rot(45)
         assert isinstance(result, np.ndarray)
+
+    def test_z_rot_dtype(self) -> None:
+        """Test array dtype is float64"""
+        result = z_rot(45)
         assert result.dtype == np.float64
 
 
 class TestYRotation:
     """Test suite for y_rot function"""
 
-    def test_y_rot_zero_degrees(self) -> None:
-        """Test rotation matrix for 0 degrees"""
-        expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        actual = y_rot(0)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_y_rot_90_degrees(self) -> None:
-        """Test rotation matrix for 90 degrees"""
-        expected = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-        actual = y_rot(90)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_y_rot_180_degrees(self) -> None:
-        """Test rotation matrix for 180 degrees"""
-        expected = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])
-        actual = y_rot(180)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_y_rot_360_degrees(self) -> None:
-        """Test rotation matrix for 360 degrees"""
-        expected = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        actual = y_rot(360)
-        np.testing.assert_array_almost_equal(actual, expected)
-
-    def test_y_rot_negative_angle(self) -> None:
-        """Test rotation matrix for -90 degrees"""
-        expected = np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])
-        actual = y_rot(-90)
+    @pytest.mark.parametrize(
+        "angle,expected",
+        [
+            (0, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])),
+            (90, np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])),
+            (180, np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]])),
+            (360, np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])),
+            (-90, np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]])),
+        ],
+    )
+    def test_y_rot_angles(self, angle: float, expected: np.typing.NDArray[np.float64]) -> None:
+        """Test rotation matrix for various angles"""
+        actual = y_rot(angle)
         np.testing.assert_array_almost_equal(actual, expected)
 
     def test_y_rot_return_type(self) -> None:
         """Test return type is numpy array"""
         result = y_rot(45)
         assert isinstance(result, np.ndarray)
+
+    def test_y_rot_dtype(self) -> None:
+        """Test array dtype is float64"""
+        result = y_rot(45)
         assert result.dtype == np.float64
 
 
