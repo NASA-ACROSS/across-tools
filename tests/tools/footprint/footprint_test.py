@@ -53,7 +53,7 @@ class TestFootprintInstantiation:
             + "\n\t\tCoordinate(359.5, 0.5),\n\t),\n)"
         )
 
-    def test_should_raise_not_implemented_when_comparing_with_other_objects(self) -> None:
+    def test_should_return_not_implemented_when_comparing_with_other_objects(self) -> None:
         """
         Should return `NotImplemented` when comparing with other objects
         """
