@@ -57,7 +57,7 @@ class TestFootprintInstantiation:
         """
         Should return `NotImplemented` when comparing with other objects
         """
-        assert self.simple_footprint != "NotImplemented"
+        assert self.simple_footprint.__eq__("NotImplemented") == NotImplemented
 
 
 class TestFootprintProjection:
