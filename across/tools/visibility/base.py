@@ -94,12 +94,13 @@ class Visibility(ABC, BaseSchema):
             raise ValueError("Step size must be a positive value")
 
         # Round begin/end to step_size
-        begin = Time(values["begin"]).unix
-        end = Time(values["end"]).unix
-        step_size = values["step_size"].to_value(u.s)
+        if values.get("begin") is not None and values.get("end") is not None:
+            begin = Time(values["begin"]).unix
+            end = Time(values["end"]).unix
+            step_size = values["step_size"].to_value(u.s)
 
-        values["begin"] = Time(begin // step_size * step_size, format="unix")  # floor division for begin
-        values["end"] = Time(((end // step_size) + 1) * step_size, format="unix")  # ceil for end
+            values["begin"] = Time(begin // step_size * step_size, format="unix")  # floor division for begin
+            values["end"] = Time(((end // step_size) + 1) * step_size, format="unix")  # ceil for end
 
         return values
 

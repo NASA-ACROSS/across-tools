@@ -1,10 +1,10 @@
 from pydantic import field_serializer
 from shapely import Polygon
 
-from across.tools.core.schemas.base import BaseSchema
+from .base import Constraint
 
 
-class PolygonConstraint(BaseSchema):
+class PolygonConstraint(Constraint):
     """
     Mixin class for constraints that are defined by a polygon. Mostly provides
     serialization and validation for the polygon.

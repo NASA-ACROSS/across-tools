@@ -78,3 +78,4 @@ class Constraint(BaseSchema, ABC):
             `True` if the coordinate is inside the constraint, `False`
             otherwise.
         """
+        raise NotImplementedError("Subclasses must implement this method.")

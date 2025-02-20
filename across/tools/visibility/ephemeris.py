@@ -66,6 +66,7 @@ class EphemerisVisibility(Visibility):
 
     ephemeris: Optional[Ephemeris] = Field(None, exclude=True)
     constraints: list[Constraint] = Field([], exclude=True)
+    calculated_constraints: dict[str, np.typing.NDArray[np.bool_]] = Field({}, exclude=True)
     entries: list[VisWindow] = []
 
     @cached_property
@@ -89,7 +90,7 @@ class EphemerisVisibility(Visibility):
             return None
         return i + 1
 
-    def get_ephemeris_vis(self) -> bool:
+    def prepare_data(self) -> None:
         """
         Query visibility for given parameters.
 
@@ -113,11 +114,6 @@ class EphemerisVisibility(Visibility):
         ):
             raise ValueError("Ephemeris not available.")
 
-        # Check constraints are array-like
-        for con in self.constraints:
-            if not isinstance(con, (np.typing.NDArray)):
-                raise ValueError("Constraints must be an array-like structure.")
-
         # Calculate all the individual constraints
         self.calculated_constraints = {
             constraint.short_name: constraint(
@@ -132,9 +128,7 @@ class EphemerisVisibility(Visibility):
         # Calculate good windows from combined constraints
         self.entries = self._make_windows()
 
-        return True
-
-    def constraint(self, index: int) -> str:
+    def _constraint(self, index: int) -> str:
         """
         What kind of constraints are in place at a given time index.
 

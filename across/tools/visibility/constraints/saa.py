@@ -1,5 +1,6 @@
 from typing import Literal
 
+import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
@@ -50,11 +51,12 @@ class SAAPolygonConstraint(PolygonConstraint):
         i = get_slice(time, ephemeris)
         if ephemeris.longitude is None or ephemeris.latitude is None:
             raise ValueError("Ephemeris must contain longitude and latitude")
-        in_constraint = np.zeros(len(ephemeris.longitude[i]), dtype=bool)
-        if self.polygon is not None:
-            in_constraint |= self.polygon.contains(points(ephemeris.longitude[i], ephemeris.latitude[i]))
+        assert self.polygon is not None
+        in_constraint = np.array(
+            self.polygon.contains(
+                points(ephemeris.longitude[i].to_value(u.deg), ephemeris.latitude[i].to_value(u.deg))
+            )
+        )
 
-        if self.polygon is not None:
-            in_constraint |= self.polygon.contains(points(ephemeris.longitude[i], ephemeris.latitude[i]))
         # Return the result as True or False, or an array of True/False
-        return in_constraint[0] if time.isscalar else in_constraint
+        return in_constraint

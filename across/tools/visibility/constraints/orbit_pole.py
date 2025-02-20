@@ -71,14 +71,13 @@ class OrbitPoleConstraint(Constraint):
 
         # Find the vector of the orbit pole, which is cross product of the
         # orbit vector and the velocity vector
-        assert (
-            ephemeris.gcrs.cartesian.xyz.value is not None
-            and ephemeris.gcrs.velocity.d_xyz.value is not None
-            and ephemeris.earth_radius_angle is not None
-        )
+
+        posvec = ephemeris.gcrs.cartesian.xyz.value
+        velvec = ephemeris.gcrs.velocity.d_xyz.value
+        assert posvec is not None and velvec is not None and ephemeris.earth_radius_angle is not None
 
         # Calculate the coordinate of the orbit pole
-        polevec = ephemeris.gcrs.cartesian.xyz.value[i].cross(ephemeris.gcrs.velocity.d_xyz.value[i])
+        polevec = posvec[i].cross(velvec[i])
         pole = SkyCoord(polevec / polevec.norm())
 
         # If this is an Earth Limb driven pole constraint, then we need to

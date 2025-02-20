@@ -66,18 +66,15 @@ class RamConstraint(Constraint):
         # direction and the object. Note that creating the SkyCoord here from
         # ra/dec stored in the ephemeris `ram` is 3x faster than just doing the
         # separation directly with `ram`.
-        assert ephemeris.gcrs.velocity.d_xyz.value is not None
+        velvec = ephemeris.gcrs.velocity.d_xyz.value
+        assert velvec is not None
 
-        in_constraint = np.zeros(len(ephemeris.gcrs.velocity.d_xyz.value[i]), dtype=bool)
+        in_constraint = np.zeros(len(velvec[i]), dtype=bool)
 
         if self.min_angle is None:
-            in_constraint |= (
-                SkyCoord(ephemeris.gcrs.velocity.d_xyz.value[i]).separation(skycoord) < self.min_angle * u.deg
-            )
+            in_constraint |= SkyCoord(velvec[i]).separation(skycoord) < self.min_angle * u.deg
         if self.max_angle is not None:
-            in_constraint |= (
-                SkyCoord(ephemeris.gcrs.velocity.d_xyz.value[i]).separation(skycoord) > self.max_angle * u.deg
-            )
+            in_constraint |= SkyCoord(velvec[i]).separation(skycoord) > self.max_angle * u.deg
 
         # Return the result as True or False, or an array of True/False
         return in_constraint

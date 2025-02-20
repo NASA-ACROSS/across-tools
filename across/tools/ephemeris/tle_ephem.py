@@ -107,8 +107,8 @@ class TLEEphemeris(Ephemeris):
 def compute_tle_ephemeris(
     begin: datetime | Time,
     end: datetime | Time,
-    step_size: int | timedelta | TimeDelta,
     tle: TLE,
+    step_size: int | timedelta | TimeDelta = 60,
 ) -> Ephemeris:
     """
     Compute the ephemeris for a space object using TLE data.
