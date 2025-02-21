@@ -1,11 +1,9 @@
 
 [project]
 name = "across-tools"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 readme = "README.md"
-authors = [
-    { name = "ACROSS-Team", email = "samuel.d.wyatt@nasa.gov" }
-]
+authors = [{ name = "ACROSS-Team", email = "samuel.d.wyatt@nasa.gov" }]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
@@ -17,9 +15,13 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.9"
 dependencies = [
+    "astropy",
     "numpy",
     "healpy",
-    "pydantic"
+    "pydantic",
+    "astroquery",
+    "sgp4",
+    "spiceypy>=6.0.0",
 ]
 
 [project.urls]
@@ -28,21 +30,21 @@ dependencies = [
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
 dev = [
-    "jupyter", # Clears output from Jupyter notebooks
-    "mypy", # Used for static type checking of files
-    "pre-commit", # Used to run checks before finalizing a git commit
+    "jupyter",           # Clears output from Jupyter notebooks
+    "mypy",              # Used for static type checking of files
+    "pre-commit",        # Used to run checks before finalizing a git commit
     "pytest",
-    "pytest-cov", # Used to report total code coverage
-    "ruff", # Used for static linting of files
-	"sphinx-autoapi", # Read the docs
-	"nbsphinx",
-	"sphinx-copybutton",
-	"sphinx-rtd-theme",
+    "pytest-cov",        # Used to report total code coverage
+    "ruff",              # Used for static linting of files
+    "sphinx-autoapi",    # Read the docs
+    "nbsphinx",
+    "sphinx-copybutton",
+    "sphinx-rtd-theme",
 ]
 
 [build-system]
 requires = [
-    "setuptools>=62", # Used to build and package the Python project
+    "setuptools>=62",      # Used to build and package the Python project
     "setuptools_scm>=6.2", # Gets release version from git. Makes it available programmatically
 ]
 build-backend = "setuptools.build_meta"
@@ -51,9 +53,7 @@ build-backend = "setuptools.build_meta"
 write_to = "across/tools/_version.py"
 
 [tool.pytest.ini_options]
-testpaths = [
-    "tests",
-]
+testpaths = ["tests"]
 
 [tool.black]
 line-length = 110
@@ -100,16 +100,16 @@ select = [
 ]
 
 ignore = [
-    "UP006", # Allow non standard library generics in type hints
-    "UP007", # Allow Union in type hints
+    "UP006",  # Allow non standard library generics in type hints
+    "UP007",  # Allow Union in type hints
     "SIM114", # Allow if with same arms
-    "B028", # Allow default warning level
+    "B028",   # Allow default warning level
     "SIM117", # Allow nested with
-    "UP015", # Allow redundant open parameters
-    "UP028", # Allow yield in for loop
+    "UP015",  # Allow redundant open parameters
+    "UP028",  # Allow yield in for loop
 ]
 [tool.setuptools.package-data]
 tools = ["py.typed"]
 
 [tool.coverage.run]
-omit=["across/tools/_version.py"]
+omit = ["across/tools/_version.py"]
