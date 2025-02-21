@@ -42,6 +42,23 @@ class TestFootprintInstantiation:
         footprint = Footprint(detectors=[self.simple_polygon])
         assert footprint == self.simple_footprint
 
+    def test_repr(self) -> None:
+        """
+        Should return a string representation of the Footprint object
+        """
+        assert (
+            repr(self.simple_footprint)
+            == "Footprint(\n\tPolygon(\n\t\tCoordinate(359.5, 0.5),\n\t\tCoordinate(0.5, 0.5),"
+            + "\n\t\tCoordinate(0.5, -0.5),\n\t\tCoordinate(359.5, -0.5),"
+            + "\n\t\tCoordinate(359.5, 0.5),\n\t),\n)"
+        )
+
+    def test_should_return_not_implemented_when_comparing_with_other_objects(self) -> None:
+        """
+        Should return `NotImplemented` when comparing with other objects
+        """
+        assert self.simple_footprint.__eq__("NotImplemented") == NotImplemented
+
 
 class TestFootprintProjection:
     """
@@ -160,3 +177,11 @@ class TestFootprintQueryPixels:
         """
         with pytest.raises(ValueError):
             self.simple_footprint.query_pixels(order=invalid_healpix_order)
+
+    def test_should_return_false_on_footprint_with_different_length(self, simple_polygon: Polygon) -> None:
+        """
+        Should return False when comparing footprints with different number of detectors
+        """
+        footprint1 = Footprint(detectors=[simple_polygon])
+        footprint2 = Footprint(detectors=[simple_polygon, simple_polygon])
+        assert footprint1 != footprint2
