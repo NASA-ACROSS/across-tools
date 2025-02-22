@@ -73,7 +73,7 @@ class OrbitPoleConstraint(Constraint):
         # orbit vector and the velocity vector
 
         # Calculate the pole vector
-        pole = SkyCoord(ephemeris.gcrs.cartesian.without_differentials().cross(ephemeris.gcrs.velocity))
+        pole = SkyCoord(ephemeris.gcrs.cartesian.without_differentials().cross(ephemeris.gcrs.velocity))[i]
 
         # If this is an Earth Limb driven pole constraint, then we need to
         # calculate the pole from the Earth limb constraint, in this case
