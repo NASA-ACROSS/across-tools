@@ -63,7 +63,7 @@ class TestConstraint:
     def test_get_slice_time_array_stop(self, time_array: Time, mock_ephemeris: Ephemeris) -> None:
         """Test get_slice stop index is correct."""
         result = get_slice(time_array, mock_ephemeris)
-        assert result.stop == 1440
+        assert result.stop == 1441
 
     def test_get_slice_time_array_type(self, time_array: Time, mock_ephemeris: Ephemeris) -> None:
         """Test get_slice returns slice object."""

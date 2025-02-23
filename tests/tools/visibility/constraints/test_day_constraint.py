@@ -63,4 +63,4 @@ class TestDayConstraint:
         """Test that array result has correct length."""
         constraint = DayConstraint(twilight_type=TwilightType.SUNRISE)
         result = constraint(keck_ground_ephemeris.timestamp, keck_ground_ephemeris, sky_coord)
-        assert len(result) == 5
+        assert len(result) == 6

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from functools import cached_property
 from typing import Optional
 
@@ -66,7 +67,7 @@ class EphemerisVisibility(Visibility):
 
     ephemeris: Optional[Ephemeris] = Field(None, exclude=True)
     constraints: list[Constraint] = Field([], exclude=True)
-    calculated_constraints: dict[str, np.typing.NDArray[np.bool_]] = Field({}, exclude=True)
+    calculated_constraints: OrderedDict[str, np.typing.NDArray[np.bool_]] = Field(OrderedDict(), exclude=True)
     entries: list[VisWindow] = []
 
     @cached_property
@@ -115,12 +116,11 @@ class EphemerisVisibility(Visibility):
             raise ValueError("Ephemeris not available.")
 
         # Calculate all the individual constraints
-        self.calculated_constraints = {
-            constraint.short_name: constraint(
+        self.calculated_constraints = OrderedDict()
+        for constraint in self.constraints:
+            self.calculated_constraints[constraint.short_name] = constraint(
                 time=self.timestamp, ephemeris=self.ephemeris, skycoord=self.skycoord
             )
-            for constraint in self.constraints
-        }
 
         # self.inconstraint is the logical or of all constraints
         self.inconstraint = np.logical_or.reduce([v for v in self.calculated_constraints.values()])
@@ -150,8 +150,6 @@ class EphemerisVisibility(Visibility):
             return "Window"
 
         # Return what constraint is causing the window to open/close
-        for k, v in self.calculated_constraints.items():
-            if v[index]:
-                return k
+        return next((k for k, v in self.calculated_constraints.items() if v[index]), "Unknown")
 
         return "Unknown"
