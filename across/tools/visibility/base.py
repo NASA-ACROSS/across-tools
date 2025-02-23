@@ -59,7 +59,7 @@ class Visibility(ABC, BaseSchema):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_skycoord(
+    def validate_parameters(
         cls, values: dict[str, Union[float, SkyCoord]]
     ) -> dict[str, Union[float, SkyCoord]]:
         """
