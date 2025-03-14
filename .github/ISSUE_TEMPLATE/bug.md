@@ -1,29 +1,37 @@
----
 name: Bug
-about: Create an issue to document a bug or issue with the system.
-title: "[BUG]"
-labels: bug
----
+description: Issue a bug report
+type: "bug"
+projects: ["ACROSS-Team/22"]
 
-# Bug Details :warning::bug:
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for issuing a bug report! Please describe it in detail below.
 
-## Description
+  - type: textarea
+    id: description
+    validations:
+      required: true
+    attributes:
+      label: "Description"
+      description: What is the bug? Include images if appropriate.
 
-[Description of the bug, include images if appropriate]
+  - type: textarea
+    id: steps_to_reproduce
+    validations:
+      required: true
+    attributes:
+      label: "Steps to Reproduce"
+      description: Describe the steps needed to take to reproduce the issue.
+      value: |
+        1. [Step 1]
+        2. [Step 2]
 
-## Steps to Reproduce
-
-- [ ] Is the bug reproducible?
-
-1. [First Step]
-2. [Second Step]
-3. [Include images]
-4. [and so on...]
-
-### Expected behavior
-
-[What is expected to happen]
-
-### Actual behavior
-
-[What actually happened]
+  - type: textarea
+    id: expected_behavior
+    validations:
+      required: true
+    attributes:
+      label: "Expected Behavior"
+      description: What is expected behavior instead of the bug?
