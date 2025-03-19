@@ -7,7 +7,7 @@ from spacetrack import AuthenticationError  # type: ignore[import-untyped]
 
 from across.tools.core.schemas.tle import TLE
 from across.tools.tle.exceptions import SpaceTrackAuthenticationError
-from across.tools.tle.tle import TLEFetch
+from across.tools.tle.tle import TLEFetch, get_tle
 
 
 class TestTLEFetch:
@@ -52,7 +52,6 @@ class TestTLEFetch:
         )
 
         result = tle_fetch.get()
-
         assert isinstance(result, TLE)
         assert result.norad_id == 25544
         assert result.satellite_name == "ISS"
@@ -97,3 +96,36 @@ class TestTLEFetch:
 
         with pytest.raises(SpaceTrackAuthenticationError):
             tle_fetch.get()
+
+
+class TestGetTLE:
+    """Test suite for the get_tle function."""
+
+    def test_get_tle_success(self, mock_spacetrack: MagicMock, valid_spacetrack_tle_response: str) -> None:
+        """Test successful TLE retrieval"""
+        mock_client = MagicMock()
+        mock_client.tle.return_value = valid_spacetrack_tle_response
+        mock_spacetrack.return_value.__enter__.return_value = mock_client
+
+        result = get_tle(
+            norad_id=25544,
+            epoch=datetime(2008, 9, 20),
+            spacetrack_user="test_user",
+            spacetrack_pwd="test_pass",
+        )
+
+        assert isinstance(result, TLE)
+
+    def test_get_tle_no_results(self, mock_spacetrack: MagicMock) -> None:
+        """Test when no TLEs are found"""
+        mock_spacetrack.authenticate.return_value = True
+        mock_spacetrack.tle.return_value = ""
+
+        result = get_tle(
+            norad_id=99999,
+            epoch=datetime(2008, 9, 20),
+            spacetrack_user="test_user",
+            spacetrack_pwd="test_pass",
+        )
+
+        assert result is None

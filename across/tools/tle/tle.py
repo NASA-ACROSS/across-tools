@@ -88,7 +88,9 @@ class TLEFetch:
 
         Returns
         -------
-            True if the TLE was successfully read and stored, False otherwise.
+        TLE | None
+            A TLE object containing the two-line element data for the specified
+            satellite, or None if no data is found.
 
         Raises
         ------
@@ -135,7 +137,7 @@ class TLEFetch:
 
         # Return the TLE that is closest to the requested epoch
         tles.sort(key=lambda x: abs(x.epoch - self.epoch))
-        return tles[0]
+        return tles[0] if tles else None
 
 
 def get_tle(
