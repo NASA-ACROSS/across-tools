@@ -1,0 +1,290 @@
+# Copyright © 2023 United States Government as represented by the
+# Administrator of the National Aeronautics and Space Administration.
+# All Rights Reserved.
+
+
+import os
+from datetime import datetime, timedelta
+
+from httpx import HTTPStatusError
+from spacetrack import (  # type: ignore[import-untyped]
+    AsyncSpaceTrackClient,
+    AuthenticationError,
+    SpaceTrackClient,
+)
+
+from ..core.schemas.tle import TLE
+from .exceptions import SpaceTrackAuthenticationError
+
+
+class TLEFetch:
+    """
+    Fetches Two-Line Element (TLE) data for a satellite at a specific epoch.
+    Requires a Space-Track.org account to access the TLE data. If no spacetrack
+    user or password is provided, the class will attempt to use the environment
+    variables SPACETRACK_USER and SPACETRACK_PWD.
+
+    Parameters
+    ----------
+    epoch
+        Epoch of TLE to retrieve
+
+    Attributes
+    ----------
+    satellite_name : str, optional
+        Name of the satellite
+    norad_id : int
+        NORAD ID of the satellite
+    epoch : datetime
+        Epoch of the TLE
+    spacetrack_user : str, optional
+        Space-Track.org username
+    spacetrack_pwd  : str, optional
+        Space-Track.org password
+
+
+    Methods
+    -------
+    get
+        Get TLEs for given epoch
+    tle_out_of_date
+        Check if the given TLE is out of date
+    read_tle_web
+        Read TLE from dedicated weblink
+    read_tle_concat
+        Read TLEs in the concatenated format
+    read_tle_db
+        Read the best TLE for a given epoch from the local database of TLEs
+    write_tle_db
+        Write a TLE to the database
+    """
+
+    # Configuration parameters
+    satellite_name: str | None
+    norad_id: int
+    epoch: datetime
+    spacetrack_user: str | None
+    spacetrack_pwd: str | None
+
+    def __init__(
+        self,
+        norad_id: int,
+        epoch: datetime,
+        satellite_name: str | None = None,
+        spacetrack_user: str | None = None,
+        spacetrack_pwd: str | None = None,
+    ):
+        self.norad_id = norad_id
+        self.epoch = epoch
+        self.satellite_name = satellite_name
+        self.spacetrack_user = spacetrack_user or os.getenv("SPACETRACK_USER")
+        self.spacetrack_pwd = spacetrack_pwd or os.getenv("SPACETRACK_PWD")
+
+    async def read_tle_space_track_async(self) -> TLE | None:
+        """
+        Read TLE from Space-Track.org.
+
+        This method downloads the TLE (Two-Line Elements) from Space-Track.org.
+        It retrieves the TLE data, parses it, and stores the valid TLE entries
+        in a list. Often websites (e.g. Celestrak) will have multiple TLEs for
+        a given satellite, so this method will only store the TLEs that match
+        the given satellite name, as stored in the `satellite_name` attribute.
+
+        Returns
+        -------
+            True if the TLE was successfully read and stored, False otherwise.
+        """
+        # Check if the name is set
+        if self.satellite_name is None:
+            return None
+
+        # Build space-track.org query
+        epoch_start = self.epoch - timedelta(days=7)
+        epoch_stop = self.epoch + timedelta(days=7)
+
+        # Check if the user and password are set
+        if self.spacetrack_user is None or self.spacetrack_pwd is None:
+            raise SpaceTrackAuthenticationError("space-track.org username and password must be provided.")
+
+        # Log into space-track.org
+        async with AsyncSpaceTrackClient(identity=self.spacetrack_user, password=self.spacetrack_pwd) as st:
+            await st.authenticate()
+
+            # Fetch the TLEs between the requested epochs
+            tletext = await st.tle(
+                norad_cat_id=self.norad_id,
+                orderby="epoch desc",
+                limit=22,
+                format="tle",
+                epoch=f">{epoch_start},<{epoch_stop}",
+            )
+
+        # Check if we got a return
+        if tletext == "":
+            return None
+
+        # Split the TLEs into individual lines
+        tletext = tletext.splitlines()
+
+        # Parse the results into a list of TLEEntry objects
+        tles = [
+            TLE(
+                satellite_name=self.satellite_name,
+                norad_id=self.norad_id,
+                tle1=tletext[i].strip(),
+                tle2=tletext[i + 1].strip(),
+            )
+            for i in range(0, len(tletext), 2)
+        ]
+
+        if len(tles) == 0:
+            return None
+
+        # Return the TLE that is closest to the requested epoch
+        tles.sort(key=lambda x: abs(x.epoch - self.epoch))
+        return tles[0]
+
+    def read_tle_space_track(self) -> TLE | None:
+        """
+        Read TLE from Space-Track.org.
+
+        This method downloads the TLE (Two-Line Elements) from Space-Track.org.
+        It retrieves the TLE data, parses it, and stores the valid TLE entries
+        in a list. Often websites (e.g. Celestrak) will have multiple TLEs for
+        a given satellite, so this method will only store the TLEs that match
+        the given satellite name, as stored in the `satellite_name` attribute.
+
+        Returns
+        -------
+            True if the TLE was successfully read and stored, False otherwise.
+
+        Raises
+        ------
+        SpaceTrackAuthenticationError
+            If space-track.org authentication fails.
+        """
+        # Build space-track.org query
+        epoch_start = self.epoch - timedelta(days=7)
+        epoch_stop = self.epoch + timedelta(days=7)
+
+        # Log into space-track.org
+        with SpaceTrackClient(identity=self.spacetrack_user, password=self.spacetrack_pwd) as st:
+            try:
+                st.authenticate()
+            except (AuthenticationError, HTTPStatusError) as e:
+                raise SpaceTrackAuthenticationError("space-track.org authentication failed.") from e
+
+            # Fetch the TLEs between the requested epochs
+            tletext = st.tle(
+                norad_cat_id=self.norad_id,
+                orderby="epoch desc",
+                limit=22,
+                format="tle",
+                epoch=f">{epoch_start},<{epoch_stop}",
+            )
+
+        # Check if we got a return
+        if tletext == "":
+            return None
+
+        # Split the TLEs into individual lines
+        tletext = tletext.splitlines()
+
+        # Parse the results into a list of TLEEntry objects
+        tles = [
+            TLE(
+                satellite_name=self.satellite_name,
+                norad_id=self.norad_id,
+                tle1=tletext[i].strip(),
+                tle2=tletext[i + 1].strip(),
+            )
+            for i in range(0, len(tletext), 2)
+        ]
+
+        if len(tles) == 0:
+            return None
+
+        # Return the TLE that is closest to the requested epoch
+        tles.sort(key=lambda x: abs(x.epoch - self.epoch))
+        return tles[0]
+
+
+def get_tle(
+    norad_id: int,
+    epoch: datetime,
+    spacetrack_user: str | None = None,
+    spacetrack_pwd: str | None = None,
+) -> TLE | None:
+    """
+    Gets the Two-Line Element (TLE) data for a satellite at a specific epoch.
+
+    Parameters
+    ----------
+    norad_id : int
+        The NORAD Catalog Number (NORAD ID) of the satellite.
+    epoch : datetime
+        The epoch timestamp for which to retrieve the TLE data.
+    spacetrack_user : str, optional
+        Space-Track.org username.
+    spacetrack_pwd : str, optional
+        Space-Track.org password.
+
+    Returns
+    -------
+    TLE
+        A TLE object containing the two-line element data for the specified
+        satellite, or None if no data is found.
+
+    Raises
+    ------
+    TLEFetchError
+        If unable to retrieve TLE data from Space-Track.org.
+    AuthenticationError
+        If Space-Track.org authentication fails.
+    """
+
+    tle = TLEFetch(
+        norad_id=norad_id, epoch=epoch, spacetrack_user=spacetrack_user, spacetrack_pwd=spacetrack_pwd
+    )
+    return tle.read_tle_space_track()
+
+
+async def get_tle_async(
+    norad_id: int,
+    epoch: datetime,
+    spacetrack_user: str | None = None,
+    spacetrack_pwd: str | None = None,
+) -> TLE | None:
+    """
+    Gets the Two-Line Element (TLE) data for a satellite at a specific epoch.
+    Uses async I/O to fetch the TLE data from Space-Track.org.
+
+    Parameters
+    ----------
+    norad_id : int
+        The NORAD Catalog Number (NORAD ID) of the satellite.
+    epoch : datetime
+        The epoch timestamp for which to retrieve the TLE data.
+    spacetrack_user : str, optional
+        Space-Track.org username.
+    spacetrack_pwd : str, optional
+        Space-Track.org password.
+
+    Returns
+    -------
+    TLE
+        A TLE object containing the two-line element data for the specified
+        satellite, or None if no data is found.
+
+    Raises
+    ------
+    TLEFetchError
+        If unable to retrieve TLE data from Space-Track.org.
+    AuthenticationError
+        If Space-Track.org authentication fails.
+    """
+
+    tle = TLEFetch(
+        norad_id=norad_id, epoch=epoch, spacetrack_user=spacetrack_user, spacetrack_pwd=spacetrack_pwd
+    )
+    return await tle.read_tle_space_track_async()
