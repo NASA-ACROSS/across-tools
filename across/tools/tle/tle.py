@@ -133,9 +133,6 @@ class TLEFetch:
             for i in range(0, len(tletext), 2)
         ]
 
-        if len(tles) == 0:
-            return None
-
         # Return the TLE that is closest to the requested epoch
         tles.sort(key=lambda x: abs(x.epoch - self.epoch))
         return tles[0]
