@@ -1,8 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from across.tools.visibility.constraints.base import Constraint
-
+from ....tools.visibility.constraints.base import Constraint
 from .base import BaseSchema
 
 
@@ -39,6 +38,7 @@ class ConstraintType(str, Enum):
     ORBIT_SAA = "SAA"
     AIR_MASS = "Air Mass"
     ALT_AZ = "Alt/Az"
+    FOV = "FOV"
 
 
 class ConstrainedDate(BaseSchema):

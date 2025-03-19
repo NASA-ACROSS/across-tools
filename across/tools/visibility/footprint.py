@@ -1,4 +1,5 @@
-from across.tools.visibility.base import Visibility
+from ..core.schemas.visibility import ConstraintType
+from .base import Visibility
 
 
 class FootprintVisibility(Visibility):
@@ -7,12 +8,12 @@ class FootprintVisibility(Visibility):
     footprint and schedule.
     """
 
-    def _constraint(self, i: int) -> str:
+    def _constraint(self, i: int) -> ConstraintType:
         """
         For a given index, return the constraint at that time. For a footprint
         visibility, this is always Field of View (FOV).
         """
-        return "FOV"
+        return ConstraintType.FOV
 
     def prepare_data(self) -> None:
         """
