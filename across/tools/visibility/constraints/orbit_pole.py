@@ -5,6 +5,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
 
@@ -28,7 +29,7 @@ class OrbitPoleConstraint(Constraint):
 
     """
 
-    short_name: Literal["Pole"] = "Pole"
+    short_name: Literal[ConstraintType.ORBIT_POLE] = ConstraintType.ORBIT_POLE
     name: Literal["Orbit Pole Angle"] = "Orbit Pole Angle"
     min_angle: float | None = None
     max_angle: float | None = None

@@ -5,6 +5,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
 
@@ -29,7 +30,7 @@ class SunConstraint(Constraint):
 
     """
 
-    short_name: Literal["Sun"] = "Sun"
+    short_name: Literal[ConstraintType.SUN] = ConstraintType.SUN
     name: Literal["Sun Angle"] = "Sun Angle"
     min_angle: float | None = None
     max_angle: float | None = None

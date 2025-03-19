@@ -6,6 +6,8 @@ from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from shapely import Polygon, points
 
+from across.tools.core.schemas.visibility import ConstraintType
+
 from ...ephemeris import Ephemeris
 from .base import get_slice
 from .polygon import PolygonConstraint
@@ -29,7 +31,7 @@ class AltAzConstraint(PolygonConstraint):
         The maximum altitude in degrees.
     """
 
-    short_name: Literal["Alt/Az"] = "Alt/Az"
+    short_name: Literal[ConstraintType.ALT_AZ] = ConstraintType.ALT_AZ
     name: Literal["Altitude/Azimuth Avoidance"] = "Altitude/Azimuth Avoidance"
     polygon: Polygon | None
     alt_min: float | None

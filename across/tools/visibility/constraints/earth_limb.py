@@ -5,6 +5,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
 
@@ -29,7 +30,7 @@ class EarthLimbConstraint(Constraint):
         Checks if a given coordinate is inside the constraint.
     """
 
-    short_name: Literal["Earth"] = "Earth"
+    short_name: Literal[ConstraintType.DAY] = ConstraintType.DAY
     name: Literal["Earth Limb Constraint"] = "Earth Limb Constraint"
     min_angle: float | None = None
     max_angle: float | None = None

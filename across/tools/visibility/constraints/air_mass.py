@@ -4,6 +4,8 @@ import numpy as np
 from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from across.tools.core.schemas.visibility import ConstraintType
+
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
 
@@ -20,7 +22,7 @@ class AirMassConstraint(Constraint):
         The maximum altitude in degrees.
     """
 
-    short_name: Literal["Airmass"] = "Airmass"
+    short_name: Literal[ConstraintType.AIR_MASS] = ConstraintType.AIR_MASS
     name: Literal["Airmass"] = "Airmass"
     airmass_max: float | None = None
     airmass_min: float | None = None

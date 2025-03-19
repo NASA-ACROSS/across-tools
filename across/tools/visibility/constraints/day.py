@@ -6,6 +6,7 @@ from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
 from ...core.enums import TwilightType
+from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
 
@@ -26,7 +27,7 @@ class DayConstraint(Constraint):
 
     """
 
-    short_name: Literal["Day"] = "Day"
+    short_name: Literal[ConstraintType.DAY] = ConstraintType.DAY
     name: Literal["Daytime"] = "Daytime"
     twilight_type: TwilightType
     horizon_dip: bool = False

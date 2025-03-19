@@ -6,6 +6,7 @@ from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from shapely import Polygon, points
 
+from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import get_slice
 from .polygon import PolygonConstraint
@@ -25,7 +26,7 @@ class SAAPolygonConstraint(PolygonConstraint):
 
     polygon: Polygon | None = None
     name: Literal["South Atlantic Anomaly"] = "South Atlantic Anomaly"
-    short_name: Literal["SAA"] = "SAA"
+    short_name: Literal[ConstraintType.ORBIT_SAA] = ConstraintType.ORBIT_SAA
 
     def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """

@@ -9,7 +9,13 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
 
 from ..core.schemas.base import BaseSchema
-from .schema import VisWindow
+from ..core.schemas.visibility import (
+    ConstrainedDate,
+    ConstraintReason,
+    ConstraintType,
+    VisibilityWindow,
+    Window,
+)
 
 
 class Visibility(ABC, BaseSchema):
@@ -32,6 +38,10 @@ class Visibility(ABC, BaseSchema):
         Minimum visibility percentage for the target.
     hires
         Whether to use high resolution for visibility calculations.
+    observatory_id
+        Unique Observatory ID for which this visibility is calculated.
+    observatory_name:
+        Name of the observatory for which this visibility is calculated.
 
     Methods
     -------
@@ -50,12 +60,14 @@ class Visibility(ABC, BaseSchema):
     begin: Time
     end: Time
     min_vis: int = 0
+    observatory_id: str
+    observatory_name: str
 
     # Computed values
     timestamp: Optional[Time] = None
     inconstraint: np.typing.NDArray[np.bool_] = Field(default=np.array([]), exclude=True)
-    constraint_windows: Optional[dict[str, list[VisWindow]]] = None
-    entries: list[VisWindow] = []
+    constraint_windows: Optional[dict[str, list[VisibilityWindow]]] = None
+    visibility_windows: list[VisibilityWindow] = []
 
     @model_validator(mode="before")
     @classmethod
@@ -117,7 +129,7 @@ class Visibility(ABC, BaseSchema):
         -------
             True if visible, False if not
         """
-        return any(t >= win.begin and t <= win.end for win in self.entries)
+        return any(t >= win.window.begin and t <= win.window.end for win in self.visibility_windows)
 
     def _compute_timestamp(self) -> None:
         """
@@ -147,7 +159,7 @@ class Visibility(ABC, BaseSchema):
         return index
 
     @abstractmethod
-    def _constraint(self, i: int) -> str:
+    def _constraint(self, i: int) -> ConstraintType:
         """
         For a given index, return the constraint at that time.
         """
@@ -158,7 +170,7 @@ class Visibility(ABC, BaseSchema):
         Abstract method to perform visibility calculation.
         """
 
-    def _make_windows(self) -> list[VisWindow]:
+    def _make_windows(self) -> list[VisibilityWindow]:
         """
         Parameters
         ----------
@@ -182,18 +194,37 @@ class Visibility(ABC, BaseSchema):
         end = np.flatnonzero(buff[:-1] & ~buff[1:])
         indices = np.column_stack((begin, end - 1))
 
-        # Return as list of VisWindows
-        return [
-            VisWindow(
-                begin=self.timestamp[i[0]].datetime,
-                end=self.timestamp[i[1]].datetime,
-                visibility=int((self.timestamp[i[1]] - self.timestamp[i[0]]).to_value(u.s)),
-                initial=self._constraint(i[0] - 1),
-                final=self._constraint(i[1] + 1),
+        visibility_windows = []
+        for i in indices:
+            constrained_date_begin = ConstrainedDate(
+                datetime=self.timestamp[i[0]].datetime,
+                constraint=self._constraint(i[0] - 1),
+                observatory_id=self.observatory_id,
             )
-            for i in indices
-            if self.timestamp[i[0]].datetime != self.timestamp[i[1]].datetime
-        ]
+            constrained_date_end = ConstrainedDate(
+                datetime=self.timestamp[i[1]].datetime,
+                constraint=self._constraint(i[1] + 1),
+                observatory_id=self.observatory_id,
+            )
+            window = Window(begin=constrained_date_begin, end=constrained_date_end)
+            visibility = int((self.timestamp[i[1]] - self.timestamp[i[0]]).to_value(u.s))
+            constraint_reason = ConstraintReason(
+                start_reason=f"{self.observatory_name} {self._constraint(i[0] - 1)}",
+                end_reason=f"{self.observatory_name} {self._constraint(i[1] + 1)}",
+            )
+
+            visibility_window = VisibilityWindow(
+                window=window,
+                max_visibility_duration=visibility,
+                constraint_reason=constraint_reason,
+            )
+            # Only add windows if they are > min_vis seconds long
+            if self.timestamp[i[1]].datetime - self.timestamp[i[0]].datetime > timedelta(
+                seconds=self.min_vis
+            ):
+                visibility_windows.append(visibility_window)
+
+        return visibility_windows
 
     def compute(self) -> None:
         """
@@ -201,4 +232,4 @@ class Visibility(ABC, BaseSchema):
         """
         self._compute_timestamp()
         self.prepare_data()
-        self.entries = self._make_windows()
+        self.visibility_windows = self._make_windows()

@@ -4,6 +4,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
 
@@ -21,8 +22,8 @@ class MoonPhaseConstraint(Constraint):
         The maximum moon phase value.
     """
 
+    short_name: Literal[ConstraintType.MOON_PHASE] = ConstraintType.MOON_PHASE
     name: Literal["Moon Phase"] = "Moon Phase"
-    short_name: Literal["Moon Phase"] = "Moon Phase"
     min_phase_angle: float | None = None
     max_phase_angle: float | None = None
 

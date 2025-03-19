@@ -1,15 +1,14 @@
 from collections import OrderedDict
 from functools import cached_property
-from typing import Optional
 
 import numpy as np
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
 
+from ..core.schemas.visibility import ConstraintType, VisibilityWindow
 from ..ephemeris.base import Ephemeris
 from .base import Visibility
 from .constraints.base import Constraint
-from .schema import VisWindow
 
 
 class EphemerisVisibility(Visibility):
@@ -29,7 +28,7 @@ class EphemerisVisibility(Visibility):
         Dictionary mapping constraint names to boolean arrays of evaluation results
     inconstraint : np.typing.NDArray[np.bool_]
         Boolean array indicating combined constraint evaluation results
-    ephemeris : Optional[Ephemeris]
+    ephemeris : Ephemeris | None
         Ephemeris data object containing spacecraft position/timing information
 
     Methods
@@ -46,7 +45,7 @@ class EphemerisVisibility(Visibility):
     step_size : int
         Time step size in seconds for calculations (60s for high res, 3600s for
         low res)
-    entries : list[VisWindow]
+    visibility_windows : list[VisibilityWindow]
         List of visibility window objects
 
     Notes
@@ -54,24 +53,17 @@ class EphemerisVisibility(Visibility):
     The class processes ephemeris data against multiple constraints to determine
     periods of visibility. It handles both high and low resolution timing and
     generates windows with start/end times and constraint information.
-
-    # Constraint definitions
-    constraints: list[Constraint]
-
-    # Computed values
-    timestamp: Time = Field(np.array([]), exclude=True)
-    calculated_constraints: dict[str, np.typing.NDArray[np.bool_]] = Field({}, exclude=True)
-    inconstraint: np.typing.NDArray[np.bool_] = Field(np.array([]), exclude=True)
-    ephemeris: Optional[Ephemeris] = Field(None, exclude=True)
     """
 
-    ephemeris: Optional[Ephemeris] = Field(None, exclude=True)
+    ephemeris: Ephemeris | None = Field(None, exclude=True)
     constraints: list[Constraint] = Field([], exclude=True)
-    calculated_constraints: OrderedDict[str, np.typing.NDArray[np.bool_]] = Field(OrderedDict(), exclude=True)
-    entries: list[VisWindow] = []
+    calculated_constraints: OrderedDict[ConstraintType, np.typing.NDArray[np.bool_]] = Field(
+        OrderedDict(), exclude=True
+    )
+    visibility_windows: list[VisibilityWindow] = []
 
     @cached_property
-    def _ephstart(self) -> Optional[int]:
+    def _ephstart(self) -> int | None:
         """
         Returns the ephemeris index of the beginning time.
         """
@@ -80,7 +72,7 @@ class EphemerisVisibility(Visibility):
         return self.ephemeris.index(Time(self.begin))
 
     @cached_property
-    def _ephstop(self) -> Optional[int]:
+    def _ephstop(self) -> int | None:
         """
         Returns the ephemeris index of the stopping time.
         """
@@ -100,7 +92,7 @@ class EphemerisVisibility(Visibility):
             True if successful, False otherwise.
         """
         # Reset windows
-        self.entries = list()
+        self.visibility_windows = list()
 
         # Check if constraints are available
         if self.constraints is None:
@@ -126,9 +118,9 @@ class EphemerisVisibility(Visibility):
         self.inconstraint = np.logical_or.reduce([v for v in self.calculated_constraints.values()])
 
         # Calculate good windows from combined constraints
-        self.entries = self._make_windows()
+        self.visibility_windows = self._make_windows()
 
-    def _constraint(self, index: int) -> str:
+    def _constraint(self, index: int) -> ConstraintType:
         """
         What kind of constraints are in place at a given time index.
 
@@ -147,9 +139,7 @@ class EphemerisVisibility(Visibility):
 
         # Check if index is out of bounds
         if index == self._ephstart - 1 or index >= self._ephstop - 1:
-            return "Window"
+            return ConstraintType.WINDOW
 
         # Return what constraint is causing the window to open/close
-        return next((k for k, v in self.calculated_constraints.items() if v[index]), "Unknown")
-
-        return "Unknown"
+        return next((k for k, v in self.calculated_constraints.items() if v[index]), ConstraintType.UNKNOWN)

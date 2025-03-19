@@ -5,6 +5,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import Constraint, get_slice
 
@@ -29,7 +30,7 @@ class RamConstraint(Constraint):
     """
 
     name: Literal["Ram Direction Constraint"] = "Ram Direction Constraint"
-    short_name: Literal["Ram"] = "Ram"
+    short_name: Literal[ConstraintType.ORBIT_RAM] = ConstraintType.ORBIT_RAM
     min_angle: float | None = None
     max_angle: float | None = None
 

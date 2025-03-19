@@ -1,34 +1,44 @@
 from datetime import datetime
-from typing import Optional
+from enum import Enum
 
 from across.tools.visibility.constraints.base import Constraint
 
 from .base import BaseSchema
 
 
-class VisWindow(BaseSchema):
+class Constraints(BaseSchema):
     """
-    Represents a visibility window.
+    Represents a list of constraints.
 
     Parameters
     ----------
-    begin
-        The beginning of the window.
-    end
-        The end of the window.
-    initial
-        The main constraint that ends at the beginning of the window.
-    final
-        The main constraint that begins at the end of the window.
-    visibility
-        The amount of seconds in the window that the object is visible.
+    constraints
+        List of constraints.
     """
 
-    begin: datetime
-    end: datetime
-    visibility: int
-    initial: str
-    final: str
+    constraint_type: str
+    constraints: list[Constraint]
+
+
+class ConstraintType(str, Enum):
+    """
+    Represents a constraint.
+    """
+
+    SUN = "Sun"
+    MOON = "Moon"
+    EARTH = "Earth"
+    UNKNOWN = "Unknown"
+    WINDOW = "Window"
+    VISIBILITY = "Visibility"
+    DAY = "Day"
+    MOON_PHASE = "Moon Phase"
+    ORBIT_DAY = "Orbit Day"
+    ORBIT_POLE = "Orbit Pole"
+    ORBIT_RAM = "Orbit Ram"
+    ORBIT_SAA = "SAA"
+    AIR_MASS = "Air Mass"
+    ALT_AZ = "Alt/Az"
 
 
 class ConstrainedDate(BaseSchema):
@@ -37,8 +47,8 @@ class ConstrainedDate(BaseSchema):
     """
 
     datetime: datetime
-    constraint: Constraint
-    observatory_id: int
+    constraint: ConstraintType
+    observatory_id: str
 
 
 class Window(BaseSchema):
@@ -53,6 +63,16 @@ class VisibilityWindow(BaseSchema):
 
     window: Window
     max_visibility_duration: int
+    constraint_reason: "ConstraintReason"
+
+
+class ConstraintReason(BaseSchema):
+    """
+    Represents the reasons for constraints.
+    """
+
+    start_reason: str
+    end_reason: str
 
 
 class VisibilitySchema(BaseSchema):
@@ -68,6 +88,6 @@ class VisibilitySchema(BaseSchema):
     """
 
     observatory_id: int
-    min_vis: Optional[int] = None
+    min_vis: int | None = None
     hires: bool = True
-    entries: list[VisWindow] = []
+    entries: list[VisibilityWindow] = []

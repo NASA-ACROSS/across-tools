@@ -7,6 +7,7 @@ from astropy.io.votable import parse_single_table  # type: ignore[import-untyped
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
 
+from ..core.schemas.visibility import ConstraintType
 from .base import Visibility
 
 
@@ -24,7 +25,7 @@ class VOVisibility(Visibility):
         Additional default parameters to include in ObjVisSAP queries, defaults to empty dict.
     Attributes
     ----------
-    entries : list
+    visibility_windows : list[VisibilityWindows]
         List of VisWindow objects representing visibility periods.
     Methods
     -------
@@ -43,11 +44,11 @@ class VOVisibility(Visibility):
     objvissap_url: str = Field(..., exclude=True)
     objvissap_default_params: dict[str, Any] = Field({}, exclude=True)
 
-    def _constraint(self, index: int) -> str:
+    def _constraint(self, index: int) -> ConstraintType:
         """
         For a given index, return the constraint at that time.
         """
-        return "Visibility"
+        return ConstraintType.VISIBILITY
 
     def prepare_data(self) -> None:
         """
@@ -67,7 +68,7 @@ class VOVisibility(Visibility):
         Returns
         -------
         None
-            Results are stored in self.entries as VisWindow objects
+            Results are stored in self.visibility_windows as VisWindow objects
 
 
         Notes
