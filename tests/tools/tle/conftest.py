@@ -1,8 +1,11 @@
 from collections.abc import Generator
+from datetime import datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+from across.tools.tle.tle import TLEFetch
 
 
 @pytest.fixture
@@ -30,3 +33,15 @@ def valid_tle_data(valid_spacetrack_tle_response: str) -> dict[str, Any]:
         "tle1": valid_spacetrack_tle_response.split("\n")[0],
         "tle2": valid_spacetrack_tle_response.split("\n")[1],
     }
+
+
+@pytest.fixture
+def tle_fetch_object() -> Generator[TLEFetch]:
+    """Example TLEFetch object."""
+    yield TLEFetch(
+        norad_id=25544,
+        epoch=datetime(2008, 9, 20),
+        satellite_name="ISS",
+        spacetrack_user="user",
+        spacetrack_pwd="pass",
+    )

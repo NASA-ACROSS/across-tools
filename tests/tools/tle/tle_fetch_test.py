@@ -13,21 +13,25 @@ from across.tools.tle.tle import TLEFetch, get_tle
 class TestTLEFetch:
     """Test suite for the TLEFetch class."""
 
-    def test_init_with_credentials(self) -> None:
-        """Test TLEFetch initialization with credentials."""
-        tle_fetch = TLEFetch(
-            norad_id=25544,
-            epoch=datetime(2008, 9, 20),
-            satellite_name="ISS",
-            spacetrack_user="user",
-            spacetrack_pwd="pass",
-        )
+    def test_init_norad_id(self, tle_fetch_object: TLEFetch) -> None:
+        """Test TLEFetch initialization norad_id."""
+        assert tle_fetch_object.norad_id == 25544
 
-        assert tle_fetch.norad_id == 25544
-        assert tle_fetch.epoch == datetime(2008, 9, 20)
-        assert tle_fetch.satellite_name == "ISS"
-        assert tle_fetch.spacetrack_user == "user"
-        assert tle_fetch.spacetrack_pwd == "pass"
+    def test_init_epoch(self, tle_fetch_object: TLEFetch) -> None:
+        """Test TLEFetch initialization epoch."""
+        assert tle_fetch_object.epoch == datetime(2008, 9, 20)
+
+    def test_init_satellite_name(self, tle_fetch_object: TLEFetch) -> None:
+        """Test TLEFetch initialization satellite_name."""
+        assert tle_fetch_object.satellite_name == "ISS"
+
+    def test_init_spacetrack_user(self, tle_fetch_object: TLEFetch) -> None:
+        """Test TLEFetch initialization spacetrack_user."""
+        assert tle_fetch_object.spacetrack_user == "user"
+
+    def test_init_spacetrack_pwd(self, tle_fetch_object: TLEFetch) -> None:
+        """Test TLEFetch initialization spacetrack_pwd."""
+        assert tle_fetch_object.spacetrack_pwd == "pass"
 
     @patch.dict("os.environ", {"SPACETRACK_USER": "env_user", "SPACETRACK_PWD": "env_pass"})
     def test_init_with_env_vars(self) -> None:
@@ -37,23 +41,39 @@ class TestTLEFetch:
         assert tle_fetch.spacetrack_user == "env_user"
         assert tle_fetch.spacetrack_pwd == "env_pass"
 
-    def test_get_success(self, mock_spacetrack: MagicMock, valid_spacetrack_tle_response: str) -> None:
-        """Test TLEFetch get method with a successful response."""
+    def test_get_returns_tle_instance(
+        self, mock_spacetrack: MagicMock, valid_spacetrack_tle_response: str, tle_fetch_object: TLEFetch
+    ) -> None:
+        """Test TLEFetch get method returns TLE instance."""
         mock_client = MagicMock()
         mock_client.tle.return_value = valid_spacetrack_tle_response
         mock_spacetrack.return_value.__enter__.return_value = mock_client
 
-        tle_fetch = TLEFetch(
-            norad_id=25544,
-            epoch=datetime(2008, 9, 20),
-            satellite_name="ISS",
-            spacetrack_user="user",
-            spacetrack_pwd="pass",
-        )
-
-        result = tle_fetch.get()
+        result = tle_fetch_object.get()
         assert isinstance(result, TLE)
+
+    def test_get_returns_correct_norad_id(
+        self, mock_spacetrack: MagicMock, valid_spacetrack_tle_response: str, tle_fetch_object: TLEFetch
+    ) -> None:
+        """Test TLEFetch get method returns correct norad_id."""
+        mock_client = MagicMock()
+        mock_client.tle.return_value = valid_spacetrack_tle_response
+        mock_spacetrack.return_value.__enter__.return_value = mock_client
+
+        result = tle_fetch_object.get()
+        assert result is not None
         assert result.norad_id == 25544
+
+    def test_get_returns_correct_satellite_name(
+        self, mock_spacetrack: MagicMock, valid_spacetrack_tle_response: str, tle_fetch_object: TLEFetch
+    ) -> None:
+        """Test TLEFetch get method returns correct satellite name."""
+        mock_client = MagicMock()
+        mock_client.tle.return_value = valid_spacetrack_tle_response
+        mock_spacetrack.return_value.__enter__.return_value = mock_client
+
+        result = tle_fetch_object.get()
+        assert result is not None
         assert result.satellite_name == "ISS"
 
     def test_get_empty_response(self, mock_spacetrack: MagicMock) -> None:
@@ -101,8 +121,10 @@ class TestTLEFetch:
 class TestGetTLE:
     """Test suite for the get_tle function."""
 
-    def test_get_tle_success(self, mock_spacetrack: MagicMock, valid_spacetrack_tle_response: str) -> None:
-        """Test successful TLE retrieval"""
+    def test_get_tle_returns_tle_instance(
+        self, mock_spacetrack: MagicMock, valid_spacetrack_tle_response: str
+    ) -> None:
+        """Test get_tle returns TLE instance"""
         mock_client = MagicMock()
         mock_client.tle.return_value = valid_spacetrack_tle_response
         mock_spacetrack.return_value.__enter__.return_value = mock_client
