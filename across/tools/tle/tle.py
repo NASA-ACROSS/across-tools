@@ -80,7 +80,7 @@ class TLEFetch:
         self.spacetrack_user = spacetrack_user or os.getenv("SPACETRACK_USER")
         self.spacetrack_pwd = spacetrack_pwd or os.getenv("SPACETRACK_PWD")
 
-    async def read_tle_space_track_async(self) -> TLE | None:
+    async def get_async(self) -> TLE | None:
         """
         Read TLE from Space-Track.org.
 
@@ -144,7 +144,7 @@ class TLEFetch:
         tles.sort(key=lambda x: abs(x.epoch - self.epoch))
         return tles[0]
 
-    def read_tle_space_track(self) -> TLE | None:
+    def get(self) -> TLE | None:
         """
         Read TLE from Space-Track.org.
 
@@ -246,7 +246,7 @@ def get_tle(
     tle = TLEFetch(
         norad_id=norad_id, epoch=epoch, spacetrack_user=spacetrack_user, spacetrack_pwd=spacetrack_pwd
     )
-    return tle.read_tle_space_track()
+    return tle.get()
 
 
 async def get_tle_async(
@@ -287,4 +287,4 @@ async def get_tle_async(
     tle = TLEFetch(
         norad_id=norad_id, epoch=epoch, spacetrack_user=spacetrack_user, spacetrack_pwd=spacetrack_pwd
     )
-    return await tle.read_tle_space_track_async()
+    return await tle.get_async()
