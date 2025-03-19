@@ -157,9 +157,9 @@ def get_tle(
     epoch : datetime
         The epoch timestamp for which to retrieve the TLE data.
     spacetrack_user : str, optional
-        Space-Track.org username.
+        space-Track.org username.
     spacetrack_pwd : str, optional
-        Space-Track.org password.
+        space-Track.org password.
 
     Returns
     -------
@@ -169,10 +169,8 @@ def get_tle(
 
     Raises
     ------
-    TLEFetchError
-        If unable to retrieve TLE data from Space-Track.org.
     AuthenticationError
-        If Space-Track.org authentication fails.
+        If space-Track.org authentication fails.
     """
 
     tle = TLEFetch(
