@@ -24,6 +24,7 @@ dependencies = [
     "spiceypy>=6.0.0",
     "httpx",
     "spacetrack",
+    "pydantic_settings",
 ]
 
 [project.urls]

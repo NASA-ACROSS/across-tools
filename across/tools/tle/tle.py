@@ -3,13 +3,13 @@
 # All Rights Reserved.
 
 
-import os
 from datetime import datetime, timedelta
 from typing import Optional
 
 from httpx import HTTPStatusError
 from spacetrack import AuthenticationError, SpaceTrackClient  # type: ignore[import-untyped]
 
+from ..core.config import config
 from ..core.schemas.tle import TLE
 from .exceptions import SpaceTrackAuthenticationError
 
@@ -44,16 +44,6 @@ class TLEFetch:
     -------
     get
         Get TLEs for given epoch
-    tle_out_of_date
-        Check if the given TLE is out of date
-    read_tle_web
-        Read TLE from dedicated weblink
-    read_tle_concat
-        Read TLEs in the concatenated format
-    read_tle_db
-        Read the best TLE for a given epoch from the local database of TLEs
-    write_tle_db
-        Write a TLE to the database
     """
 
     # Configuration parameters
@@ -74,8 +64,8 @@ class TLEFetch:
         self.norad_id = norad_id
         self.epoch = epoch
         self.satellite_name = satellite_name
-        self.spacetrack_user = spacetrack_user or os.getenv("SPACETRACK_USER")
-        self.spacetrack_pwd = spacetrack_pwd or os.getenv("SPACETRACK_PWD")
+        self.spacetrack_user = spacetrack_user or config.SPACETRACK_USER
+        self.spacetrack_pwd = spacetrack_pwd or config.SPACETRACK_PWD
 
     def get(self) -> Optional[TLE]:
         """
@@ -130,8 +120,8 @@ class TLEFetch:
             TLE(
                 satellite_name=self.satellite_name,
                 norad_id=self.norad_id,
-                tle1=tletext[i].strip(),
-                tle2=tletext[i + 1].strip(),
+                tle1=tletext[i],
+                tle2=tletext[i + 1],
             )
             for i in range(0, len(tletext), 2)
         ]

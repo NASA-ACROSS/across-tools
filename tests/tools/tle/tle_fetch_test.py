@@ -33,12 +33,16 @@ class TestTLEFetch:
         """Test TLEFetch initialization spacetrack_pwd."""
         assert tle_fetch_object.spacetrack_pwd == "pass"
 
-    @patch.dict("os.environ", {"SPACETRACK_USER": "env_user", "SPACETRACK_PWD": "env_pass"})
+    @patch("across.tools.core.config.config.SPACETRACK_PWD", "env_pass")
+    @patch("across.tools.core.config.config.SPACETRACK_USER", "env_user")
+    @patch.dict("os.environ", {"SPACETRACK_USER": "env_user", "SPACETRACK_PWD": "env_pass"}, clear=True)
     def test_init_with_env_vars_user(self) -> None:
         """Test TLEFetch initialization with environment variable user."""
         tle_fetch = TLEFetch(norad_id=25544, epoch=datetime(2008, 9, 20))
         assert tle_fetch.spacetrack_user == "env_user"
 
+    @patch("across.tools.core.config.config.SPACETRACK_PWD", "env_pass")
+    @patch("across.tools.core.config.config.SPACETRACK_USER", "env_user")
     @patch.dict("os.environ", {"SPACETRACK_USER": "env_user", "SPACETRACK_PWD": "env_pass"})
     def test_init_with_env_vars_pwd(self) -> None:
         """Test TLEFetch initialization with environment variable password."""
