@@ -48,10 +48,7 @@ class WavelengthBandPass(BaseBandpass):
         """
         Validates the min and max values of the wavelength bandpass and calculates the central wavelength
         and bandwidth if they are not provided. Also ensures the values are positive and that the max
-        wavelength is greater than the min wavelength.
-
-        Args:
-            __context (Any): The context during model initialization, which may contain additional data.
+        wavelength is greater than the min wavelength. Lastly, it converts the units to angstroms.
 
         Raises:
             ValueError: If the min/max values are invalid or if the calculated values for central wavelength
@@ -106,9 +103,6 @@ class EnergyBandpass(BaseBandpass):
         """
         Validates that the min and max energy values are positive.
 
-        Args:
-            __context (Any): The context during model initialization, which may contain additional data.
-
         Raises:
             ValueError: If the min or max energy values are not defined or are non-positive.
         """
@@ -141,9 +135,6 @@ class FrequencyBandpass(BaseBandpass):
         """
         Validates that the min and max frequency values are positive.
 
-        Args:
-            __context (Any): The context during model initialization, which may contain additional data.
-
         Raises:
             ValueError: If the min or max frequency values are not defined or are non-positive.
         """
@@ -158,19 +149,16 @@ def convert_to_wave(bandpass: EnergyBandpass | FrequencyBandpass) -> WavelengthB
     """
     Converts a given EnergyBandpass or FrequencyBandpass to a WavelengthBandPass.
 
-    This conversion switches the min and max values as they are inverse when relating to the
-    corresponding wavelengths. The resulting WavelengthBandPass will have values in Angstroms.
-
     Args:
-        bandpass (EnergyBandpass | FrequencyBandpass): The bandpass filter in energy or frequency domain to
-        convert.
+        bandpass (EnergyBandpass | FrequencyBandpass): The bandpass filter in energy or frequency domain.
 
     Returns:
         WavelengthBandPass: The corresponding bandpass filter in the wavelength domain.
 
     Important Note:
-        When converting from Energy/Frequency to wavelength, the min and max values are inverted
-        in relation to their corresponding wavelengths. Thus, their values are switched during conversion.
+        When converting from Energy/Frequency to wavelength, the min/max values are inverted
+        in relation to their corresponding wavelengths. Thus, the min/max values are switched during
+        conversion.
     """
     bandpass_min_to_angstrom = (
         (bandpass.max * u.Unit(bandpass.unit.value))
