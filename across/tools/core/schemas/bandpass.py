@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 from astropy import units as u  # type: ignore[import-untyped]
 
@@ -145,7 +145,7 @@ class FrequencyBandpass(BaseBandpass):
             raise ValueError("Frequency values must be positive.")
 
 
-def convert_to_wave(bandpass: EnergyBandpass | FrequencyBandpass) -> WavelengthBandPass:
+def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> WavelengthBandPass:
     """
     Converts a given EnergyBandpass or FrequencyBandpass to a WavelengthBandPass.
 
