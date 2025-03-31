@@ -3,7 +3,7 @@ from enum import Enum
 
 class FrequencyUnit(str, Enum):
     """
-    Enum to represent the bandpass energy types
+    Enum to represent the bandpass frequency types
     """
 
     Hz = "Hz"

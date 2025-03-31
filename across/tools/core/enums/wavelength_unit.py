@@ -3,7 +3,7 @@ from enum import Enum
 
 class WavelengthUnit(str, Enum):
     """
-    Enum to represent the astronomical depth types
+    Enum to represent the bandpass wavelength
     """
 
     Nanometer = "nm"

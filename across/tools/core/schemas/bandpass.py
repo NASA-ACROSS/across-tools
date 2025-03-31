@@ -11,12 +11,12 @@ class BaseBandpass(BaseSchema):
     A base class for defining bandpass filters with a specified range.
 
     Attributes:
-        filter_name (str | None): The name of the filter, if provided.
+        filter_name (str): The name of the filter, if provided.
         min (float | None): The minimum value of the bandpass range.
         max (float | None): The maximum value of the bandpass range.
     """
 
-    filter_name: str | None = None
+    filter_name: str = ""
     min: float | None = None
     max: float | None = None
 
