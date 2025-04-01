@@ -87,14 +87,16 @@ class TLEFetch:
         epoch_stop = self.epoch + timedelta(days=7)
 
         # Log into space-track.org
-        with SpaceTrackClient(identity=self.spacetrack_user, password=self.spacetrack_pwd) as st:
+        with SpaceTrackClient(
+            identity=self.spacetrack_user, password=self.spacetrack_pwd
+        ) as spacetrack_client:
             try:
-                st.authenticate()
+                spacetrack_client.authenticate()
             except (AuthenticationError, HTTPStatusError) as e:
                 raise SpaceTrackAuthenticationError("space-track.org authentication failed.") from e
 
             # Fetch the TLEs between the requested epochs
-            tletext = st.tle(
+            tletext = spacetrack_client.tle(
                 norad_cat_id=self.norad_id,
                 orderby="epoch desc",
                 limit=22,
