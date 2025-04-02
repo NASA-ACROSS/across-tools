@@ -42,9 +42,9 @@ class TLE(TLEBase):
 
     Parameters
     ----------
-    norid : int
+    norad_id : int
         The NORAD Catalog Number (SATCAT) that uniquely identifies the satellite
-    satname : str
+    satellite_name : str
         The name of the satellite (used as Partition Key)
     tle1 : str
         First line of the TLE, must be exactly 69 characters
@@ -65,13 +65,6 @@ class TLE(TLEBase):
     ...     tle1="1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ...     tle2="2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537"
     ... )
-
-    satname: str  # Partition Key
-    tle1: str = Field(min_length=69, max_length=69)
-    tle2: str = Field(min_length=69, max_length=69)
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
     """
 
     epoch: datetime = datetime(2000, 1, 1)
