@@ -3,7 +3,8 @@ from typing import Optional
 import numpy as np
 import pytest
 
-from across.tools import bandpass, enums
+from across.tools import EnergyBandpass, FrequencyBandpass, WavelengthBandPass, convert_to_wave, enums
+from across.tools.core.schemas.exceptions import BandwidthValueError, MinMaxValueError
 
 
 class TestBandpassSchema:
@@ -19,7 +20,8 @@ class TestBandpassSchema:
         @pytest.mark.parametrize(
             "min, max",
             [
-                (None, None),
+                (None, 1),
+                (1, None),
                 (-1, 1),
                 (1, -1),
                 (2, 1),
@@ -33,12 +35,12 @@ class TestBandpassSchema:
                 Should raise ValueError when max < 0
                 Should raise ValueError when min > max
             """
-            with pytest.raises(ValueError):
-                bandpass.WavelengthBandPass(min=min, max=max, unit=enums.WavelengthUnit.Angstrom)
+            with pytest.raises(MinMaxValueError):
+                WavelengthBandPass(min=min, max=max, unit=enums.WavelengthUnit.ANGSTROM)
 
         @pytest.mark.parametrize(
             "central_wavelength, bandwidth",
-            [(None, None), (-1, 1), (1, -1)],
+            [(None, None), (None, 1), (1, None), (-1, 1), (1, -1)],
         )
         def test_should_throw_value_error_central_wavelength_bandwidth(
             self, central_wavelength: Optional[float], bandwidth: Optional[float]
@@ -49,20 +51,20 @@ class TestBandpassSchema:
                 Should raise ValueError when central_wavelength < 0
                 Should raise ValueError when bandwidth < 0
             """
-            with pytest.raises(ValueError):
-                bandpass.WavelengthBandPass(
+            with pytest.raises(BandwidthValueError):
+                WavelengthBandPass(
                     central_wavelength=central_wavelength,
                     bandwidth=bandwidth,
-                    unit=enums.WavelengthUnit.Angstrom,
+                    unit=enums.WavelengthUnit.ANGSTROM,
                 )
 
         @pytest.mark.parametrize(
             "min, max, unit, central_wavelength, bandwidth",
             [
-                (5000.0, 6000.0, enums.WavelengthUnit.Angstrom, 5500.0, 500.0),
-                (500, 600, enums.WavelengthUnit.Nanometer, 5500, 500),
-                (0.5, 0.6, enums.WavelengthUnit.Micron, 5500, 500),
-                (0.0005, 0.0006, enums.WavelengthUnit.Millimeter, 5500, 500),
+                (5000.0, 6000.0, enums.WavelengthUnit.ANGSTROM, 5500.0, 500.0),
+                (500, 600, enums.WavelengthUnit.NANOMETER, 5500, 500),
+                (0.5, 0.6, enums.WavelengthUnit.MICRON, 5500, 500),
+                (0.0005, 0.0006, enums.WavelengthUnit.MILLIMETER, 5500, 500),
             ],
         )
         def test_should_convert_min_max_to_correct_central_wavelength_bandwidth(
@@ -77,7 +79,7 @@ class TestBandpassSchema:
             Parameterized test that confirms whether or not WavelengthBandpass converts
             the appropriate min max to central wavelength and bandpass.
             """
-            wavelength_bandpass = bandpass.WavelengthBandPass(min=min, max=max, unit=unit)
+            wavelength_bandpass = WavelengthBandPass(min=min, max=max, unit=unit)
             assert all(
                 [
                     np.isclose(wavelength_bandpass.central_wavelength, central_wavelength, 0.001),  # type:ignore
@@ -94,6 +96,8 @@ class TestBandpassSchema:
             "min, max",
             [
                 (None, None),
+                (None, 1),
+                (1, None),
                 (-1, 1),
                 (1, -1),
             ],
@@ -105,8 +109,8 @@ class TestBandpassSchema:
                 Should raise ValueError when min < 0
                 Should raise ValueError when max < 0
             """
-            with pytest.raises(ValueError):
-                bandpass.EnergyBandpass(min=min, max=max, unit=enums.EnergyUnit.eV)
+            with pytest.raises(MinMaxValueError):
+                EnergyBandpass(min=min, max=max, unit=enums.EnergyUnit.eV)
 
     class TestFrequencyBandpass:
         """
@@ -117,6 +121,8 @@ class TestBandpassSchema:
             "min, max",
             [
                 (None, None),
+                (None, 1),
+                (1, None),
                 (-1, 1),
                 (1, -1),
             ],
@@ -128,8 +134,8 @@ class TestBandpassSchema:
                 Should raise ValueError when min < 0
                 Should raise ValueError when max < 0
             """
-            with pytest.raises(ValueError):
-                bandpass.FrequencyBandpass(min=min, max=max, unit=enums.FrequencyUnit.Hz)
+            with pytest.raises(MinMaxValueError):
+                FrequencyBandpass(min=min, max=max, unit=enums.FrequencyUnit.Hz)
 
     class TestConvertToWave:
         """
@@ -153,8 +159,8 @@ class TestBandpassSchema:
             Parameterized test that confirms that the convert_to_wave method
             converts Energy min/max to appropriate Wavelength min/max
             """
-            energy_bandpass = bandpass.EnergyBandpass(min=min, max=max, unit=unit)
-            wavelength_bandpass = bandpass.convert_to_wave(energy_bandpass)
+            energy_bandpass = EnergyBandpass(min=min, max=max, unit=unit)
+            wavelength_bandpass = convert_to_wave(energy_bandpass)
             assert all(
                 [
                     np.isclose(wavelength_bandpass.min, min_wave),  # type:ignore
@@ -179,8 +185,8 @@ class TestBandpassSchema:
             Parameterized test that confirms that the convert_to_wave method
             converts Frequency min/max to appropriate Wavelength min/max
             """
-            energy_bandpass = bandpass.FrequencyBandpass(min=min, max=max, unit=unit)
-            wavelength_bandpass = bandpass.convert_to_wave(energy_bandpass)
+            energy_bandpass = FrequencyBandpass(min=min, max=max, unit=unit)
+            wavelength_bandpass = convert_to_wave(energy_bandpass)
             assert all(
                 [
                     np.isclose(wavelength_bandpass.min, min_wave),  # type:ignore

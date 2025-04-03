@@ -4,6 +4,7 @@ from astropy import units as u  # type: ignore[import-untyped]
 
 from ..enums import EnergyUnit, FrequencyUnit, WavelengthUnit
 from .base import BaseSchema
+from .exceptions import BandwidthValueError, MinMaxValueError
 
 
 class BaseBandpass(BaseSchema):
@@ -54,31 +55,40 @@ class WavelengthBandPass(BaseBandpass):
             ValueError: If the min/max values are invalid or if the calculated values for central wavelength
                         or bandwidth are non-positive.
         """
+        if (self.min and not self.max) or (self.max and not self.min):
+            raise MinMaxValueError("Both min and max must be defined.")
+
         if self.min and self.max:
             if self.max < self.min:
-                raise ValueError("Max wavelength cannot be less than min wavelength.")
+                raise MinMaxValueError("Max wavelength cannot be less than min wavelength.")
 
             if not all([self.min > 0, self.max > 0]):
-                raise ValueError("Wavelength values must be positive.")
+                raise MinMaxValueError("Wavelength values must be positive.")
 
             self.bandwidth = 0.5 * (self.max - self.min)
             self.central_wavelength = self.min + self.bandwidth
 
         if not (self.central_wavelength and self.bandwidth):
-            raise ValueError("Both central wavelength and bandwidth must be defined.")
+            raise BandwidthValueError("Both central wavelength and bandwidth must be defined.")
 
         if not all([self.central_wavelength > 0, self.bandwidth > 0]):
-            raise ValueError("Central wavelength and bandwidth must be positive.")
+            raise BandwidthValueError("Central wavelength and bandwidth must be positive.")
 
         self.bandwidth = (
-            (self.bandwidth * u.Unit(self.unit.value)).to(u.Unit(WavelengthUnit.Angstrom.value)).value
+            (self.bandwidth * u.Unit(self.unit.value)).to(u.Unit(WavelengthUnit.ANGSTROM.value)).value
         )
 
         self.central_wavelength = (
             (self.central_wavelength * u.Unit(self.unit.value))
-            .to(u.Unit(WavelengthUnit.Angstrom.value))
+            .to(u.Unit(WavelengthUnit.ANGSTROM.value))
             .value
         )
+
+        self.min = self.central_wavelength - (self.bandwidth)  # type: ignore
+
+        self.max = self.central_wavelength + (self.bandwidth)  # type: ignore
+
+        self.unit = WavelengthUnit.ANGSTROM
 
 
 class EnergyBandpass(BaseBandpass):
@@ -107,10 +117,10 @@ class EnergyBandpass(BaseBandpass):
             ValueError: If the min or max energy values are not defined or are non-positive.
         """
         if not (self.min and self.max):
-            raise ValueError("Both min and max energy values must be defined.")
+            raise MinMaxValueError("Both min and max energy values must be defined.")
 
         if not all([self.min > 0, self.max > 0]):
-            raise ValueError("Energy values must be positive.")
+            raise MinMaxValueError("Energy values must be positive.")
 
 
 class FrequencyBandpass(BaseBandpass):
@@ -139,10 +149,10 @@ class FrequencyBandpass(BaseBandpass):
             ValueError: If the min or max frequency values are not defined or are non-positive.
         """
         if not (self.min and self.max):
-            raise ValueError("Both min and max frequency values must be defined.")
+            raise MinMaxValueError("Both min and max frequency values must be defined.")
 
         if not all([self.min > 0, self.max > 0]):
-            raise ValueError("Frequency values must be positive.")
+            raise MinMaxValueError("Frequency values must be positive.")
 
 
 def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> WavelengthBandPass:
@@ -160,21 +170,21 @@ def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> Wavel
         in relation to their corresponding wavelengths. Thus, the min/max values are switched during
         conversion.
     """
-    bandpass_min_to_angstrom = (
+    bandpass_min_angstrom = (
         (bandpass.max * u.Unit(bandpass.unit.value))
-        .to(u.Unit(WavelengthUnit.Angstrom.value), equivalencies=u.spectral())
+        .to(u.Unit(WavelengthUnit.ANGSTROM.value), equivalencies=u.spectral())
         .value
     )
 
-    bandpass_max_to_angstrom = (
+    bandpass_max_angstrom = (
         (bandpass.min * u.Unit(bandpass.unit.value))
-        .to(u.Unit(WavelengthUnit.Angstrom.value), equivalencies=u.spectral())
+        .to(u.Unit(WavelengthUnit.ANGSTROM.value), equivalencies=u.spectral())
         .value
     )
 
     return WavelengthBandPass(
-        min=bandpass_min_to_angstrom,
-        max=bandpass_max_to_angstrom,
-        unit=WavelengthUnit.Angstrom,
+        min=bandpass_min_angstrom,
+        max=bandpass_max_angstrom,
+        unit=WavelengthUnit.ANGSTROM,
         filter_name=bandpass.filter_name,
     )

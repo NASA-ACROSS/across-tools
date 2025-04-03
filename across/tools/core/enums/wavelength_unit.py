@@ -6,7 +6,7 @@ class WavelengthUnit(str, Enum):
     Enum to represent the bandpass wavelength
     """
 
-    Nanometer = "nm"
-    Angstrom = "angstrom"
-    Micron = "um"
-    Millimeter = "mm"
+    NANOMETER = "nm"
+    ANGSTROM = "angstrom"
+    MICRON = "um"
+    MILLIMETER = "mm"
