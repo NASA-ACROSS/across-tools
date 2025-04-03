@@ -1,4 +1,4 @@
-from .bandpass import EnergyBandpass, FrequencyBandpass, WavelengthBandPass, convert_to_wave
+from .bandpass import EnergyBandpass, FrequencyBandpass, WavelengthBandpass, convert_to_wave
 from .base import BaseSchema
 from .coordinate import Coordinate
 from .healpix_order import HealpixOrder
@@ -12,7 +12,7 @@ __all__ = [
     "RollAngle",
     "HealpixOrder",
     "EnergyBandpass",
-    "WavelengthBandPass",
+    "WavelengthBandpass",
     "FrequencyBandpass",
     "convert_to_wave",
 ]

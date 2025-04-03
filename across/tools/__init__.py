@@ -4,7 +4,7 @@ from .core.schemas import (
     EnergyBandpass,
     FrequencyBandpass,
     Polygon,
-    WavelengthBandPass,
+    WavelengthBandpass,
     convert_to_wave,
 )
 from .footprint import Footprint, inner, outer, union
@@ -15,7 +15,7 @@ __all__ = [
     "Footprint",
     "FrequencyBandpass",
     "Polygon",
-    "WavelengthBandPass",
+    "WavelengthBandpass",
     "convert_to_wave",
     "enums",
     "inner",

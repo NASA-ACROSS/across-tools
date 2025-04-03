@@ -22,7 +22,7 @@ class BaseBandpass(BaseSchema):
     max: Optional[float] = None
 
 
-class WavelengthBandPass(BaseBandpass):
+class WavelengthBandpass(BaseBandpass):
     """
     A class representing a bandpass filter defined in terms of wavelength.
 
@@ -155,7 +155,7 @@ class FrequencyBandpass(BaseBandpass):
             raise MinMaxValueError("Frequency values must be positive.")
 
 
-def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> WavelengthBandPass:
+def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> WavelengthBandpass:
     """
     Converts a given EnergyBandpass or FrequencyBandpass to a WavelengthBandPass.
 
@@ -182,7 +182,7 @@ def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> Wavel
         .value
     )
 
-    return WavelengthBandPass(
+    return WavelengthBandpass(
         min=bandpass_min_angstrom,
         max=bandpass_max_angstrom,
         unit=WavelengthUnit.ANGSTROM,

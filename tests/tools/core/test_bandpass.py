@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import pytest
 
-from across.tools import EnergyBandpass, FrequencyBandpass, WavelengthBandPass, convert_to_wave, enums
+from across.tools import EnergyBandpass, FrequencyBandpass, WavelengthBandpass, convert_to_wave, enums
 from across.tools.core.schemas.exceptions import BandwidthValueError, MinMaxValueError
 
 
@@ -36,7 +36,7 @@ class TestBandpassSchema:
                 Should raise ValueError when min > max
             """
             with pytest.raises(MinMaxValueError):
-                WavelengthBandPass(min=min, max=max, unit=enums.WavelengthUnit.ANGSTROM)
+                WavelengthBandpass(min=min, max=max, unit=enums.WavelengthUnit.ANGSTROM)
 
         @pytest.mark.parametrize(
             "central_wavelength, bandwidth",
@@ -52,7 +52,7 @@ class TestBandpassSchema:
                 Should raise ValueError when bandwidth < 0
             """
             with pytest.raises(BandwidthValueError):
-                WavelengthBandPass(
+                WavelengthBandpass(
                     central_wavelength=central_wavelength,
                     bandwidth=bandwidth,
                     unit=enums.WavelengthUnit.ANGSTROM,
@@ -79,7 +79,7 @@ class TestBandpassSchema:
             Parameterized test that confirms whether or not WavelengthBandpass converts
             the appropriate min max to central wavelength and bandpass.
             """
-            wavelength_bandpass = WavelengthBandPass(min=min, max=max, unit=unit)
+            wavelength_bandpass = WavelengthBandpass(min=min, max=max, unit=unit)
             assert all(
                 [
                     np.isclose(wavelength_bandpass.central_wavelength, central_wavelength, 0.001),  # type:ignore
