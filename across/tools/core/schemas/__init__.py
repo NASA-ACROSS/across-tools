@@ -1,7 +1,18 @@
+from .bandpass import EnergyBandpass, FrequencyBandpass, WavelengthBandpass, convert_to_wave
 from .base import BaseSchema
 from .coordinate import Coordinate
 from .healpix_order import HealpixOrder
 from .polygon import Polygon
 from .roll_angle import RollAngle
 
-__all__ = ["Coordinate", "Polygon", "BaseSchema", "RollAngle", "HealpixOrder"]
+__all__ = [
+    "Coordinate",
+    "Polygon",
+    "BaseSchema",
+    "RollAngle",
+    "HealpixOrder",
+    "EnergyBandpass",
+    "WavelengthBandpass",
+    "FrequencyBandpass",
+    "convert_to_wave",
+]
