@@ -42,6 +42,7 @@ class WavelengthBandpass(BaseBandpass):
 
     type: Literal["WAVELENGTH"] = "WAVELENGTH"
     central_wavelength: Optional[float] = None
+    peak_wavelength: Optional[float] = None
     bandwidth: Optional[float] = None
     unit: WavelengthUnit
 
