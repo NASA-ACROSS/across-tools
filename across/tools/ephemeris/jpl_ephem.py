@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
 
 import astropy.units as u  # type: ignore[import-untyped]
 import astroquery.jplhorizons as jpl  # type: ignore[import-untyped]
@@ -60,14 +59,14 @@ class JPLEphemeris(Ephemeris):
     """
 
     # NAIF ID of object for JPL Horizons or Spice Kernel
-    naif_id: Optional[int] = None
+    naif_id: int | None = None
 
     def __init__(
         self,
-        begin: Union[datetime, Time],
-        end: Union[datetime, Time],
-        step_size: Union[int, TimeDelta, timedelta] = 60,
-        naif_id: Optional[int] = None,
+        begin: datetime | Time,
+        end: datetime | Time,
+        step_size: int | TimeDelta | timedelta = 60,
+        naif_id: int | None = None,
     ) -> None:
         super().__init__(begin, end, step_size)
         self.naif_id = naif_id
@@ -119,9 +118,9 @@ class JPLEphemeris(Ephemeris):
 
 
 def compute_jpl_ephemeris(
-    begin: Union[datetime, Time],
-    end: Union[datetime, Time],
-    step_size: Union[int, timedelta, TimeDelta],
+    begin: datetime | Time,
+    end: datetime | Time,
+    step_size: int | timedelta | TimeDelta,
     naif_id: int,
 ) -> Ephemeris:
     """

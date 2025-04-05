@@ -26,7 +26,7 @@ def outer(footprints: list[Footprint], order: int = 10) -> list[int]:
         total_pixels.extend(footprint.query_pixels(order=order))
 
     duplicates = find_duplicates(total_pixels)
-    outer_pixels = list(set([x for x in total_pixels if x not in duplicates]))
+    outer_pixels = list({x for x in total_pixels if x not in duplicates})
 
     return outer_pixels
 

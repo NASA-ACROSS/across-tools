@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pytest
 
@@ -27,7 +25,7 @@ class TestBandpassSchema:
                 (2, 1),
             ],
         )
-        def test_should_throw_value_error_min_max(self, min: Optional[float], max: Optional[float]) -> None:
+        def test_should_throw_value_error_min_max(self, min: float | None, max: float | None) -> None:
             """
             Parameterized tests that validate bad instantiations for WavelengthBandpass.
                 Should raise ValueError when min=None, max=None
@@ -43,7 +41,7 @@ class TestBandpassSchema:
             [(None, None), (None, 1), (1, None), (-1, 1), (1, -1)],
         )
         def test_should_throw_value_error_central_wavelength_bandwidth(
-            self, central_wavelength: Optional[float], bandwidth: Optional[float]
+            self, central_wavelength: float | None, bandwidth: float | None
         ) -> None:
             """
             Parameterized tests that validate bad instantiations for WavelengthBandpass.
@@ -102,7 +100,7 @@ class TestBandpassSchema:
                 (1, -1),
             ],
         )
-        def test_should_throw_value_error_min_max(self, min: Optional[float], max: Optional[float]) -> None:
+        def test_should_throw_value_error_min_max(self, min: float | None, max: float | None) -> None:
             """
             Parameterized tests that validate bad instantiations for EnergyBandpass.
                 Should raise ValueError when min=None, max=None
@@ -127,7 +125,7 @@ class TestBandpassSchema:
                 (1, -1),
             ],
         )
-        def test_should_throw_value_error_min_max(self, min: Optional[float], max: Optional[float]) -> None:
+        def test_should_throw_value_error_min_max(self, min: float | None, max: float | None) -> None:
             """
             Parameterized tests that validate bad instantiations for FrequencyBandpass.
                 Should raise ValueError when min=None, max=None

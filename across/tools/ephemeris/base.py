@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import Optional, Union
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -91,9 +90,9 @@ class Ephemeris(ABC):
     moon: SkyCoord
     sun: SkyCoord
     earth: SkyCoord
-    longitude: Optional[Longitude]
-    latitude: Optional[Latitude]
-    height: Optional[u.Quantity]
+    longitude: Longitude | None
+    latitude: Latitude | None
+    height: u.Quantity | None
     earth_radius_angle: Angle
     moon_radius_angle: Angle
     sun_radius_angle: Angle
@@ -101,9 +100,9 @@ class Ephemeris(ABC):
 
     def __init__(
         self,
-        begin: Union[datetime, Time],
-        end: Union[datetime, Time],
-        step_size: Union[int, TimeDelta, timedelta] = 60,
+        begin: datetime | Time,
+        end: datetime | Time,
+        step_size: int | TimeDelta | timedelta = 60,
     ) -> None:
         # Convert begin and end to astropy Time
         self.begin = begin if isinstance(begin, Time) else Time(begin)

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,8 +20,8 @@ class Config(BaseConfig):
         Space-Track.org password
     """
 
-    SPACETRACK_USER: Optional[str] = None
-    SPACETRACK_PWD: Optional[str] = None
+    SPACETRACK_USER: str | None = None
+    SPACETRACK_PWD: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
