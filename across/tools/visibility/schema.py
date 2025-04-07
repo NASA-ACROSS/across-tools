@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any
 
 from ..core.schemas.base import BaseSchema
 from ..core.schemas.coordinate import DateRangeSchema
@@ -30,7 +30,7 @@ class ObservatoryConstraints(BaseSchema):
     # modified_on: datetime | None = None
     # modified_by: str | None = Field(None, exclude=True)
     objvissap_url: str | None = None
-    objvissap_default_params: Union[dict[str, Any], None] = None
+    objvissap_default_params: dict[str, Any] | None = None
     # Loaded constraints
     constraints: list[
         EarthLimbConstraint

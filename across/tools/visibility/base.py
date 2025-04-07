@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Optional, Union
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -53,10 +52,10 @@ class Visibility(ABC, BaseSchema):
     """
 
     # Parameters
-    ra: Optional[float] = Field(default=None, ge=0, lt=360)
-    dec: Optional[float] = Field(default=None, ge=-90, le=90)
+    ra: float | None = Field(default=None, ge=0, lt=360)
+    dec: float | None = Field(default=None, ge=-90, le=90)
     step_size: TimeDelta = TimeDelta(60 * u.s)
-    skycoord: Optional[SkyCoord] = Field(default=None, exclude=True)
+    skycoord: SkyCoord | None = Field(default=None, exclude=True)
     begin: Time
     end: Time
     min_vis: int = 0
@@ -64,16 +63,14 @@ class Visibility(ABC, BaseSchema):
     observatory_name: str
 
     # Computed values
-    timestamp: Optional[Time] = None
+    timestamp: Time | None = None
     inconstraint: np.typing.NDArray[np.bool_] = Field(default=np.array([]), exclude=True)
-    constraint_windows: Optional[dict[str, list[VisibilityWindow]]] = None
+    constraint_windows: dict[str, list[VisibilityWindow]] | None = None
     visibility_windows: list[VisibilityWindow] = []
 
     @model_validator(mode="before")
     @classmethod
-    def validate_parameters(
-        cls, values: dict[str, Union[float, SkyCoord]]
-    ) -> dict[str, Union[float, SkyCoord]]:
+    def validate_parameters(cls, values: dict[str, float | SkyCoord]) -> dict[str, float | SkyCoord]:
         """
         Validate and synchronize SkyCoord, RA and DEC values.
         This method ensures that both coordinate representations (SkyCoord object and separate RA/DEC values)
