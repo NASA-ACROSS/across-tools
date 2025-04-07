@@ -4,7 +4,6 @@
 
 
 from datetime import datetime, timedelta
-from typing import Optional
 
 from httpx import HTTPStatusError
 from spacetrack import AuthenticationError, SpaceTrackClient  # type: ignore[import-untyped]
@@ -46,19 +45,19 @@ class TLEFetch:
     """
 
     # Configuration parameters
-    satellite_name: Optional[str]
+    satellite_name: str | None
     norad_id: int
     epoch: datetime
-    spacetrack_user: Optional[str]
-    spacetrack_pwd: Optional[str]
+    spacetrack_user: str | None
+    spacetrack_pwd: str | None
 
     def __init__(
         self,
         norad_id: int,
         epoch: datetime,
-        satellite_name: Optional[str] = None,
-        spacetrack_user: Optional[str] = None,
-        spacetrack_pwd: Optional[str] = None,
+        satellite_name: str | None = None,
+        spacetrack_user: str | None = None,
+        spacetrack_pwd: str | None = None,
     ):
         self.norad_id = norad_id
         self.epoch = epoch
@@ -66,7 +65,7 @@ class TLEFetch:
         self.spacetrack_user = spacetrack_user or config.SPACETRACK_USER
         self.spacetrack_pwd = spacetrack_pwd or config.SPACETRACK_PWD
 
-    def get(self) -> Optional[TLE]:
+    def get(self) -> TLE | None:
         """
         Return TLE epoch closest to the requested epoch, within +/- 7 days. If
         no TLE data is found, return None.
@@ -130,9 +129,9 @@ class TLEFetch:
 def get_tle(
     norad_id: int,
     epoch: datetime,
-    spacetrack_user: Optional[str] = None,
-    spacetrack_pwd: Optional[str] = None,
-) -> Optional[TLE]:
+    spacetrack_user: str | None = None,
+    spacetrack_pwd: str | None = None,
+) -> TLE | None:
     """
     Gets the Two-Line Element (TLE) data for a satellite at a specific epoch.
     Credentials for space-track.org can be provided as arguments, or they can

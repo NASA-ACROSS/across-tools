@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -72,18 +71,18 @@ class SPICEEphemeris(Ephemeris):
     """
 
     # NAIF ID of object for JPL Horizons or Spice Kernel
-    naif_id: Optional[int] = None
+    naif_id: int | None = None
 
     # URL of spacecraft SPICE Kernel
-    spice_kernel_url: Optional[str] = None
+    spice_kernel_url: str | None = None
 
     def __init__(
         self,
-        begin: Union[datetime, Time],
-        end: Union[datetime, Time],
-        step_size: Union[int, TimeDelta, timedelta] = 60,
-        spice_kernel_url: Optional[str] = None,
-        naif_id: Optional[int] = None,
+        begin: datetime | Time,
+        end: datetime | Time,
+        step_size: int | TimeDelta | timedelta = 60,
+        spice_kernel_url: str | None = None,
+        naif_id: int | None = None,
     ) -> None:
         super().__init__(begin, end, step_size)
         self.spice_kernel_url = spice_kernel_url
@@ -134,9 +133,9 @@ class SPICEEphemeris(Ephemeris):
 
 
 def compute_spice_ephemeris(
-    begin: Union[datetime, Time],
-    end: Union[datetime, Time],
-    step_size: Union[int, timedelta, TimeDelta],
+    begin: datetime | Time,
+    end: datetime | Time,
+    step_size: int | timedelta | TimeDelta,
     spice_kernel_url: str,
     naif_id: int,
 ) -> Ephemeris:

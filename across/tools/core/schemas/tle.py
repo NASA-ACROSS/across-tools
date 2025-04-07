@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import Field, model_validator
 
@@ -27,8 +27,8 @@ class TLEBase(BaseSchema):
     Each TLE line must be exactly 69 characters long per NORAD specification.
     """
 
-    norad_id: Optional[int] = None
-    satellite_name: Optional[str] = None
+    norad_id: int | None = None
+    satellite_name: str | None = None
     tle1: str = Field(min_length=69, max_length=69, pattern=r"1 .{67}")
     tle2: str = Field(min_length=69, max_length=69, pattern=r"2 .{67}")
 

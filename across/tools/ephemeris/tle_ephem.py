@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
 
 import astropy.units as u  # type: ignore[import-untyped]
 from astropy.coordinates import (  # type: ignore[import-untyped]
@@ -67,14 +66,14 @@ class TLEEphemeris(Ephemeris):
     """
 
     # TLE for calculating LEO satellites
-    tle: Optional[TLE] = None
+    tle: TLE | None = None
 
     def __init__(
         self,
-        begin: Union[datetime, Time],
-        end: Union[datetime, Time],
-        step_size: Union[int, TimeDelta, timedelta] = 60,
-        tle: Optional[TLE] = None,
+        begin: datetime | Time,
+        end: datetime | Time,
+        step_size: int | TimeDelta | timedelta = 60,
+        tle: TLE | None = None,
     ) -> None:
         super().__init__(begin, end, step_size)
         self.tle = tle
@@ -106,9 +105,9 @@ class TLEEphemeris(Ephemeris):
 
 
 def compute_tle_ephemeris(
-    begin: Union[datetime, Time],
-    end: Union[datetime, Time],
-    step_size: Union[int, timedelta, TimeDelta],
+    begin: datetime | Time,
+    end: datetime | Time,
+    step_size: int | timedelta | TimeDelta,
     tle: TLE,
 ) -> Ephemeris:
     """
