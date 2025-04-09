@@ -21,11 +21,11 @@ dependencies = [
     "pydantic",
     "astroquery",
     "sgp4",
-    "spiceypy>=6.0.0",
+    "spiceypy",
     "httpx",
     "spacetrack",
     "pydantic_settings",
-    "shapely>=2.1.0",
+    "shapely",
 ]
 
 [project.urls]
@@ -44,7 +44,7 @@ dev = [
     "nbsphinx",
     "sphinx-copybutton",
     "sphinx-rtd-theme",
-    "types-shapely>=2.0.0.20250404",
+    "types-shapely",
 
 ]
 
@@ -119,6 +119,8 @@ tools = ["py.typed"]
 
 [tool.coverage.run]
 omit = ["across/tools/_version.py"]
+source = ["across"]
+
 
 [tool.mypy]
 strict = true
