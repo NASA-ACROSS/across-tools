@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 
+from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.ephemeris import Ephemeris
 from across.tools.visibility.constraints.air_mass import AirMassConstraint
 
@@ -29,7 +30,7 @@ class TestAirMassConstraint:
 
     def test_init_short_name(self, constraint: AirMassConstraint) -> None:
         """Test initialization of short_name."""
-        assert constraint.short_name == "Airmass"
+        assert constraint.short_name == ConstraintType.AIR_MASS
 
     def test_call_return_type(self, constraint: AirMassConstraint, keck_ground_ephemeris: Ephemeris) -> None:
         """Test the return type of __call__ method."""

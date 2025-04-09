@@ -7,9 +7,10 @@ import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from across.tools.core.enums.constraint_type import ConstraintType
+from across.tools.core.schemas.visibility import Constraint
 from across.tools.ephemeris import Ephemeris
 from across.tools.ephemeris.ground_ephem import compute_ground_ephemeris
-from across.tools.visibility.constraints.base import Constraint
 
 
 @pytest.fixture
@@ -78,7 +79,7 @@ class DummyConstraint(Constraint):
     """Dummy constraint for testing purposes."""
 
     name: Literal["Dummy Constraint"] = "Dummy Constraint"
-    short_name: Literal["dummy"] = "dummy"
+    short_name: Literal[ConstraintType.UNKNOWN] = ConstraintType.UNKNOWN
 
     def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """Dummy implementation of the constraint.

@@ -67,7 +67,7 @@ class Visibility(ABC, BaseSchema):
     timestamp: Time | None = None
     inconstraint: np.typing.NDArray[np.bool_] = Field(default=np.array([]), exclude=True)
     calculated_constraints: OrderedDict[ConstraintType, np.typing.NDArray[np.bool_]] = Field(
-        OrderedDict(), exclude=True
+        default_factory=OrderedDict, exclude=True
     )
     visibility_windows: list[VisibilityWindow] = []
 
@@ -129,7 +129,9 @@ class Visibility(ABC, BaseSchema):
         -------
             True if visible, False if not
         """
-        return any(t >= win.window.begin and t <= win.window.end for win in self.visibility_windows)
+        return any(
+            t >= win.window.begin.datetime and t <= win.window.end.datetime for win in self.visibility_windows
+        )
 
     def _compute_timestamp(self) -> None:
         """

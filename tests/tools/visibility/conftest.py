@@ -6,14 +6,15 @@ import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]  # type: ignore[import-untyped]
 
+from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.visibility.base import Visibility
 
 
 class MockVisibility(Visibility):
     """Test implementation of abstract Visibility class"""
 
-    def _constraint(self, i: int) -> str:
-        return "test"
+    def _constraint(self, i: int) -> ConstraintType:
+        return ConstraintType.UNKNOWN
 
     def prepare_data(self) -> None:
         """Fake data preparation"""
@@ -70,6 +71,8 @@ def mock_visibility(
         begin=begin,
         end=end,
         step_size=test_step_size,
+        observatory_id="test_observatory_id",
+        observatory_name="test_observatory_name",
     )
 
 
@@ -86,6 +89,8 @@ def mock_visibility_step_size_int(
         begin=begin,
         end=end,
         step_size=test_step_size_int,
+        observatory_id="test_observatory_id",
+        observatory_name="test_observatory_name",
     )
 
 
@@ -104,6 +109,8 @@ def mock_visibility_step_size_datetime_timedelta(
         begin=begin,
         end=end,
         step_size=test_step_size_datetime_timedelta,
+        observatory_id="test_observatory_id",
+        observatory_name="test_observatory_name",
     )
 
 
@@ -124,4 +131,6 @@ def bad_mock_visibility(
         begin=test_time_range[0],
         end=test_time_range[1],
         step_size=TimeDelta(-60 * u.s),
+        observatory_id="test_observatory_id",
+        observatory_name="test_observatory_name",
     )

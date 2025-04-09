@@ -4,8 +4,10 @@ import pytest
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
+from across.tools.core.enums.constraint_type import ConstraintType
+from across.tools.core.schemas.visibility import Constraint
 from across.tools.ephemeris import Ephemeris
-from across.tools.visibility.constraints.base import Constraint, get_slice
+from across.tools.visibility.constraints.base import get_slice
 
 
 class TestConstraint:
@@ -25,7 +27,7 @@ class TestConstraint:
 
     def test_constraint_short_name_value(self, dummy_constraint: Constraint) -> None:
         """Test short_name value is set correctly."""
-        assert dummy_constraint.short_name == "dummy"
+        assert dummy_constraint.short_name == ConstraintType.UNKNOWN
 
     def test_constraint_name_value(self, dummy_constraint: Constraint) -> None:
         """Test name value is set correctly."""

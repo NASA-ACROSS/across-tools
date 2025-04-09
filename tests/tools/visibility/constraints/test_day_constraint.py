@@ -1,7 +1,7 @@
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 
-from across.tools.core.enums import TwilightType
+from across.tools.core.enums.twilight_type import TwilightType
 from across.tools.ephemeris import Ephemeris
 from across.tools.visibility.constraints.day import DayConstraint
 

@@ -49,7 +49,7 @@ class TestVisibility:
     def test_compute_entries_not_empty(self, mock_visibility: Visibility) -> None:
         """Test that entries are not empty after compute"""
         mock_visibility.compute()
-        assert len(mock_visibility.entries) > 0
+        assert len(mock_visibility.visibility_windows) > 0
 
     def test_visible_at_noon(self, mock_visibility: Visibility) -> None:
         """Test that target is visible at noon"""
@@ -88,7 +88,14 @@ class TestVisibility:
         with pytest.raises(ValidationError) as excinfo:
             begin, end = Time(datetime(2023, 1, 1)), Time(datetime(2023, 1, 2))
 
-            mock_visibility_class(begin=begin, end=end, skycoord=test_skycoord, step_size=TimeDelta(-1 * u.s))
+            mock_visibility_class(
+                begin=begin,
+                end=end,
+                skycoord=test_skycoord,
+                step_size=TimeDelta(-1 * u.s),
+                observatory_id="test_observatory_id",
+                observatory_name="test_observatory_name",
+            )
         assert "must be a positive" in str(excinfo.value)
 
     def test_step_size_int(self, mock_visibility_step_size_int: Visibility) -> None:
@@ -107,7 +114,13 @@ class TestVisibility:
         """Test that step size cannot be negative"""
         with pytest.raises(ValidationError) as excinfo:
             begin, end = test_time_range
-            mock_visibility_class(begin=begin, end=end, step_size=TimeDelta(1 * u.s))
+            mock_visibility_class(
+                begin=begin,
+                end=end,
+                step_size=TimeDelta(1 * u.s),
+                observatory_id="test_observatory_id",
+                observatory_name="test_observatory_name",
+            )
         assert "Must supply either skycoord" in str(excinfo.value)
 
     def test_no_step_size_given_gives_default(
@@ -118,5 +131,11 @@ class TestVisibility:
     ) -> None:
         """Test that step size is set to default if not given"""
 
-        dog = mock_visibility_class(begin=test_time_range[0], end=test_time_range[1], skycoord=test_skycoord)
+        dog = mock_visibility_class(
+            begin=test_time_range[0],
+            end=test_time_range[1],
+            skycoord=test_skycoord,
+            observatory_id="test_observatory_id",
+            observatory_name="test_observatory_name",
+        )
         assert dog.step_size == TimeDelta(60 * u.s)
