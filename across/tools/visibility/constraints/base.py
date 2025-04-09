@@ -1,11 +1,5 @@
-from abc import ABC, abstractmethod
-
-import numpy as np
-from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
-from ...core.schemas.base import BaseSchema
-from ...core.schemas.visibility import ConstraintType
 from ...ephemeris import Ephemeris
 
 
@@ -31,52 +25,3 @@ def get_slice(time: Time, ephemeris: Ephemeris) -> slice:
     # Find the indices for the start and end of the time range and return a
     # slice for that range
     return slice(ephemeris.index(time[0]), ephemeris.index(time[-1]) + 1)
-
-
-class Constraint(BaseSchema, ABC):
-    """
-    Base class for constraints. Constraints are used to determine if a given
-    coordinate is inside the constraint. This is done by checking if the
-    separation between the constraint and the coordinate is less than a given
-    value.
-
-    Parameters
-    ----------
-    min_angle
-        The minimum angle from the constraint that the spacecraft can point.
-    max_angle
-        The maximum angle from the constraint that the spacecraft can point.
-
-    Methods
-    -------
-    __call__(time, ephemeris, coord)
-        Checks if a given coordinate is inside the constraint.
-    """
-
-    short_name: ConstraintType
-    name: str
-    min_angle: float | None = None
-    max_angle: float | None = None
-
-    @abstractmethod
-    def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
-        """
-        Check for a given time, ephemeris and coordinate if positions given are
-        inside the constraint.
-
-        Parameters
-        ----------
-        time : Time
-            The time to check.
-        ephemeris : Ephemeris
-            The ephemeris object.
-        skycoord : SkyCoord
-            The coordinate to check.
-
-        Returns
-        -------
-        bool
-            `True` if the coordinate is inside the constraint, `False`
-            otherwise.
-        """
-        raise NotImplementedError("Subclasses must implement this method.")

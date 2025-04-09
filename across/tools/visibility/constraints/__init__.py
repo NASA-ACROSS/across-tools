@@ -1,6 +1,5 @@
 from .air_mass import AirMassConstraint
 from .alt_az import AltAzConstraint
-from .base import Constraint
 from .day import DayConstraint
 from .earth_limb import EarthLimbConstraint
 from .moon import MoonConstraint
@@ -25,6 +24,5 @@ __all__ = [
     "SpaceCraftDayConstraint",
     "SAAPolygonConstraint",
     "PolygonConstraint",
-    "Constraint",
     "Polygon",
 ]

@@ -5,10 +5,10 @@ import numpy as np
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
 
-from ..core.schemas.visibility import ConstraintType, VisibilityWindow
+from ..core.enums.constraint_type import ConstraintType
+from ..core.schemas.visibility import Constraint, VisibilityWindow
 from ..ephemeris.base import Ephemeris
 from .base import Visibility
-from .constraints.base import Constraint
 
 
 class EphemerisVisibility(Visibility):
@@ -57,9 +57,6 @@ class EphemerisVisibility(Visibility):
 
     ephemeris: Ephemeris | None = Field(None, exclude=True)
     constraints: list[Constraint] = Field([], exclude=True)
-    calculated_constraints: OrderedDict[ConstraintType, np.typing.NDArray[np.bool_]] = Field(
-        OrderedDict(), exclude=True
-    )
     visibility_windows: list[VisibilityWindow] = []
 
     @cached_property

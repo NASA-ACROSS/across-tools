@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from datetime import timedelta
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -7,11 +8,11 @@ from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
 
+from ..core.enums.constraint_type import ConstraintType
 from ..core.schemas.base import BaseSchema
 from ..core.schemas.visibility import (
     ConstrainedDate,
     ConstraintReason,
-    ConstraintType,
     VisibilityWindow,
     Window,
 )
@@ -65,7 +66,9 @@ class Visibility(ABC, BaseSchema):
     # Computed values
     timestamp: Time | None = None
     inconstraint: np.typing.NDArray[np.bool_] = Field(default=np.array([]), exclude=True)
-    constraint_windows: dict[str, list[VisibilityWindow]] | None = None
+    calculated_constraints: OrderedDict[ConstraintType, np.typing.NDArray[np.bool_]] = Field(
+        OrderedDict(), exclude=True
+    )
     visibility_windows: list[VisibilityWindow] = []
 
     @model_validator(mode="before")
@@ -169,6 +172,8 @@ class Visibility(ABC, BaseSchema):
 
     def _make_windows(self) -> list[VisibilityWindow]:
         """
+        Create visibility windows from the inconstraint array.
+
         Parameters
         ----------
         inconstraint : list

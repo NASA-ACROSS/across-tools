@@ -1,4 +1,4 @@
-from ..core.schemas.visibility import ConstraintType
+from ..core.enums.constraint_type import ConstraintType
 from .base import Visibility
 
 

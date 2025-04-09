@@ -4,10 +4,10 @@ import numpy as np
 from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
-from across.tools.core.schemas.visibility import ConstraintType
-
+from ...core.enums.constraint_type import ConstraintType
+from ...core.schemas.visibility import Constraint
 from ...ephemeris import Ephemeris
-from .base import Constraint, get_slice
+from .base import get_slice
 
 
 class AirMassConstraint(Constraint):

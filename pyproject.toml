@@ -25,6 +25,7 @@ dependencies = [
     "httpx",
     "spacetrack",
     "pydantic_settings",
+    "shapely>=2.1.0",
 ]
 
 [project.urls]
@@ -43,6 +44,8 @@ dev = [
     "nbsphinx",
     "sphinx-copybutton",
     "sphinx-rtd-theme",
+    "types-shapely>=2.0.0.20250404",
+
 ]
 
 [build-system]

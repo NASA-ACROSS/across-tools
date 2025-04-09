@@ -1,7 +1,7 @@
 from pydantic import field_serializer
 from shapely import Polygon
 
-from .base import Constraint
+from ...core.schemas.visibility import Constraint
 
 
 class PolygonConstraint(Constraint):

@@ -7,7 +7,7 @@ from astropy.io.votable import parse_single_table  # type: ignore[import-untyped
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
 
-from ..core.schemas.visibility import ConstraintType
+from ..core.enums.constraint_type import ConstraintType
 from .base import Visibility
 
 
