@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
 
 import astropy.units as u  # type: ignore[import-untyped]
 from astropy.coordinates import (  # type: ignore[import-untyped]
@@ -61,20 +60,20 @@ class GroundEphemeris(Ephemeris):
     """
 
     # Longitude of Observatory on Earth
-    longitude: Optional[Longitude]
+    longitude: Longitude | None
     # Latitude of Observatory on Earth
-    latitude: Optional[Latitude]
+    latitude: Latitude | None
     # Height of the Observatory on Earth
-    height: Optional[u.Quantity]
+    height: u.Quantity | None
 
     def __init__(
         self,
-        begin: Union[datetime, Time],
-        end: Union[datetime, Time],
-        step_size: Union[int, TimeDelta, timedelta] = 60,
-        latitude: Optional[Latitude] = None,
-        longitude: Optional[Longitude] = None,
-        height: Optional[u.Quantity] = None,
+        begin: datetime | Time,
+        end: datetime | Time,
+        step_size: int | TimeDelta | timedelta = 60,
+        latitude: Latitude | None = None,
+        longitude: Longitude | None = None,
+        height: u.Quantity | None = None,
     ) -> None:
         super().__init__(begin, end, step_size)
         self.latitude = latitude
@@ -97,9 +96,9 @@ class GroundEphemeris(Ephemeris):
 
 
 def compute_ground_ephemeris(
-    begin: Union[datetime, Time],
-    end: Union[datetime, Time],
-    step_size: Union[int, timedelta, TimeDelta],
+    begin: datetime | Time,
+    end: datetime | Time,
+    step_size: int | timedelta | TimeDelta,
     latitude: Latitude,
     longitude: Longitude,
     height: u.Quantity,

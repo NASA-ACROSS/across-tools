@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 from astropy import units as u  # type: ignore[import-untyped]
 
@@ -17,9 +17,9 @@ class BaseBandpass(BaseSchema):
         max (float | None): The maximum value of the bandpass range.
     """
 
-    filter_name: Optional[str] = None
-    min: Optional[float] = None
-    max: Optional[float] = None
+    filter_name: str | None = None
+    min: float | None = None
+    max: float | None = None
 
 
 class WavelengthBandpass(BaseBandpass):
@@ -41,9 +41,9 @@ class WavelengthBandpass(BaseBandpass):
     """
 
     type: Literal["WAVELENGTH"] = "WAVELENGTH"
-    central_wavelength: Optional[float] = None
-    peak_wavelength: Optional[float] = None
-    bandwidth: Optional[float] = None
+    central_wavelength: float | None = None
+    peak_wavelength: float | None = None
+    bandwidth: float | None = None
     unit: WavelengthUnit
 
     def model_post_init(self, __context: Any) -> None:
@@ -164,7 +164,7 @@ class FrequencyBandpass(BaseBandpass):
             raise MinMaxValueError("Max wavelength cannot be less than min wavelength.")
 
 
-def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> WavelengthBandpass:
+def convert_to_wave(bandpass: EnergyBandpass | FrequencyBandpass) -> WavelengthBandpass:
     """
     Converts a given EnergyBandpass or FrequencyBandpass to a WavelengthBandPass.
 
