@@ -115,13 +115,17 @@ class EnergyBandpass(BaseBandpass):
         Validates that the min and max energy values are positive.
 
         Raises:
-            ValueError: If the min or max energy values are not defined or are non-positive.
+            ValueError: If the min or max energy values are not defined, are non-positive, and max is greater
+            than min.
         """
         if not (self.min and self.max):
             raise MinMaxValueError("Both min and max energy values must be defined.")
 
         if not all([self.min > 0, self.max > 0]):
             raise MinMaxValueError("Energy values must be positive.")
+
+        if self.max < self.min:
+            raise MinMaxValueError("Max wavelength cannot be less than min wavelength.")
 
 
 class FrequencyBandpass(BaseBandpass):
@@ -147,13 +151,17 @@ class FrequencyBandpass(BaseBandpass):
         Validates that the min and max frequency values are positive.
 
         Raises:
-            ValueError: If the min or max frequency values are not defined or are non-positive.
+            ValueError: If the min or max energy values are not defined, are non-positive, and max is greater
+            than min.
         """
         if not (self.min and self.max):
             raise MinMaxValueError("Both min and max frequency values must be defined.")
 
         if not all([self.min > 0, self.max > 0]):
             raise MinMaxValueError("Frequency values must be positive.")
+
+        if self.max < self.min:
+            raise MinMaxValueError("Max wavelength cannot be less than min wavelength.")
 
 
 def convert_to_wave(bandpass: Union[EnergyBandpass, FrequencyBandpass]) -> WavelengthBandpass:

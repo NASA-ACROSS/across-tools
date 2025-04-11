@@ -1,4 +1,4 @@
-class MinMaxValueError(Exception):
+class MinMaxValueError(ValueError):
     """
     Exception raise for invalid bandpass min/max values
     """
@@ -7,7 +7,7 @@ class MinMaxValueError(Exception):
         super().__init__(message)
 
 
-class BandwidthValueError(Exception):
+class BandwidthValueError(ValueError):
     """
     Exception raise for invalid bandpass central_wavelength/bandwidth values
     """
