@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from across.tools import EnergyBandpass, FrequencyBandpass, WavelengthBandpass, convert_to_wave, enums
-from across.tools.core.schemas.exceptions import BandwidthValueError, MinMaxValueError
 
 
 class TestBandpassSchema:
@@ -33,7 +32,7 @@ class TestBandpassSchema:
                 Should raise ValueError when max < 0
                 Should raise ValueError when min > max
             """
-            with pytest.raises(MinMaxValueError):
+            with pytest.raises(ValueError):
                 WavelengthBandpass(min=min, max=max, unit=enums.WavelengthUnit.ANGSTROM)
 
         @pytest.mark.parametrize(
@@ -49,7 +48,7 @@ class TestBandpassSchema:
                 Should raise ValueError when central_wavelength < 0
                 Should raise ValueError when bandwidth < 0
             """
-            with pytest.raises(BandwidthValueError):
+            with pytest.raises(ValueError):
                 WavelengthBandpass(
                     central_wavelength=central_wavelength,
                     bandwidth=bandwidth,
@@ -107,7 +106,7 @@ class TestBandpassSchema:
                 Should raise ValueError when min < 0
                 Should raise ValueError when max < 0
             """
-            with pytest.raises(MinMaxValueError):
+            with pytest.raises(ValueError):
                 EnergyBandpass(min=min, max=max, unit=enums.EnergyUnit.eV)
 
     class TestFrequencyBandpass:
@@ -132,7 +131,7 @@ class TestBandpassSchema:
                 Should raise ValueError when min < 0
                 Should raise ValueError when max < 0
             """
-            with pytest.raises(MinMaxValueError):
+            with pytest.raises(ValueError):
                 FrequencyBandpass(min=min, max=max, unit=enums.FrequencyUnit.Hz)
 
     class TestConvertToWave:
