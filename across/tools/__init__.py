@@ -7,18 +7,13 @@ from .core.schemas import (
     WavelengthBandpass,
     convert_to_wave,
 )
-from .footprint import Footprint, inner, outer, union
 
 __all__ = [
     "Coordinate",
     "EnergyBandpass",
-    "Footprint",
     "FrequencyBandpass",
     "Polygon",
     "WavelengthBandpass",
     "convert_to_wave",
     "enums",
-    "inner",
-    "outer",
-    "union",
 ]

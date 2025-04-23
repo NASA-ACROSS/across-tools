@@ -2,7 +2,8 @@ from typing import Any
 
 import pytest
 
-from across.tools import Coordinate, Footprint, Polygon
+from across.tools import Coordinate, Polygon
+from across.tools.footprint import Footprint
 from across.tools.core.schemas import BaseSchema
 
 

@@ -2,7 +2,8 @@ from typing import Any
 
 import pytest
 
-from across.tools import Coordinate, Footprint, inner, outer, union
+from across.tools import Coordinate
+from across.tools.footprint import Footprint, inner, outer, union
 
 
 class TestInnerJoin:
