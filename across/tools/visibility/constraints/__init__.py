@@ -7,7 +7,6 @@ from .moon_phase import MoonPhaseConstraint
 from .orbit_day import SpaceCraftDayConstraint
 from .orbit_pole import OrbitPoleConstraint
 from .orbit_ram import RamConstraint
-from .polygon import PolygonConstraint
 from .saa import SAAPolygonConstraint
 from .sun import SunConstraint
 
@@ -23,6 +22,4 @@ __all__ = [
     "DayConstraint",
     "SpaceCraftDayConstraint",
     "SAAPolygonConstraint",
-    "PolygonConstraint",
-    "Polygon",
 ]
