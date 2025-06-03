@@ -196,7 +196,7 @@ class Ephemeris(ABC):
         """
         Prepare data for ephemeris calculation. Abstract method, to be implemented by subclasses.
         """
-        raise NotImplementedError("prepare_data method must be implemented by subclass")
+        raise NotImplementedError("prepare_data method must be implemented by subclass")  # pragma: no cover
 
     def compute(self) -> None:
         """
