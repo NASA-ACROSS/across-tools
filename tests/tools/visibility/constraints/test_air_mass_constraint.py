@@ -14,15 +14,15 @@ class TestAirMassConstraint:
     @pytest.fixture
     def constraint(self) -> AirMassConstraint:
         """Create a basic AirMassConstraint instance."""
-        return AirMassConstraint(airmass_min=1.0, airmass_max=2.0)
+        return AirMassConstraint(min=1.0, max=2.0)
 
-    def test_init_airmass_min(self, constraint: AirMassConstraint) -> None:
-        """Test initialization of airmass_min."""
-        assert constraint.airmass_min == 1.0
+    def test_init_min(self, constraint: AirMassConstraint) -> None:
+        """Test initialization of min."""
+        assert constraint.min == 1.0
 
-    def test_init_airmass_max(self, constraint: AirMassConstraint) -> None:
-        """Test initialization of airmass_max."""
-        assert constraint.airmass_max == 2.0
+    def test_init_max(self, constraint: AirMassConstraint) -> None:
+        """Test initialization of max."""
+        assert constraint.max == 2.0
 
     def test_init_name(self, constraint: AirMassConstraint) -> None:
         """Test initialization of name."""
@@ -64,7 +64,7 @@ class TestAirMassConstraint:
 
     def test_call_with_only_min_return_type(self, keck_ground_ephemeris: Ephemeris) -> None:
         """Test return type with only minimum limit."""
-        constraint = AirMassConstraint(airmass_min=1.0)
+        constraint = AirMassConstraint(min=1.0)
         time = keck_ground_ephemeris.timestamp
         coord = SkyCoord(ra=45 * u.deg, dec=45 * u.deg)
         result = constraint(time, keck_ground_ephemeris, coord)
@@ -72,7 +72,7 @@ class TestAirMassConstraint:
 
     def test_call_with_only_min_return_dtype(self, keck_ground_ephemeris: Ephemeris) -> None:
         """Test return dtype with only minimum limit."""
-        constraint = AirMassConstraint(airmass_min=1.0)
+        constraint = AirMassConstraint(min=1.0)
         time = keck_ground_ephemeris.timestamp
         coord = SkyCoord(ra=45 * u.deg, dec=45 * u.deg)
         result = constraint(time, keck_ground_ephemeris, coord)
@@ -80,7 +80,7 @@ class TestAirMassConstraint:
 
     def test_call_with_only_max_return_type(self, keck_ground_ephemeris: Ephemeris) -> None:
         """Test return type with only maximum limit."""
-        constraint = AirMassConstraint(airmass_max=2.0)
+        constraint = AirMassConstraint(max=2.0)
         time = keck_ground_ephemeris.timestamp
         coord = SkyCoord(ra=45 * u.deg, dec=45 * u.deg)
         result = constraint(time, keck_ground_ephemeris, coord)
@@ -88,7 +88,7 @@ class TestAirMassConstraint:
 
     def test_call_with_only_max_return_dtype(self, keck_ground_ephemeris: Ephemeris) -> None:
         """Test return dtype with only maximum limit."""
-        constraint = AirMassConstraint(airmass_max=2.0)
+        constraint = AirMassConstraint(max=2.0)
         time = keck_ground_ephemeris.timestamp
         coord = SkyCoord(ra=45 * u.deg, dec=45 * u.deg)
         result = constraint(time, keck_ground_ephemeris, coord)

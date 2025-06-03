@@ -65,6 +65,8 @@ class MoonConstraint(Constraint):
         # directly with `moon`.
         assert ephemeris.moon is not None
 
+        # FIXME: Add option to support size of moon in angle
+
         in_constraint = np.zeros(len(ephemeris.moon[i]), dtype=bool)
         if self.min_angle is None:
             in_constraint |= (

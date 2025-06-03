@@ -24,17 +24,17 @@ class AltAzConstraint(PolygonConstraint):
     ----------
     polygon
         The polygon defining the exclusion region.
-    alt_min
+    min
         The minimum altitude in degrees.
-    alt_max
+    max
         The maximum altitude in degrees.
     """
 
     short_name: Literal[ConstraintType.ALT_AZ] = ConstraintType.ALT_AZ
     name: Literal["Altitude/Azimuth Avoidance"] = "Altitude/Azimuth Avoidance"
     polygon: Polygon | None
-    alt_min: float | None
-    alt_max: float | None
+    min: float | None
+    max: float | None
 
     def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
@@ -65,10 +65,10 @@ class AltAzConstraint(PolygonConstraint):
         in_constraint = np.zeros(len(alt_az), dtype=bool)
 
         # Calculate the basic Alt/Az min/max constraints
-        if self.alt_min is not None:
-            in_constraint |= alt_az.alt < self.alt_min * u.deg
-        if self.alt_max is not None:
-            in_constraint |= alt_az.alt > self.alt_max * u.deg
+        if self.min is not None:
+            in_constraint |= alt_az.alt < self.min * u.deg
+        if self.max is not None:
+            in_constraint |= alt_az.alt > self.max * u.deg
 
         # If a polygon is defined, then check if the Alt/Az is inside the polygon
         if self.polygon is not None:

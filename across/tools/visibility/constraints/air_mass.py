@@ -16,16 +16,16 @@ class AirMassConstraint(Constraint):
 
     Parameters
     ----------
-    airmass_min
+    min
         The minimum altitude in degrees.
-    airmass_max
+    max
         The maximum altitude in degrees.
     """
 
     short_name: Literal[ConstraintType.AIR_MASS] = ConstraintType.AIR_MASS
     name: Literal["Airmass"] = "Airmass"
-    airmass_max: float | None = None
-    airmass_min: float | None = None
+    max: float | None = None
+    min: float | None = None
 
     def __call__(self, time: Time, ephemeris: Ephemeris, skycoord: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
@@ -56,10 +56,10 @@ class AirMassConstraint(Constraint):
         in_constraint = np.zeros(len(alt_az), dtype=bool)
 
         # Calculate the basic Alt/Az min/max constraints
-        if self.airmass_max is not None:
-            in_constraint |= alt_az.secz < self.airmass_max
-        if self.airmass_min is not None:
-            in_constraint |= alt_az.secz > self.airmass_min
+        if self.max is not None:
+            in_constraint |= alt_az.secz < self.max
+        if self.min is not None:
+            in_constraint |= alt_az.secz > self.min
 
         # Return the value as a scalar or array
         return in_constraint
