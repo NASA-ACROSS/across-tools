@@ -11,3 +11,6 @@ class ConstraintType(str, Enum):
     EARTH = "Earth Limb"
     WINDOW = "Window"
     UNKNOWN = "Unknown"
+    SAA = "South Atlantic Anomaly"
+    ALT_AZ = "Altitude/Azimuth Avoidance"
+    TEST = "Test Constraint"
