@@ -75,19 +75,19 @@ class WavelengthBandpass(BaseBandpass):
         if not all([self.central_wavelength > 0, self.bandwidth > 0]):
             raise BandwidthValueError("Central wavelength and bandwidth must be positive.")
 
-        self.bandwidth = (
+        self.bandwidth = float(
             (self.bandwidth * u.Unit(self.unit.value)).to(u.Unit(WavelengthUnit.ANGSTROM.value)).value
         )
 
-        self.central_wavelength = (
+        self.central_wavelength = float(
             (self.central_wavelength * u.Unit(self.unit.value))
             .to(u.Unit(WavelengthUnit.ANGSTROM.value))
             .value
         )
 
-        self.min = self.central_wavelength - (self.bandwidth)  # type: ignore
+        self.min = self.central_wavelength - self.bandwidth
 
-        self.max = self.central_wavelength + (self.bandwidth)  # type: ignore
+        self.max = self.central_wavelength + self.bandwidth
 
         self.unit = WavelengthUnit.ANGSTROM
 
