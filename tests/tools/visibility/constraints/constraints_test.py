@@ -29,6 +29,10 @@ class TestConstraintABC:
         with pytest.raises(NotImplementedError):
             get_slice(scalar_time, mock_ephemeris)
 
+
+class TestGetSlice:
+    """Test suite for get_slice function."""
+
     def test_get_slice_time_array_start(self, time_array: Time, mock_ephemeris: Ephemeris) -> None:
         """Test get_slice start index is correct."""
         result = get_slice(time_array, mock_ephemeris)
