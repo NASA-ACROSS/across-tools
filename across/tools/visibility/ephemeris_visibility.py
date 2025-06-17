@@ -32,6 +32,9 @@ class EphemerisVisibility(Visibility):
         Boolean array indicating combined constraint evaluation results
     ephemeris : Ephemeris | None
         Ephemeris data object containing spacecraft position/timing information
+    step_size : int
+        Time step size in seconds for calculations (60s for high res, 3600s for
+        low res)
 
     Methods
     -------
@@ -42,13 +45,6 @@ class EphemerisVisibility(Visibility):
     make_windows(inconstraint)
         Generates visibility window objects from boolean constraint data
 
-    Properties
-    ----------
-    step_size : int
-        Time step size in seconds for calculations (60s for high res, 3600s for
-        low res)
-
-
     Notes
     -----
     The class processes ephemeris data against multiple constraints to determine
@@ -56,8 +52,8 @@ class EphemerisVisibility(Visibility):
     generates windows with start/end times and constraint information.
     """
 
-    ephemeris: Ephemeris | None = Field(None, exclude=True)
-    constraints: list[Constraint] | None = None
+    ephemeris: Ephemeris = Field(..., exclude=True)
+    constraints: list[Constraint] = Field(default_factory=list)
 
     def prepare_data(self) -> None:
         """
@@ -67,15 +63,6 @@ class EphemerisVisibility(Visibility):
         -------
             True if successful, False otherwise.
         """
-
-        # Check if constraints are available
-        if self.constraints is None:
-            raise ValueError("Constraints not available.")
-
-        # Verify that ephemeris is available and has valid timestamps
-        if self.ephemeris is None or self.ephemeris.timestamp is None:
-            raise ValueError("Ephemeris not available.")
-
         # Calculate all the individual constraints
         self.calculated_constraints = OrderedDict()
         for constraint in self.constraints:  # FIXME: constraints constraints

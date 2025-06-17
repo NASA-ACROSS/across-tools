@@ -1,6 +1,7 @@
 import uuid
 
 import astropy.units as u  # type: ignore[import-untyped]
+import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
@@ -55,6 +56,26 @@ class TestVisibility:
         """Test that target is visible at noon"""
         mock_visibility.compute()
         assert mock_visibility.visible(noon_time) is True
+
+    def test_not_visible_at_midnight(self, mock_visibility: Visibility, midnight_time: Time) -> None:
+        """Test that target is not visible at midnight"""
+        mock_visibility.compute()
+        assert mock_visibility.visible(midnight_time) is False
+
+    def test_visible_at_noon_and_a_few_minutes_later(
+        self, mock_visibility: Visibility, noon_time_array: Time
+    ) -> None:
+        """Test that verifies functionality of Ephemeris visible method with an
+        array of times that are all visible"""
+        mock_visibility.compute()
+        assert np.all(mock_visibility.visible(noon_time_array)) is np.True_
+
+    def test_visible_over_earth_limb(self, computed_visibility: Visibility) -> None:
+        """Test that verifies functionality of Ephemeris visible method with an
+        array of times that include times when the target is not visible"""
+        assert isinstance(computed_visibility.timestamp, Time)
+        times = computed_visibility.timestamp[0:10]
+        assert np.all(computed_visibility.visible(times)) is np.False_
 
     def test_index_type(self, mock_visibility: Visibility, noon_time: Time) -> None:
         """Test that index returns an integer"""

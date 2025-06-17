@@ -36,7 +36,7 @@ def default_step_size() -> TimeDelta:
 
 
 class MockVisibility(Visibility):
-    """Test implementation of abstract Visibility class"""
+    """Test implementation of abstract Visibility class."""
 
     def _constraint(self, i: int) -> ConstraintType:
         return ConstraintType.UNKNOWN
@@ -44,7 +44,7 @@ class MockVisibility(Visibility):
     def prepare_data(self) -> None:
         """Fake data preparation"""
         assert self.timestamp is not None
-        self.inconstraint = np.zeros(len(self.timestamp), dtype=bool)
+        self.inconstraint = np.array([t.datetime.hour < 1 for t in self.timestamp], dtype=bool)
 
 
 @pytest.fixture
@@ -162,6 +162,18 @@ def noon_time(test_time_range: tuple[Time, Time]) -> Time:
 
 
 @pytest.fixture
+def midnight_time(test_time_range: tuple[Time, Time]) -> Time:
+    """Fixture for midnight time within the test time range"""
+    return Time(datetime(2023, 1, 1, 0, 0, 0))
+
+
+@pytest.fixture
+def noon_time_array(test_time_range: tuple[Time, Time]) -> Time:
+    """Fixture for noon time within the test time range"""
+    return Time(["2023-01-01 12:00:00", "2023-01-01 12:01:00", "2023-01-01 12:02:00"])
+
+
+@pytest.fixture
 def test_tle() -> TLE:
     """Fixture for a basic TLE instance."""
     tle_dict = {
@@ -240,6 +252,7 @@ def computed_visibility(
     test_tle_ephemeris: Ephemeris,
     test_earth_limb_constraint: EarthLimbConstraint,
     test_observatory_id: uuid.UUID,
+    test_observatory_name: str,
 ) -> EphemerisVisibility:
     """Fixture that returns a computed EphemerisVisibility object."""
     return compute_ephemeris_visibility(
@@ -247,7 +260,7 @@ def computed_visibility(
         begin=test_visibility_time_range[0],
         end=test_visibility_time_range[1],
         step_size=test_step_size,
-        observatory_name="Test Observatory",
+        observatory_name=test_observatory_name,
         ephemeris=test_tle_ephemeris,
         constraints=[test_earth_limb_constraint],
         observatory_id=test_observatory_id,

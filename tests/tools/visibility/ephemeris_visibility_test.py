@@ -8,32 +8,6 @@ from across.tools.visibility import EphemerisVisibility
 class TestEphemerisVisibility:
     """Test the EphemerisVisibility class."""
 
-    def test_ephemeris_visibility_no_constraints(self, test_visibility: EphemerisVisibility) -> None:
-        """Test that EphemerisVisibility can't be created without constraints."""
-
-        test_visibility.constraints = None
-
-        with pytest.raises(ValueError, match="Constraints not available."):
-            test_visibility.compute()
-
-    def test_ephemeris_visibility_no_ephemeris(self, test_visibility: EphemerisVisibility) -> None:
-        """Test that EphemerisVisibility raises an error if no ephemeris is provided."""
-
-        test_visibility.ephemeris = None
-
-        with pytest.raises(ValueError, match="Ephemeris not available for timestamp computation."):
-            test_visibility.compute()
-
-    def test_ephemeris_visibility_no_ephemeris_no_timestamp(
-        self, test_visibility: EphemerisVisibility
-    ) -> None:
-        """Test that EphemerisVisibility raises an error if no ephemeris is provided."""
-
-        test_visibility.ephemeris = None
-
-        with pytest.raises(ValueError, match="Ephemeris not available."):
-            test_visibility.prepare_data()
-
     def test_ephemeris_visibility_timestamp(self, test_visibility: EphemerisVisibility) -> None:
         """Test that EphemerisVisibility computes timestamp."""
         test_visibility.compute()

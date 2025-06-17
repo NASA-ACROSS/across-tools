@@ -124,9 +124,9 @@ class Visibility(ABC, BaseSchema):
 
         return values
 
-    def visible(self, t: Time) -> bool:
+    def visible(self, t: Time) -> bool | np.typing.NDArray[np.bool_]:
         """
-        For a given time, is the target visible?
+        For a given time or array of times, is the target visible?
 
         Parameters
         ----------
@@ -137,9 +137,21 @@ class Visibility(ABC, BaseSchema):
         -------
             True if visible, False if not
         """
-        return any(
-            t >= win.window.begin.datetime and t <= win.window.end.datetime for win in self.visibility_windows
-        )
+        if not t.isscalar:
+            # Return an array of visibility booleans for multiple times
+            result = np.zeros(len(t), dtype=bool)
+
+            for win in self.visibility_windows:
+                mask = (t >= win.window.begin.datetime) & (t <= win.window.end.datetime)
+                result |= mask
+
+            return result
+        else:
+            # Return if visible for a single time
+            for win in self.visibility_windows:
+                if win.window.begin.datetime <= t <= win.window.end.datetime:
+                    return True
+            return False
 
     def _compute_timestamp(self) -> None:
         """

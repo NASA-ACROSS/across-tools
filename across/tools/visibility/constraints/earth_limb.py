@@ -4,6 +4,7 @@ import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
+from pydantic import Field
 
 from ...core.enums import ConstraintType
 from ...ephemeris import Ephemeris
@@ -32,8 +33,12 @@ class EarthLimbConstraint(ConstraintABC):
 
     name: Literal[ConstraintType.EARTH] = ConstraintType.EARTH
     short_name: Literal["Earth"] = "Earth"
-    min_angle: float | None = None
-    max_angle: float | None = None
+    min_angle: float | None = Field(
+        default=None, ge=0, le=180, description="Minimum angle from the Earth limb"
+    )
+    max_angle: float | None = Field(
+        default=None, ge=0, le=180, description="Maximum angle from the Earth limb"
+    )
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
