@@ -51,7 +51,7 @@ class Visibility(ABC, BaseSchema):
     -------
     visible(t)
         Check if the target is visible at a given time.
-    get()
+    compute()
         Perform visibility calculation.
 
     """
