@@ -94,7 +94,7 @@ class TestEarthLimbConstraint:
         self, earth_limb_constraint: EarthLimbConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
     ) -> None:
         """Test that constraint correctly identifies coordinates in the constraint."""
-        inside_coord = test_tle_ephemeris.earth[0].icrs
+        inside_coord = SkyCoord(test_tle_ephemeris.earth[0].ra, test_tle_ephemeris.earth[0].dec)
 
         result = earth_limb_constraint(
             time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=inside_coord
