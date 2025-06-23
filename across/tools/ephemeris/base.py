@@ -90,9 +90,9 @@ class Ephemeris(ABC):
     moon: SkyCoord
     sun: SkyCoord
     earth: SkyCoord
-    longitude: Longitude | None
-    latitude: Latitude | None
-    height: u.Quantity | None
+    longitude: Longitude | None = None
+    latitude: Latitude | None = None
+    height: u.Quantity | None = None
     earth_radius_angle: Angle
     moon_radius_angle: Angle
     sun_radius_angle: Angle
