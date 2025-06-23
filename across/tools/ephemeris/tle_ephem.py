@@ -97,6 +97,9 @@ class TLEEphemeris(Ephemeris):
         )
         itrs = teme.transform_to("itrs")
         self.earth_location = itrs.earth_location
+        self.latitude = itrs.earth_location.lat
+        self.longitude = itrs.earth_location.lon
+        self.height = itrs.earth_location.height
 
         # Calculate satellite position in GCRS coordinate system vector as
         # array of x,y,z vectors in units of km, and velocity vector as array
