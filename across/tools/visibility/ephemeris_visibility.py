@@ -126,6 +126,7 @@ def compute_ephemeris_visibility(
     step_size: u.Quantity = 60 * u.s,
     observatory_name: str = "Observatory",
     observatory_id: UUID | None = None,
+    min_vis: int = 0,
 ) -> EphemerisVisibility:
     """
     Compute visibility windows based on ephemeris data and constraints.
@@ -152,6 +153,8 @@ def compute_ephemeris_visibility(
         Name of the observatory for which visibility is calculated, default is "Observatory".
     observatory_id : UUID, optional
         Unique identifier for the observatory, if available.
+    min_vis : int, optional
+        Minimum visibility time for a window to be considered valid, default is 0 seconds.
 
     Returns
     -------
@@ -168,6 +171,7 @@ def compute_ephemeris_visibility(
         end=end,
         step_size=step_size,
         observatory_name=observatory_name,
+        min_vis=min_vis,
     )
     if observatory_id is not None:
         vis.observatory_id = observatory_id
