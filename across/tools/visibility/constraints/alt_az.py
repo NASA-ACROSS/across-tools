@@ -4,6 +4,7 @@ import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
+from pydantic import Field
 from shapely import Polygon, points
 
 from ...core.enums.constraint_type import ConstraintType
@@ -33,10 +34,10 @@ class AltAzConstraint(PolygonConstraint):
     short_name: str = "AltAz"
     name: Literal[ConstraintType.ALT_AZ] = ConstraintType.ALT_AZ
     polygon: Polygon | None
-    altitude_min: float | None = None
-    altitude_max: float | None = None
-    azimuth_min: float | None = None
-    azimuth_max: float | None = None
+    altitude_min: float | None = Field(default=None, ge=0, le=90)
+    altitude_max: float | None = Field(default=None, ge=0, le=90)
+    azimuth_min: float | None = Field(default=None, ge=0, lt=360)
+    azimuth_max: float | None = Field(default=None, ge=0, lt=360)
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
@@ -61,7 +62,7 @@ class AltAzConstraint(PolygonConstraint):
 
         # Convert the sky coordinates to Alt/Az coordinates
         assert ephemeris.earth_location is not None
-        alt_az = coordinate.transform_to(AltAz(obstime=time[i], location=ephemeris.earth_location))
+        alt_az = coordinate.transform_to(AltAz(obstime=time[i], location=ephemeris.earth_location[i]))
 
         # Initialize the constraint array as all False
         in_constraint = np.zeros(len(alt_az), dtype=bool)
