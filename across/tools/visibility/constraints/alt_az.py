@@ -62,7 +62,14 @@ class AltAzConstraint(PolygonConstraint):
 
         # Convert the sky coordinates to Alt/Az coordinates
         assert ephemeris.earth_location is not None
-        alt_az = coordinate.transform_to(AltAz(obstime=time[i], location=ephemeris.earth_location[i]))
+        alt_az = coordinate.transform_to(
+            AltAz(
+                obstime=time[i],
+                location=ephemeris.earth_location
+                if ephemeris.earth_location.isscalar
+                else ephemeris.earth_location[i],
+            )
+        )
 
         # Initialize the constraint array as all False
         in_constraint = np.zeros(len(alt_az), dtype=bool)
