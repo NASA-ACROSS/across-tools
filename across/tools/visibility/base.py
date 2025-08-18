@@ -237,8 +237,8 @@ class Visibility(ABC, BaseSchema):
             window = Window(begin=constrained_date_begin, end=constrained_date_end)
             visibility = int((self.timestamp[i[1]] - self.timestamp[i[0]]).to_value(u.s))
             constraint_reason = ConstraintReason(
-                start_reason=f"{self.observatory_name} {self._constraint(i[0] - 1)}",
-                end_reason=f"{self.observatory_name} {self._constraint(i[1] + 1)}",
+                start_reason=f"{self.observatory_name} {self._constraint(i[0] - 1).value}",
+                end_reason=f"{self.observatory_name} {self._constraint(i[1] + 1).value}",
             )
 
             visibility_window = VisibilityWindow(
