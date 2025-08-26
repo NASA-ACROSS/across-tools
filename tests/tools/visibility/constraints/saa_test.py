@@ -33,6 +33,25 @@ class TestSAAPolygonConstraintInstantiation:
         assert isinstance(saa_polygon_constraint.polygon, Polygon)
         assert saa_polygon_constraint.polygon.exterior.coords[0] == (39.0, -30.0)
 
+    def test_saa_polygon_constraint_instantiation_from_json(
+        self, saa_polygon_constraint: SAAPolygonConstraint
+    ) -> None:
+        """Test that SAAPolygonConstraint can be instantiated from JSON."""
+        json_data = saa_polygon_constraint.model_dump_json()
+        saa_constraint = SAAPolygonConstraint.model_validate_json(json_data)
+        assert saa_constraint is not None
+        assert isinstance(saa_constraint, SAAPolygonConstraint)
+
+    def test_saa_polygon_constraint_instantiation_from_dict_bad_polygon_type(
+        self, saa_polygon_constraint: SAAPolygonConstraint
+    ) -> None:
+        """Test that SAAPolygonConstraint raises ValidationError with invalid polygon data."""
+        model_dict = saa_polygon_constraint.model_dump()
+        model_dict["polygon"] = 1
+
+        with pytest.raises(ValueError):
+            SAAPolygonConstraint.model_validate(model_dict)
+
 
 class TestSAAPolygonConstraintCompute:
     """Test suite for the computing constraints with the SAAPolygonConstraint class."""
