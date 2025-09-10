@@ -40,6 +40,15 @@ class ConstraintABC(BaseSchema, ABC):
     separation between the constraint and the coordinate is less than a given
     value.
 
+    Parameters
+    ----------
+    short_name: str
+        The short name of the constraint.
+    name: ConstraintType
+        The name of the constraint.
+    reverse: bool
+        Whether the constraint is reversed, i.e. the opposite of the default behavior.
+
     Methods
     -------
     __call__(time, ephemeris, coord)
@@ -48,6 +57,7 @@ class ConstraintABC(BaseSchema, ABC):
 
     short_name: str
     name: ConstraintType
+    reverse: bool = False
 
     @abstractmethod
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:

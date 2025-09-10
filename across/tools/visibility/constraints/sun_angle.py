@@ -84,4 +84,4 @@ class SunAngleConstraint(ConstraintABC):
             )
 
         # Return the result as True or False, or an array of True/False
-        return in_constraint
+        return in_constraint if not self.reverse else np.logical_not(in_constraint)

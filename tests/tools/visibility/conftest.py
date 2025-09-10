@@ -272,9 +272,9 @@ def constraint_json() -> Generator[str]:
     """Fixture for a JSON representation of a constraint."""
     yield json.dumps(
         [
-            {"short_name": "Sun", "name": "Sun Angle", "min_angle": 45.0},
-            {"short_name": "Moon", "name": "Moon Angle", "min_angle": 21.0},
-            {"short_name": "Earth", "name": "Earth Limb", "min_angle": 33.0},
+            {"short_name": "Sun", "name": "Sun Angle", "reverse": False, "min_angle": 45.0},
+            {"short_name": "Moon", "name": "Moon Angle", "reverse": False, "min_angle": 21.0},
+            {"short_name": "Earth", "name": "Earth Limb", "reverse": False, "min_angle": 33.0},
         ]
     )
 
