@@ -116,9 +116,10 @@ class Ephemeris(ABC):
         elif isinstance(step_size, (int, float)):
             self.step_size = TimeDelta(step_size * u.s)
 
-        # Round the end time to the nearest step size
-        steps = np.ceil(self.end.unix / self.step_size.to_value(u.s))
-        self.end = Time(steps * self.step_size.to_value(u.s), format="unix")
+        # Align begin/end to step grid (floor)
+        s = self.step_size.to_value(u.s)
+        self.begin = Time((self.begin.unix // s) * s, format="unix")
+        self.end = Time((self.end.unix // s) * s, format="unix")
 
         # Compute range of timestamps
         self.timestamp = self._compute_timestamp()
