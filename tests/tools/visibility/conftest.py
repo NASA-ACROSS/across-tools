@@ -6,12 +6,12 @@ from datetime import datetime, timedelta
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
-from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]  # type: ignore[import-untyped]
-from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]  # type: ignore[import-untyped]
+from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas.tle import TLE
-from across.tools.core.schemas.visibility import VisibilityWindow
+from across.tools.core.schemas.visibility import VisibilityComputedValues, VisibilityWindow
 from across.tools.ephemeris import Ephemeris, compute_tle_ephemeris
 from across.tools.visibility import (
     EphemerisVisibility,
@@ -37,6 +37,32 @@ def test_observatory_name() -> str:
     return "Test Observatory"
 
 
+class MockConstraint:
+    """Mock constraint for testing computed values merging."""
+
+    def __init__(self, constraint_type: ConstraintType, value_attr: str):
+        """Initialize mock constraint with type and computed value attribute."""
+
+        self.name = constraint_type
+        self.computed_values = VisibilityComputedValues()
+
+        # Set appropriate test values based on the field type
+        if value_attr in ["sun_angle", "moon_angle", "earth_angle"]:
+            setattr(self.computed_values, value_attr, 45.0 * u.deg)
+        elif value_attr == "alt_az":
+            setattr(self.computed_values, value_attr, SkyCoord(ra=0 * u.deg, dec=0 * u.deg))
+
+    def __call__(self, *args, **kwargs):  # type: ignore
+        """Mock the constraint call to return a boolean array."""
+        return np.array([False] * 10, dtype=bool)
+
+
+@pytest.fixture
+def mock_constraint_class() -> type[MockConstraint]:
+    """Return the MockConstraint class for testing"""
+    return MockConstraint
+
+
 @pytest.fixture
 def test_observatory_id_2() -> uuid.UUID:
     """Fixture for another test observatory ID"""
@@ -60,6 +86,10 @@ class MockVisibility(Visibility):
 
     def _constraint(self, i: int) -> ConstraintType:
         return ConstraintType.UNKNOWN
+
+    def _merge_computed_values(self) -> None:
+        """Fake merging of computed values"""
+        return
 
     def prepare_data(self) -> None:
         """Fake data preparation"""

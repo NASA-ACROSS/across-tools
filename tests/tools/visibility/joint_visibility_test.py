@@ -180,6 +180,17 @@ class TestComputeJointVisibility:
             == expected_joint_visibility_windows[0].model_dump()[field]
         )
 
+    def test_compute_joint_visibility_computed_values_pass_through(
+        self, computed_joint_visibility: JointVisibility[EphemerisVisibility]
+    ) -> None:
+        """JointVisibility should pass through computed_values from input visibilities"""
+        # The joint visibility should have computed_values from the first visibility
+        # that has them (in this case, both visibilities should have earth_angle)
+        assert computed_joint_visibility.computed_values.earth_angle is not None
+        assert computed_joint_visibility.computed_values.sun_angle is None
+        assert computed_joint_visibility.computed_values.moon_angle is None
+        assert computed_joint_visibility.computed_values.alt_az is None
+
     def test_compute_joint_visibility_should_return_empty_list_if_no_windows(
         self,
         computed_visibility: EphemerisVisibility,

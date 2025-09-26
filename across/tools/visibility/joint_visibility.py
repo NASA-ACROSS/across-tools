@@ -128,6 +128,14 @@ class JointVisibility(Visibility, Generic[T]):
         # Compute joint visibility by ORing all inconstraint arrays
         self.inconstraint = np.any([vis.inconstraint for vis in self.visibilities], axis=0)
 
+    def _merge_computed_values(self) -> None:
+        """
+        Abstract method to merge computed values from constraints.
+        """
+        for visibility in self.visibilities:
+            if visibility.computed_values is not None:
+                self.computed_values.merge(visibility.computed_values)
+
 
 def compute_joint_visibility(
     visibilities: list[T],

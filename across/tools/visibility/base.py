@@ -10,6 +10,7 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
 
 from across.tools.core.schemas import AstropyDateTime, AstropyTimeDelta
+from across.tools.core.schemas.visibility import VisibilityComputedValues
 
 from ..core.enums.constraint_type import ConstraintType
 from ..core.schemas import (
@@ -74,6 +75,7 @@ class Visibility(ABC, BaseSchema):
         default_factory=OrderedDict, exclude=True
     )
     visibility_windows: list[VisibilityWindow] = []
+    computed_values: VisibilityComputedValues = Field(default_factory=VisibilityComputedValues)
 
     @model_validator(mode="before")
     @classmethod
@@ -190,6 +192,13 @@ class Visibility(ABC, BaseSchema):
         raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
 
     @abstractmethod
+    def _merge_computed_values(self) -> None:
+        """
+        Abstract method to merge computed values from constraints.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
+
+    @abstractmethod
     def prepare_data(self) -> None:
         """
         Abstract method to perform visibility calculation.
@@ -273,3 +282,4 @@ class Visibility(ABC, BaseSchema):
         self._compute_timestamp()
         self.prepare_data()
         self.visibility_windows = self._make_windows()
+        self._merge_computed_values()
