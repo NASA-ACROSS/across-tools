@@ -90,6 +90,20 @@ class EphemerisVisibility(Visibility):
             self.ephemeris.index(self.begin) : self.ephemeris.index(self.end)
         ]
 
+    def _merge_computed_values(self) -> None:
+        """
+        Merge computed values from all constraints into the main computed_values attribute.
+        """
+        for constraint in self.constraints:
+            if constraint.name == ConstraintType.SUN:
+                self.computed_values.sun_angle = constraint.computed_values.sun_angle
+            elif constraint.name == ConstraintType.MOON:
+                self.computed_values.moon_angle = constraint.computed_values.moon_angle
+            elif constraint.name == ConstraintType.EARTH:
+                self.computed_values.earth_angle = constraint.computed_values.earth_angle
+            elif constraint.name == ConstraintType.ALT_AZ:
+                self.computed_values.alt_az = constraint.computed_values.alt_az
+
     def _constraint(self, index: int) -> ConstraintType:
         """
         What kind of constraints are in place at a given time index.
