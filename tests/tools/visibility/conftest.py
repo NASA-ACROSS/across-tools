@@ -41,6 +41,10 @@ class MockVisibility(Visibility):
     def _constraint(self, i: int) -> ConstraintType:
         return ConstraintType.UNKNOWN
 
+    def _merge_computed_values(self) -> None:
+        """Fake merging of computed values"""
+        return
+
     def prepare_data(self) -> None:
         """Fake data preparation"""
         assert self.timestamp is not None

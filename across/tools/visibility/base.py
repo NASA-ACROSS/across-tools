@@ -192,6 +192,13 @@ class Visibility(ABC, BaseSchema):
         raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
 
     @abstractmethod
+    def _merge_computed_values(self) -> None:
+        """
+        Abstract method to merge computed values from constraints.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
+
+    @abstractmethod
     def prepare_data(self) -> None:
         """
         Abstract method to perform visibility calculation.
@@ -256,21 +263,6 @@ class Visibility(ABC, BaseSchema):
 
         return visibility_windows
 
-    def merge_computed_values(self) -> None:
-        """
-        Merge computed values from all constraints into the main computed_values attribute.
-        """
-        for constraint in self.calculated_constraints:
-            constraint_computed_values = self.calculated_constraints[constraint]
-            if constraint == ConstraintType.SUN:
-                self.computed_values.sun_angle = constraint_computed_values
-            elif constraint == ConstraintType.MOON:
-                self.computed_values.moon_angle = constraint_computed_values
-            elif constraint == ConstraintType.EARTH:
-                self.computed_values.earth_angle = constraint_computed_values
-            elif constraint == ConstraintType.ALT_AZ:
-                self.computed_values.alt_az = constraint_computed_values
-
     def compute(self) -> None:
         """
         Perform visibility calculation.
@@ -278,4 +270,4 @@ class Visibility(ABC, BaseSchema):
         self._compute_timestamp()
         self.prepare_data()
         self.visibility_windows = self._make_windows()
-        self.merge_computed_values()
+        self._merge_computed_values()
