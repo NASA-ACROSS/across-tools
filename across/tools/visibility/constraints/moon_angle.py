@@ -66,16 +66,15 @@ class MoonAngleConstraint(ConstraintABC):
         assert ephemeris.moon is not None
 
         in_constraint = np.zeros(len(ephemeris.moon[i]), dtype=bool)
+
+        self.computed_values.moon_angle = SkyCoord(ephemeris.moon[i].ra, ephemeris.moon[i].dec).separation(
+            coordinate
+        )
+
         if self.min_angle is not None:
-            in_constraint |= (
-                SkyCoord(ephemeris.moon[i].ra, ephemeris.moon[i].dec).separation(coordinate)
-                < self.min_angle * u.deg
-            )
+            in_constraint |= self.computed_values.moon_angle < self.min_angle * u.deg
         if self.max_angle is not None:
-            in_constraint |= (
-                SkyCoord(ephemeris.moon[i].ra, ephemeris.moon[i].dec).separation(coordinate)
-                > self.max_angle * u.deg
-            )
+            in_constraint |= self.computed_values.moon_angle > self.max_angle * u.deg
 
         # Return the result as True or False, or an array of True/False
         return in_constraint

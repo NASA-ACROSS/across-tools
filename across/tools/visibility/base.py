@@ -10,6 +10,7 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
 
 from across.tools.core.schemas import AstropyDateTime, AstropyTimeDelta
+from across.tools.core.schemas.visibility import VisibilityComputedValues
 
 from ..core.enums.constraint_type import ConstraintType
 from ..core.schemas import (
@@ -74,6 +75,7 @@ class Visibility(ABC, BaseSchema):
         default_factory=OrderedDict, exclude=True
     )
     visibility_windows: list[VisibilityWindow] = []
+    computed_values: VisibilityComputedValues = Field(default_factory=VisibilityComputedValues)
 
     @model_validator(mode="before")
     @classmethod
@@ -266,6 +268,21 @@ class Visibility(ABC, BaseSchema):
 
         return visibility_windows
 
+    def merge_computed_values(self) -> None:
+        """
+        Merge computed values from all constraints into the main computed_values attribute.
+        """
+        for constraint in self.calculated_constraints:
+            constraint_computed_values = self.calculated_constraints[constraint]
+            if constraint == ConstraintType.SUN:
+                self.computed_values.sun_angle = constraint_computed_values
+            elif constraint == ConstraintType.MOON:
+                self.computed_values.moon_angle = constraint_computed_values
+            elif constraint == ConstraintType.EARTH:
+                self.computed_values.earth_angle = constraint_computed_values
+            elif constraint == ConstraintType.ALT_AZ:
+                self.computed_values.alt_az = constraint_computed_values
+
     def compute(self) -> None:
         """
         Perform visibility calculation.
@@ -273,3 +290,4 @@ class Visibility(ABC, BaseSchema):
         self._compute_timestamp()
         self.prepare_data()
         self.visibility_windows = self._make_windows()
+        self.merge_computed_values()

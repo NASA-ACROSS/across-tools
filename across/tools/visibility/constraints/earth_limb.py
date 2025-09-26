@@ -76,15 +76,17 @@ class EarthLimbConstraint(ConstraintABC):
 
         in_constraint = np.zeros(len(ephemeris.earth[i]), dtype=bool)
 
+        self.computed_values.earth_angle = SkyCoord(ephemeris.earth[i].ra, ephemeris.earth[i].dec).separation(
+            coordinate
+        )
+
         if self.min_angle is not None:
             in_constraint |= (
-                SkyCoord(ephemeris.earth[i].ra, ephemeris.earth[i].dec).separation(coordinate)
-                < ephemeris.earth_radius_angle[i] + self.min_angle * u.deg
+                self.computed_values.earth_angle < ephemeris.earth_radius_angle[i] + self.min_angle * u.deg
             )
         if self.max_angle is not None:
             in_constraint |= (
-                SkyCoord(ephemeris.earth[i].ra, ephemeris.earth[i].dec).separation(coordinate)
-                > ephemeris.earth_radius_angle[i] + self.max_angle * u.deg
+                self.computed_values.earth_angle > ephemeris.earth_radius_angle[i] + self.max_angle * u.deg
             )
 
         # Return the result as True or False, or an array of True/False
