@@ -170,13 +170,16 @@ class Ephemeris(ABC):
         prepare_data().
         """
         # Calculate the position of the Moon relative to the spacecraft
-        self.moon = get_body("moon", self.timestamp, location=self.earth_location)
+        if not hasattr(self, "moon"):
+            self.moon = get_body("moon", self.timestamp, location=self.earth_location)
 
         # Calculate the position of the Sun relative to the spacecraft
-        self.sun = get_body("sun", self.timestamp, location=self.earth_location)
+        if not hasattr(self, "sun"):
+            self.sun = get_body("sun", self.timestamp, location=self.earth_location)
 
         # Calculate the position of the Earth relative to the spacecraft
-        self.earth = get_body("earth", self.timestamp, location=self.earth_location)
+        if not hasattr(self, "earth"):
+            self.earth = get_body("earth", self.timestamp, location=self.earth_location)
 
         # Get the longitude, latitude, height, and distance (from center of
         # Earth) of the satellite from the EarthLocation object.
