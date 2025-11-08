@@ -3,19 +3,19 @@ from datetime import datetime, timedelta
 import astropy.units as u  # type: ignore[import-untyped]
 from astropy.coordinates import (  # type: ignore[import-untyped]
     GCRS,
-    TEME,
+    ITRS,
     CartesianDifferential,
     CartesianRepresentation,
     SkyCoord,
 )
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
-from sgp4.api import Satrec  # type: ignore[import-untyped]
+from tle_to_gcrs import Ephemeris as RustEphemeris  # type: ignore[import-untyped]
 
 from ..core.schemas.tle import TLE
 from .base import Ephemeris
 
 
-class TLEEphemeris(Ephemeris):
+class RustTLEEphemeris(Ephemeris):
     """
     TLE (Two-Line Element) based satellite ephemeris calculator.
 
@@ -84,18 +84,23 @@ class TLEEphemeris(Ephemeris):
         if self.tle is None:
             raise ValueError("No TLE provided")
 
-        # Load in the TLE data
-        satellite = Satrec.twoline2rv(self.tle.tle1, self.tle.tle2)
-
-        # Calculate TEME position/velocity and convert to ITRS
-        _, pos, vel = satellite.sgp4_array(self.timestamp.jd1, self.timestamp.jd2)
-        self.teme = SkyCoord(
-            CartesianRepresentation(pos.T * u.km).with_differentials(
-                CartesianDifferential(vel.T * u.km / u.s)
-            ),
-            frame=TEME(obstime=self.timestamp),
+        # Compute the Ephemeris using the Rust implementation
+        rust_ephem = RustEphemeris(
+            tle1=self.tle.tle1,
+            tle2=self.tle.tle2,
+            begin=self.begin.utc.datetime,
+            end=self.end.utc.datetime,
+            step_size=int(self.step_size.to_value(u.s)),
         )
-        self.itrs = self.teme.transform_to("itrs")
+
+        # Calculate convert the ITRS coordinates to SkyCoord objects
+        self.itrs = SkyCoord(
+            CartesianRepresentation(rust_ephem.itrs.position.T * u.km).with_differentials(
+                CartesianDifferential(rust_ephem.itrs.velocity.T * u.km / u.s)
+            ),
+            frame=ITRS(obstime=Time(rust_ephem.timestamp)),
+        )
+
         self.earth_location = self.itrs.earth_location
         self.latitude = self.itrs.earth_location.lat
         self.longitude = self.itrs.earth_location.lon
@@ -104,10 +109,48 @@ class TLEEphemeris(Ephemeris):
         # Calculate satellite position in GCRS coordinate system vector as
         # array of x,y,z vectors in units of km, and velocity vector as array
         # of x,y,z vectors in units of km/s
-        self.gcrs = self.itrs.transform_to(GCRS)
+        self.gcrs = SkyCoord(
+            CartesianRepresentation(rust_ephem.gcrs.position.T * u.km).with_differentials(
+                CartesianDifferential(rust_ephem.gcrs.velocity.T * u.km / u.s)
+            ),
+            frame=GCRS(obstime=Time(rust_ephem.timestamp)),
+        )
+
+        # Compute gcrs_frame for sun and moon calculations
+        # (observer info and obstime)
+        gcrs_frame = GCRS(
+            obstime=self.timestamp,
+            obsgeoloc=rust_ephem.gcrs.position.T * u.km,
+            obsgeovel=rust_ephem.gcrs.velocity.T * (u.km / u.s),
+        )
+
+        # Calculate the position of the Sun relative to the spacecraft
+        sun_pos = CartesianRepresentation(rust_ephem.sun.position.T * u.m)
+        sun_vel = CartesianDifferential(rust_ephem.sun.velocity.T * (u.m / u.s))
+
+        # Combine into a full 6D representation
+        sun_rep = sun_pos.with_differentials(sun_vel)
+
+        # Create a GCRS frame with observer info and obstime
+        self.sun = SkyCoord(sun_rep, frame=gcrs_frame)
+
+        # Calculate the position of the Moon relative to the spacecraft
+        moon_pos = CartesianRepresentation(rust_ephem.moon.position.T * u.m)
+        moon_vel = CartesianDifferential(rust_ephem.moon.velocity.T * (u.m / u.s))
+
+        # Combine into a full 6D representation,
+        moon_rep = moon_pos.with_differentials(moon_vel)
+
+        # Create a GCRS frame with observer info and obstime
+        self.moon = SkyCoord(moon_rep, frame=gcrs_frame)
+
+        earth_pos = CartesianRepresentation(-rust_ephem.gcrs.position.T * u.m)
+        earth_vel = CartesianDifferential(-rust_ephem.gcrs.velocity.T * (u.m / u.s))
+        earth_rep = earth_pos.with_differentials(earth_vel)
+        self.earth = SkyCoord(earth_rep, frame=gcrs_frame)
 
 
-def compute_tle_ephemeris(
+def compute_rust_tle_ephemeris(
     begin: datetime | Time,
     end: datetime | Time,
     step_size: int | timedelta | TimeDelta,
@@ -133,6 +176,6 @@ def compute_tle_ephemeris(
         The computed ephemeris object containing the position and velocity data.
     """
     # Compute the ephemeris using the TLEEphemeris class
-    ephemeris = TLEEphemeris(tle=tle, begin=begin, end=end, step_size=step_size)
+    ephemeris = RustTLEEphemeris(tle=tle, begin=begin, end=end, step_size=step_size)
     ephemeris.compute()
     return ephemeris
