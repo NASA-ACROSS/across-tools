@@ -1,15 +1,8 @@
 from datetime import datetime, timedelta
 
 import astropy.units as u  # type: ignore[import-untyped]
-from astropy.coordinates import (  # type: ignore[import-untyped]
-    GCRS,
-    ITRS,
-    CartesianDifferential,
-    CartesianRepresentation,
-    SkyCoord,
-)
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
-from tle_to_gcrs import Ephemeris as RustEphemeris  # type: ignore[import-untyped]
+from rust_ephem import TLEEphemeris as RustEphemeris  # type: ignore[import-untyped]
 
 from ..core.schemas.tle import TLE
 from .base import Ephemeris
@@ -94,12 +87,7 @@ class RustTLEEphemeris(Ephemeris):
         )
 
         # Calculate convert the ITRS coordinates to SkyCoord objects
-        self.itrs = SkyCoord(
-            CartesianRepresentation(rust_ephem.itrs.position.T * u.km).with_differentials(
-                CartesianDifferential(rust_ephem.itrs.velocity.T * u.km / u.s)
-            ),
-            frame=ITRS(obstime=Time(rust_ephem.timestamp)),
-        )
+        self.itrs = rust_ephem.itrs_sc
 
         self.earth_location = self.itrs.earth_location
         self.latitude = self.itrs.earth_location.lat
@@ -109,45 +97,16 @@ class RustTLEEphemeris(Ephemeris):
         # Calculate satellite position in GCRS coordinate system vector as
         # array of x,y,z vectors in units of km, and velocity vector as array
         # of x,y,z vectors in units of km/s
-        self.gcrs = SkyCoord(
-            CartesianRepresentation(rust_ephem.gcrs.position.T * u.km).with_differentials(
-                CartesianDifferential(rust_ephem.gcrs.velocity.T * u.km / u.s)
-            ),
-            frame=GCRS(obstime=Time(rust_ephem.timestamp)),
-        )
-
-        # Compute gcrs_frame for sun and moon calculations
-        # (observer info and obstime)
-        gcrs_frame = GCRS(
-            obstime=self.timestamp,
-            obsgeoloc=rust_ephem.gcrs.position.T * u.km,
-            obsgeovel=rust_ephem.gcrs.velocity.T * (u.km / u.s),
-        )
-
-        # Calculate the position of the Sun relative to the spacecraft
-        sun_pos = CartesianRepresentation(rust_ephem.sun.position.T * u.m)
-        sun_vel = CartesianDifferential(rust_ephem.sun.velocity.T * (u.m / u.s))
-
-        # Combine into a full 6D representation
-        sun_rep = sun_pos.with_differentials(sun_vel)
+        self.gcrs = rust_ephem.gcrs_sc
 
         # Create a GCRS frame with observer info and obstime
-        self.sun = SkyCoord(sun_rep, frame=gcrs_frame)
-
-        # Calculate the position of the Moon relative to the spacecraft
-        moon_pos = CartesianRepresentation(rust_ephem.moon.position.T * u.m)
-        moon_vel = CartesianDifferential(rust_ephem.moon.velocity.T * (u.m / u.s))
-
-        # Combine into a full 6D representation,
-        moon_rep = moon_pos.with_differentials(moon_vel)
+        self.sun = rust_ephem.sun_sc
 
         # Create a GCRS frame with observer info and obstime
-        self.moon = SkyCoord(moon_rep, frame=gcrs_frame)
+        self.moon = rust_ephem.moon_sc
 
-        earth_pos = CartesianRepresentation(-rust_ephem.gcrs.position.T * u.m)
-        earth_vel = CartesianDifferential(-rust_ephem.gcrs.velocity.T * (u.m / u.s))
-        earth_rep = earth_pos.with_differentials(earth_vel)
-        self.earth = SkyCoord(earth_rep, frame=gcrs_frame)
+        # Create a GCRS frame with observer info and obstime
+        self.earth = rust_ephem.earth_sc
 
 
 def compute_rust_tle_ephemeris(
