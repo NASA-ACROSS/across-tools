@@ -266,7 +266,7 @@ class Visibility(ABC, BaseSchema):
 def compute_joint_visibility(
     visibilities: list[Visibility],
     instrument_ids: list[UUID],
-) -> list[VisibilityWindow | None]:
+) -> list[VisibilityWindow]:
     """
     Compute joint visibility windows between multiple instruments.
     Assumes that the visibilities are in the same order as instrument_ids

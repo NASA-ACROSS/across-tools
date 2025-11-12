@@ -10,8 +10,8 @@ from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]  # type
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]  # type: ignore[import-untyped]
 
 from across.tools.core.enums.constraint_type import ConstraintType
-from across.tools.core.schemas.visibility import VisibilityWindow
 from across.tools.core.schemas.tle import TLE
+from across.tools.core.schemas.visibility import VisibilityWindow
 from across.tools.ephemeris import Ephemeris, compute_tle_ephemeris
 from across.tools.visibility import (
     EphemerisVisibility,
