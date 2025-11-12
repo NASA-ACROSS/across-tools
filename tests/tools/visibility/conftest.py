@@ -372,7 +372,7 @@ def computed_visibility_with_no_overlap(
     """
     Fixture that returns a computed EphemerisVisibility object for the second test instrument.
     Does not overlap with first instrument.
-    """    
+    """
     return compute_ephemeris_visibility(
         coordinate=skycoord_near_limb,
         begin=test_separate_visibility_time_range[0],

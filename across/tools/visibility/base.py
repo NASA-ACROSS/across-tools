@@ -290,7 +290,7 @@ def compute_joint_visibility(
         if not len(windows):
             # One of the instruments doesn't have any windows, so no joint visibility by default
             return []
-        
+
         for window in windows:
             visibility_windows.append(
                 [
@@ -311,7 +311,7 @@ def compute_joint_visibility(
 
     # Get all the instrument ids
     all_instrument_ids = set(visibility_array[:, 0])
-    
+
     joint_windows = []
     for row in visibility_array:
         current_start_datetime = row[1]
@@ -340,14 +340,14 @@ def compute_joint_visibility(
             new_window_start_time = new_window_start_time_row[1]
             new_window_begin_reason = new_window_start_time_row[2]
             new_window_begin_instrument_id = new_window_start_time_row[0]
-            
+
             # Get end info from most constrained end time
             # Finds remaining row with earliest end time
             new_window_end_time_row = filtered_arr[np.argmin(filtered_arr[:, 3]), :]
             new_window_end_time = new_window_end_time_row[3]
             new_window_end_reason = new_window_end_time_row[4]
             new_window_end_instrument_id = new_window_end_time_row[0]
-            
+
             # Check that it's a valid window
             if new_window_end_time > new_window_start_time:
                 d = VisibilityWindow.model_validate(
@@ -356,7 +356,7 @@ def compute_joint_visibility(
                             "begin": {
                                 "datetime": new_window_start_time,
                                 "constraint": new_window_begin_reason,
-                                "observatory_id": new_window_begin_instrument_id
+                                "observatory_id": new_window_begin_instrument_id,
                             },
                             "end": {
                                 "datetime": new_window_end_time,
@@ -364,16 +364,14 @@ def compute_joint_visibility(
                                 "observatory_id": new_window_end_instrument_id,
                             },
                         },
-                        "max_visibility_duration": int(
-                            (new_window_end_time - new_window_start_time).sec
-                        ),
+                        "max_visibility_duration": int((new_window_end_time - new_window_start_time).sec),
                         "constraint_reason": {
                             "start_reason": new_window_begin_reason,
                             "end_reason": new_window_end_reason,
-                        }
+                        },
                     }
                 )
-                
+
                 if d not in joint_windows:
                     joint_windows.append(d)
 

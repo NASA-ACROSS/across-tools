@@ -168,7 +168,8 @@ class TestVisibility:
 
 
 class TestComputeJointVisibility:
-    """Test the compute_joint_visibility function."""    
+    """Test the compute_joint_visibility function."""
+
     def test_compute_joint_visibility_should_return_list(
         self, computed_joint_visibility: list[VisibilityWindow]
     ) -> None:
@@ -188,12 +189,12 @@ class TestComputeJointVisibility:
         assert isinstance(computed_joint_visibility[0], VisibilityWindow)
 
     @pytest.mark.parametrize(
-        "field", 
+        "field",
         [
             "window",
             "max_visibility_duration",
             "constraint_reason",
-        ]
+        ],
     )
     def test_compute_joint_visibility_should_return_expected_result(
         self,
@@ -203,9 +204,8 @@ class TestComputeJointVisibility:
     ) -> None:
         """Test that expected joint windows match calculated joint windows"""
         assert (
-            computed_joint_visibility[0].model_dump()[field] 
-            == 
-            expected_joint_visibility_windows[0].model_dump()[field]
+            computed_joint_visibility[0].model_dump()[field]
+            == expected_joint_visibility_windows[0].model_dump()[field]
         )
 
     def test_compute_joint_visibility_should_return_empty_list_if_no_windows(
@@ -222,11 +222,8 @@ class TestComputeJointVisibility:
         computed_visibility_2.visibility_windows = []
 
         joint_visibility_windows = compute_joint_visibility(
-            visibilities=[
-                computed_visibility,
-                computed_visibility_2
-            ],
-            instrument_ids=[test_observatory_id, test_observatory_id_2]
+            visibilities=[computed_visibility, computed_visibility_2],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
         )
         assert len(joint_visibility_windows) == 0
 
@@ -246,6 +243,6 @@ class TestComputeJointVisibility:
                 computed_visibility,
                 computed_visibility_with_no_overlap,
             ],
-            instrument_ids=[test_observatory_id, test_observatory_id_2]
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
         )
         assert len(joint_visibility_windows) == 0
