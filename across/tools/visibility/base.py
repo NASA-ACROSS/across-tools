@@ -261,3 +261,120 @@ class Visibility(ABC, BaseSchema):
         self._compute_timestamp()
         self.prepare_data()
         self.visibility_windows = self._make_windows()
+
+
+def compute_joint_visibility(
+    visibilities: list[Visibility],
+    instrument_ids: list[UUID],
+) -> list[VisibilityWindow | None]:
+    """
+    Compute joint visibility windows between multiple instruments.
+    Assumes that the visibilities are in the same order as instrument_ids
+
+    Parameters
+    ----------
+    visibilities: list[Visibility]
+        List of Visibility objects.
+    instrument_ids: list[UUID]
+        List of IDs of the instruments belonging to the Visibility objects.
+
+    Returns
+    -------
+    list[VisibilityWindow]
+        List of VisibilityWindows capturing joint visibility between all inputted instruments.
+    """
+    # Flatten the windows into a list
+    visibility_windows = []
+    for visibility, instrument_id in zip(visibilities, instrument_ids):
+        windows = visibility.visibility_windows
+        if not len(windows):
+            # One of the instruments doesn't have any windows, so no joint visibility by default
+            return []
+        
+        for window in windows:
+            visibility_windows.append(
+                [
+                    instrument_id,
+                    window.window.begin.datetime,
+                    window.window.begin.constraint,
+                    window.window.end.datetime,
+                    window.window.end.constraint,
+                ]
+            )
+
+    # Transform list of windows into a numpy array to sort and filter
+    visibility_array = np.asarray(visibility_windows)
+
+    # Sort the array by begin time to get windows in chronological order
+    sorted_begin_time_indices = visibility_array[:, 1].argsort()
+    visibility_array = visibility_array[sorted_begin_time_indices]
+
+    # Get all the instrument ids
+    all_instrument_ids = set(visibility_array[:, 0])
+    
+    joint_windows = []
+    for row in visibility_array:
+        current_start_datetime = row[1]
+        current_end_datetime = row[3]
+
+        # Filter only those rows with compatible start and end times to overlap with current row
+        mask = np.where(
+            (visibility_array[:, 1] < current_end_datetime)
+            & (visibility_array[:, 3] >= current_start_datetime)
+        )[0]
+        filtered_arr = visibility_array[mask]
+        filtered_arr = filtered_arr[filtered_arr[:, 1].argsort()]
+
+        # Filter out any rows with the same instrument ID as the current row
+        # Will only keep the first row, corresponding to the earliest window,
+        # in cases of duplicates.
+        _, unique_instrument_indices = np.unique(filtered_arr[:, 0], return_index=True)
+        filtered_arr = filtered_arr[unique_instrument_indices]
+
+        # Check that we have all the instrument IDs remaining
+        filtered_instrument_ids = set(filtered_arr[:, 0])
+        if all([id_ in filtered_instrument_ids for id_ in all_instrument_ids]):
+            # Get start info from most constrained start time
+            # Finds remaining row with latest begin time
+            new_window_start_time_row = filtered_arr[np.argmax(filtered_arr[:, 1]), :]
+            new_window_start_time = new_window_start_time_row[1]
+            new_window_begin_reason = new_window_start_time_row[2]
+            new_window_begin_instrument_id = new_window_start_time_row[0]
+            
+            # Get end info from most constrained end time
+            # Finds remaining row with earliest end time
+            new_window_end_time_row = filtered_arr[np.argmin(filtered_arr[:, 3]), :]
+            new_window_end_time = new_window_end_time_row[3]
+            new_window_end_reason = new_window_end_time_row[4]
+            new_window_end_instrument_id = new_window_end_time_row[0]
+            
+            # Check that it's a valid window
+            if new_window_end_time > new_window_start_time:
+                d = VisibilityWindow.model_validate(
+                    {
+                        "window": {
+                            "begin": {
+                                "datetime": new_window_start_time,
+                                "constraint": new_window_begin_reason,
+                                "observatory_id": new_window_begin_instrument_id
+                            },
+                            "end": {
+                                "datetime": new_window_end_time,
+                                "constraint": new_window_end_reason,
+                                "observatory_id": new_window_end_instrument_id,
+                            },
+                        },
+                        "max_visibility_duration": int(
+                            (new_window_end_time - new_window_start_time).sec
+                        ),
+                        "constraint_reason": {
+                            "start_reason": new_window_begin_reason,
+                            "end_reason": new_window_end_reason,
+                        }
+                    }
+                )
+                
+                if d not in joint_windows:
+                    joint_windows.append(d)
+
+    return joint_windows

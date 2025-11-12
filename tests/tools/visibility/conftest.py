@@ -10,9 +10,15 @@ from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]  # type
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]  # type: ignore[import-untyped]
 
 from across.tools.core.enums.constraint_type import ConstraintType
+from across.tools.core.schemas.visibility import VisibilityWindow
 from across.tools.core.schemas.tle import TLE
 from across.tools.ephemeris import Ephemeris, compute_tle_ephemeris
-from across.tools.visibility import EphemerisVisibility, compute_ephemeris_visibility, constraints_from_json
+from across.tools.visibility import (
+    EphemerisVisibility,
+    compute_ephemeris_visibility,
+    compute_joint_visibility,
+    constraints_from_json,
+)
 from across.tools.visibility.base import Visibility
 from across.tools.visibility.constraints import Constraint, EarthLimbConstraint
 
@@ -27,6 +33,18 @@ def test_observatory_id() -> uuid.UUID:
 def test_observatory_name() -> str:
     """Fixture for a test observatory name"""
     return "Test Observatory"
+
+
+@pytest.fixture
+def test_observatory_id_2() -> uuid.UUID:
+    """Fixture for another test observatory ID"""
+    return uuid.uuid4()
+
+
+@pytest.fixture
+def test_observatory_name_2() -> str:
+    """Fixture for another test observatory name"""
+    return "Test Observatory 2"
 
 
 @pytest.fixture
@@ -191,6 +209,21 @@ def test_visibility_time_range() -> tuple[Time, Time]:
 
 
 @pytest.fixture
+def test_overlapping_visibility_time_range() -> tuple[Time, Time]:
+    """Fixture for a begin and end time for joint visibility testing"""
+    return Time(datetime(2023, 1, 1, 0, 2, 0)), Time(datetime(2023, 1, 1, 0, 5, 0))
+
+
+@pytest.fixture
+def test_separate_visibility_time_range() -> tuple[Time, Time]:
+    """
+    Fixture for a begin and end time that doesn't overlap with other windows.
+    Used for joint visibility testing.
+    """
+    return Time(datetime(2023, 1, 1, 0, 10, 0)), Time(datetime(2023, 1, 1, 0, 15, 0))
+
+
+@pytest.fixture
 def test_tle_ephemeris(
     test_visibility_time_range: tuple[Time, Time], test_step_size: TimeDelta, test_tle: TLE
 ) -> Ephemeris:
@@ -198,6 +231,39 @@ def test_tle_ephemeris(
     return compute_tle_ephemeris(
         begin=test_visibility_time_range[0],
         end=test_visibility_time_range[1],
+        step_size=test_step_size,
+        tle=test_tle,
+    )
+
+
+@pytest.fixture
+def test_overlapping_tle_ephemeris(
+    test_overlapping_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_tle: TLE,
+) -> Ephemeris:
+    """Fixture for a basic TLE Ephemeris instance for joint visibility testing."""
+    return compute_tle_ephemeris(
+        begin=test_overlapping_visibility_time_range[0],
+        end=test_overlapping_visibility_time_range[1],
+        step_size=test_step_size,
+        tle=test_tle,
+    )
+
+
+@pytest.fixture
+def test_separate_tle_ephemeris(
+    test_separate_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_tle: TLE,
+) -> Ephemeris:
+    """
+    Fixture for a basic TLE Ephemeris instance for joint visibility testing.
+    Does not overlap with other windows.
+    """
+    return compute_tle_ephemeris(
+        begin=test_separate_visibility_time_range[0],
+        end=test_separate_visibility_time_range[1],
         step_size=test_step_size,
         tle=test_tle,
     )
@@ -265,6 +331,109 @@ def computed_visibility(
         constraints=[test_earth_limb_constraint],
         observatory_id=test_observatory_id,
     )
+
+
+@pytest.fixture
+def computed_visibility_with_overlap(
+    skycoord_near_limb: SkyCoord,
+    test_overlapping_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_overlapping_tle_ephemeris: Ephemeris,
+    test_earth_limb_constraint: EarthLimbConstraint,
+    test_observatory_id_2: uuid.UUID,
+    test_observatory_name_2: str,
+) -> EphemerisVisibility:
+    """
+    Fixture that returns a computed EphemerisVisibility object for the second test instrument.
+    Overlaps with first instrument.
+    """
+    return compute_ephemeris_visibility(
+        coordinate=skycoord_near_limb,
+        begin=test_overlapping_visibility_time_range[0],
+        end=test_overlapping_visibility_time_range[1],
+        step_size=test_step_size,
+        observatory_name=test_observatory_name_2,
+        ephemeris=test_overlapping_tle_ephemeris,
+        constraints=[test_earth_limb_constraint],
+        observatory_id=test_observatory_id_2,
+    )
+
+
+@pytest.fixture
+def computed_visibility_with_no_overlap(
+    skycoord_near_limb: SkyCoord,
+    test_separate_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_separate_tle_ephemeris: Ephemeris,
+    test_earth_limb_constraint: EarthLimbConstraint,
+    test_observatory_id_2: uuid.UUID,
+    test_observatory_name_2: str,
+) -> EphemerisVisibility:
+    """
+    Fixture that returns a computed EphemerisVisibility object for the second test instrument.
+    Does not overlap with first instrument.
+    """    
+    return compute_ephemeris_visibility(
+        coordinate=skycoord_near_limb,
+        begin=test_separate_visibility_time_range[0],
+        end=test_separate_visibility_time_range[1],
+        step_size=test_step_size,
+        observatory_name=test_observatory_name_2,
+        ephemeris=test_separate_tle_ephemeris,
+        constraints=[test_earth_limb_constraint],
+        observatory_id=test_observatory_id_2,
+    )
+
+
+@pytest.fixture
+def computed_joint_visibility(
+    computed_visibility: EphemerisVisibility,
+    computed_visibility_with_overlap: EphemerisVisibility,
+    test_observatory_id: uuid.UUID,
+    test_observatory_id_2: uuid.UUID,
+) -> list[VisibilityWindow]:
+    """Fixture that returns computed joint visibility windows with overlap."""
+    return compute_joint_visibility(
+        visibilities=[
+            computed_visibility,
+            computed_visibility_with_overlap,
+        ],
+        instrument_ids=[
+            test_observatory_id,
+            test_observatory_id_2,
+        ],
+    )
+
+
+@pytest.fixture
+def expected_joint_visibility_windows(
+    test_overlapping_visibility_time_range: tuple[Time, Time],
+    test_observatory_id_2: uuid.UUID,
+) -> list[VisibilityWindow]:
+    """Fixture that provides expected joint visibility windows"""
+    return [
+        VisibilityWindow.model_validate(
+            {
+                "window": {
+                    "begin": {
+                        "datetime": test_overlapping_visibility_time_range[0],
+                        "constraint": ConstraintType.WINDOW,
+                        "observatory_id": test_observatory_id_2,
+                    },
+                    "end": {
+                        "datetime": test_overlapping_visibility_time_range[0] + timedelta(minutes=2),
+                        "constraint": ConstraintType.WINDOW,
+                        "observatory_id": test_observatory_id_2,
+                    },
+                },
+                "max_visibility_duration": 119,
+                "constraint_reason": {
+                    "start_reason": ConstraintType.WINDOW,
+                    "end_reason": ConstraintType.WINDOW,
+                },
+            }
+        )
+    ]
 
 
 @pytest.fixture

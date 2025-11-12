@@ -7,7 +7,8 @@ from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
-from across.tools.visibility.base import Visibility
+from across.tools.core.schemas.visibility import VisibilityWindow
+from across.tools.visibility import EphemerisVisibility, Visibility, compute_joint_visibility
 
 
 class TestVisibility:
@@ -164,3 +165,87 @@ class TestVisibility:
             observatory_name=test_observatory_name,
         )
         assert dog.step_size == default_step_size
+
+
+class TestComputeJointVisibility:
+    """Test the compute_joint_visibility function."""    
+    def test_compute_joint_visibility_should_return_list(
+        self, computed_joint_visibility: list[VisibilityWindow]
+    ) -> None:
+        """compute_joint_visibility should return a list."""
+        assert isinstance(computed_joint_visibility, list)
+
+    def test_compute_joint_visibility_window_should_be_not_empty(
+        self, computed_joint_visibility: list[VisibilityWindow]
+    ) -> None:
+        """computed joint visibility should not be empty."""
+        assert len(computed_joint_visibility) > 0
+
+    def test_compute_joint_visibility_should_return_correct_type(
+        self, computed_joint_visibility: list[VisibilityWindow]
+    ) -> None:
+        """compute_joint_visibility should return a list of EphemerisVisibilities."""
+        assert isinstance(computed_joint_visibility[0], VisibilityWindow)
+
+    @pytest.mark.parametrize(
+        "field", 
+        [
+            "window",
+            "max_visibility_duration",
+            "constraint_reason",
+        ]
+    )
+    def test_compute_joint_visibility_should_return_expected_result(
+        self,
+        computed_joint_visibility: list[VisibilityWindow],
+        field: str,
+        expected_joint_visibility_windows: list[VisibilityWindow],
+    ) -> None:
+        """Test that expected joint windows match calculated joint windows"""
+        assert (
+            computed_joint_visibility[0].model_dump()[field] 
+            == 
+            expected_joint_visibility_windows[0].model_dump()[field]
+        )
+
+    def test_compute_joint_visibility_should_return_empty_list_if_no_windows(
+        self,
+        computed_visibility: EphemerisVisibility,
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """
+        compute joint visibility should return an empty list
+        if any of the input windows are empty
+        """
+        computed_visibility_2 = computed_visibility
+        computed_visibility_2.visibility_windows = []
+
+        joint_visibility_windows = compute_joint_visibility(
+            visibilities=[
+                computed_visibility,
+                computed_visibility_2
+            ],
+            instrument_ids=[test_observatory_id, test_observatory_id_2]
+        )
+        assert len(joint_visibility_windows) == 0
+
+    def test_compute_joint_visibility_should_return_empty_list_if_no_overlap(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_no_overlap: EphemerisVisibility,
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """
+        compute joint visibility should return an empty list
+        if there is no overlap between the individual windows.
+        """
+        joint_visibility_windows = compute_joint_visibility(
+            visibilities=[
+                computed_visibility,
+                computed_visibility_with_no_overlap,
+            ],
+            instrument_ids=[test_observatory_id, test_observatory_id_2]
+        )
+        assert len(joint_visibility_windows) == 0
