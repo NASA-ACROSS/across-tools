@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from datetime import timedelta
+from typing import TypeVar
 from uuid import UUID, uuid4
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -263,8 +264,11 @@ class Visibility(ABC, BaseSchema):
         self.visibility_windows = self._make_windows()
 
 
+T = TypeVar("T", bound=Visibility)
+
+
 def compute_joint_visibility(
-    visibilities: list[Visibility],
+    visibilities: list[T],
     instrument_ids: list[UUID],
 ) -> list[VisibilityWindow]:
     """
