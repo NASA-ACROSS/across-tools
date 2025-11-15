@@ -2,6 +2,7 @@ import json
 import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -27,6 +28,26 @@ def test_observatory_id() -> uuid.UUID:
 def test_observatory_name() -> str:
     """Fixture for a test observatory name"""
     return "Test Observatory"
+
+
+class MockConstraint:
+    """Mock constraint for testing computed values merging."""
+
+    def __init__(self, constraint_type: ConstraintType, value_attr: str):
+        """Initialize mock constraint with type and computed value attribute."""
+        self.name = constraint_type
+        self.computed_values = MagicMock()
+        setattr(self.computed_values, value_attr, MagicMock())
+
+    def __call__(self, *args, **kwargs):  # type: ignore
+        """Mock the constraint call to return a boolean array."""
+        return np.array([False] * 10, dtype=bool)
+
+
+@pytest.fixture
+def mock_constraint_class() -> type[MockConstraint]:
+    """Return the MockConstraint class for testing"""
+    return MockConstraint
 
 
 @pytest.fixture
