@@ -35,6 +35,11 @@ class SunAngleConstraint(ConstraintABC):
     short_name: Literal["Sun"] = "Sun"
     min_angle: float | None = Field(default=None, ge=0, le=180, description="Minimum angle from the Sun")
     max_angle: float | None = Field(default=None, ge=0, le=180, description="Maximum angle from the Sun")
+    in_eclipse: bool = Field(
+        default=True,
+        description="If True, the constraint is enforced even when the Sun is behind the Earth "
+        "(i.e., during eclipse).",
+    )
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
@@ -82,6 +87,17 @@ class SunAngleConstraint(ConstraintABC):
                 SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(coordinate)
                 > self.max_angle * u.deg
             )
+
+        # If in_eclipse is set, remove points that are in eclipse from the constraint
+        if not self.in_eclipse:
+            print("in_eclipse is False, removing eclipse points from constraint")
+            eclipse = (
+                ephemeris.sun.separation(ephemeris.earth)
+                < ephemeris.earth_radius_angle - ephemeris.sun_radius_angle
+            )
+            in_constraint &= ~eclipse[i]
+        else:
+            print("in_eclipse is True, keeping all points in constraint")
 
         # Return the result as True or False, or an array of True/False
         return in_constraint
