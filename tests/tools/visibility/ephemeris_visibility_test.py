@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 
@@ -53,6 +55,45 @@ class TestEphemerisVisibility:
         with pytest.raises(ValueError, match="Timestamp not computed. Call prepare_data\\(\\) first."):
             first_true_index = int(np.argmax(earth_constraints))
             test_visibility._constraint(first_true_index)
+
+    def test_merge_computed_values_sun(self, test_visibility: EphemerisVisibility) -> None:
+        """Test _merge_computed_values with Sun constraint."""
+        # Create mock constraint with Sun type
+        mock_constraint = MagicMock()
+        mock_constraint.name = ConstraintType.SUN
+        mock_sun_angle = MagicMock()
+        mock_constraint.computed_values.sun_angle = mock_sun_angle
+
+        test_visibility.constraints = [mock_constraint]
+        test_visibility._merge_computed_values()
+
+        assert test_visibility.computed_values.sun_angle == mock_sun_angle
+
+    def test_merge_computed_values_moon(self, test_visibility: EphemerisVisibility) -> None:
+        """Test _merge_computed_values with Moon constraint."""
+        # Create mock constraint with Moon type
+        mock_constraint = MagicMock()
+        mock_constraint.name = ConstraintType.MOON
+        mock_moon_angle = MagicMock()
+        mock_constraint.computed_values.moon_angle = mock_moon_angle
+
+        test_visibility.constraints = [mock_constraint]
+        test_visibility._merge_computed_values()
+
+        assert test_visibility.computed_values.moon_angle == mock_moon_angle
+
+    def test_merge_computed_values_alt_az(self, test_visibility: EphemerisVisibility) -> None:
+        """Test _merge_computed_values with AltAz constraint."""
+        # Create mock constraint with AltAz type
+        mock_constraint = MagicMock()
+        mock_constraint.name = ConstraintType.ALT_AZ
+        mock_alt_az = MagicMock()
+        mock_constraint.computed_values.alt_az = mock_alt_az
+
+        test_visibility.constraints = [mock_constraint]
+        test_visibility._merge_computed_values()
+
+        assert test_visibility.computed_values.alt_az == mock_alt_az
 
 
 class TestComputeEphemerisVisibility:
