@@ -1,15 +1,15 @@
-import numpy as np
-
-from uuid import UUID
-from pydantic import Field, model_validator
 from typing import Any
+from uuid import UUID
 
-from .base import Visibility
+import numpy as np
+from pydantic import Field, model_validator
+
 from ..core.enums import ConstraintType
 from ..core.schemas import (
     AstropyDateTime,
     AstropyTimeDelta,
-) 
+)
+from .base import Visibility
 
 
 class JointVisibility(Visibility):
@@ -26,6 +26,7 @@ class JointVisibility(Visibility):
     instrument_ids : list[UUID]
         List of IDs of the instruments belonging to the Visibility objects.
     """
+
     # Parameters
     visibilities: list[Visibility] = Field(default_factory=list, exclude=True)
     instrument_ids: list[UUID] = Field(default_factory=list, exclude=True)
@@ -35,7 +36,6 @@ class JointVisibility(Visibility):
     begin: AstropyDateTime = Field(default=None)
     end: AstropyDateTime = Field(default=None)
     observatory_name: str = Field(default="", exclude=True)
-
 
     @model_validator(mode="before")
     @classmethod
@@ -47,49 +47,35 @@ class JointVisibility(Visibility):
         differ between Visibilities, a ValueError is raised.
         When these equalities have been validated, this method runs the base Visibility
         validate_parameters method to validate other parameter values.
-        """        
+        """
         # Check that all ra/dec values are the same
-        if not len(
-            set(
-                [visibility.ra for visibility in values["visibilities"]]
-            )
-        ) == 1 or not len(
-            set(
-                [visibility.dec for visibility in values["visibilities"]]
-            )
-        ) == 1:
+        if (
+            not len(set([visibility.ra for visibility in values["visibilities"]])) == 1
+            or not len(set([visibility.dec for visibility in values["visibilities"]])) == 1
+        ):
             raise ValueError("All input visibilities must have the same coordinate")
         values["ra"] = values["visibilities"][0].ra
         values["dec"] = values["visibilities"][0].dec
-        
+
         # Check that all begin/end values are the same
-        if not len(
-            set(
-                [visibility.begin for visibility in values["visibilities"]]
-            )
-        ) == 1 or not len(
-            set(
-                [visibility.end for visibility in values["visibilities"]]
-            )
-        ) == 1:
+        if (
+            not len(set([visibility.begin for visibility in values["visibilities"]])) == 1
+            or not len(set([visibility.end for visibility in values["visibilities"]])) == 1
+        ):
             raise ValueError("All begin and end times must be the same")
         values["begin"] = values["visibilities"][0].begin
         values["end"] = values["visibilities"][0].end
-        
+
         # Check that all step sizes are the same
-        if not len(
-            set(
-                [visibility.step_size for visibility in values["visibilities"]]
-            )
-        ) == 1:
+        if not len(set([visibility.step_size for visibility in values["visibilities"]])) == 1:
             raise ValueError("All step sizes must be the same")
         values["step_size"] = values["visibilities"][0].step_size
-        
+
         return values
 
     def _constraint(self, i: int) -> ConstraintType:
         """
-        For a given index, return the constraint 
+        For a given index, return the constraint
         from the first visibility that is actually constrained.
         """
         # Find the first visibility that is constrained at this index
@@ -98,7 +84,7 @@ class JointVisibility(Visibility):
                 return vis._constraint(i)
 
         return ConstraintType.UNKNOWN
-    
+
     def _get_id(self, i: int) -> UUID:
         """
         For a given index, find the ID of the first instrument that is constrained.
@@ -106,10 +92,10 @@ class JointVisibility(Visibility):
         for vis, instrument_id in zip(self.visibilities, self.instrument_ids):
             if vis.inconstraint[i]:
                 return instrument_id
-            
+
         # Unknown constraint found, so just return the first instrument ID
         return self.instrument_ids[0]
-    
+
     def _get_name(self, i: int) -> str:
         """
         For a given index, get the name of the first instrument that is constrained.
@@ -117,10 +103,10 @@ class JointVisibility(Visibility):
         for vis in self.visibilities:
             if vis.inconstraint[i]:
                 return vis.observatory_name
-            
+
         # Unknown constraint found, so just return the first instrument name
         return self.observatory_name
-    
+
     def prepare_data(self) -> None:
         """
         Compute joint visibility by ANDing all inconstraint arrays.
@@ -137,7 +123,7 @@ class JointVisibility(Visibility):
         self.inconstraint = np.any([vis.inconstraint for vis in self.visibilities], axis=0)
 
 
-def compute_joint_visibility( 
+def compute_joint_visibility(
     visibilities: list[Visibility],
     instrument_ids: list[UUID],
 ) -> JointVisibility:

@@ -1,9 +1,9 @@
-import pytest
 import uuid
-
-from astropy.time import Time  # type: ignore[import-untyped]
 from datetime import datetime
+
 import numpy as np
+import pytest
+from astropy.time import Time  # type: ignore[import-untyped]
 
 from across.tools.core.schemas import VisibilityWindow
 from across.tools.visibility import (
@@ -15,6 +15,7 @@ from across.tools.visibility import (
 
 class TestJointVisibility:
     """Test the JointVisibility class"""
+
     def test_joint_visibility_should_raise_error_if_ras_differ(
         self,
         computed_visibility: EphemerisVisibility,
@@ -25,7 +26,7 @@ class TestJointVisibility:
         with pytest.raises(ValueError):
             JointVisibility(
                 visibilities=[computed_visibility, computed_visibility_with_overlap],
-                instrument_ids=[uuid.uuid4(), uuid.uuid4()]
+                instrument_ids=[uuid.uuid4(), uuid.uuid4()],
             )
 
     def test_joint_visibility_should_raise_error_if_decs_differ(
@@ -38,7 +39,7 @@ class TestJointVisibility:
         with pytest.raises(ValueError):
             JointVisibility(
                 visibilities=[computed_visibility, computed_visibility_with_overlap],
-                instrument_ids=[uuid.uuid4(), uuid.uuid4()]
+                instrument_ids=[uuid.uuid4(), uuid.uuid4()],
             )
 
     def test_joint_visibility_should_raise_error_if_begin_times_differ(
@@ -51,9 +52,9 @@ class TestJointVisibility:
         with pytest.raises(ValueError):
             JointVisibility(
                 visibilities=[computed_visibility, computed_visibility_with_overlap],
-                instrument_ids=[uuid.uuid4(), uuid.uuid4()]
+                instrument_ids=[uuid.uuid4(), uuid.uuid4()],
             )
-    
+
     def test_joint_visibility_should_raise_error_if_end_times_differ(
         self,
         computed_visibility: EphemerisVisibility,
@@ -64,7 +65,7 @@ class TestJointVisibility:
         with pytest.raises(ValueError):
             JointVisibility(
                 visibilities=[computed_visibility, computed_visibility_with_overlap],
-                instrument_ids=[uuid.uuid4(), uuid.uuid4()]
+                instrument_ids=[uuid.uuid4(), uuid.uuid4()],
             )
 
     def test_joint_visibility_should_raise_error_if_step_sizes_differ(
@@ -79,7 +80,9 @@ class TestJointVisibility:
                 visibilities=[computed_visibility, computed_visibility_with_overlap],
                 instrument_ids=[uuid.uuid4(), uuid.uuid4()],
             )
-    def test_compute_timestamp_not_none(self,
+
+    def test_compute_timestamp_not_none(
+        self,
         computed_visibility: EphemerisVisibility,
         computed_visibility_with_overlap: EphemerisVisibility,
     ) -> None:
@@ -91,7 +94,8 @@ class TestJointVisibility:
         joint_vis.compute()
         assert joint_vis.timestamp is not None
 
-    def test_compute_entries_not_empty(self,
+    def test_compute_entries_not_empty(
+        self,
         computed_visibility: EphemerisVisibility,
         computed_visibility_with_overlap: EphemerisVisibility,
     ) -> None:
@@ -136,19 +140,22 @@ class TestComputeJointVisibility:
     """Test the compute_joint_visibility function."""
 
     def test_compute_joint_visibility_should_return_joint_visibility(
-        self, computed_joint_visibility: JointVisibility,
+        self,
+        computed_joint_visibility: JointVisibility,
     ) -> None:
         """compute_joint_visibility should return a JointVisibility object."""
         assert isinstance(computed_joint_visibility, JointVisibility)
 
     def test_compute_joint_visibility_window_should_be_not_empty(
-        self, computed_joint_visibility: JointVisibility,
+        self,
+        computed_joint_visibility: JointVisibility,
     ) -> None:
         """computed joint visibility windows should not be empty."""
         assert len(computed_joint_visibility.visibility_windows) > 0
 
     def test_compute_joint_visibility_should_return_correct_type(
-        self, computed_joint_visibility: JointVisibility,
+        self,
+        computed_joint_visibility: JointVisibility,
     ) -> None:
         """compute_joint_visibility should contain a list of EphemerisVisibilities."""
         assert isinstance(computed_joint_visibility.visibility_windows[0], VisibilityWindow)
