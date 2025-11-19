@@ -15,6 +15,7 @@ from across.tools.core.schemas.visibility import VisibilityWindow
 from across.tools.ephemeris import Ephemeris, compute_tle_ephemeris
 from across.tools.visibility import (
     EphemerisVisibility,
+    JointVisibility,
     compute_ephemeris_visibility,
     compute_joint_visibility,
     constraints_from_json,
@@ -209,12 +210,6 @@ def test_visibility_time_range() -> tuple[Time, Time]:
 
 
 @pytest.fixture
-def test_overlapping_visibility_time_range() -> tuple[Time, Time]:
-    """Fixture for a begin and end time for joint visibility testing"""
-    return Time(datetime(2023, 1, 1, 0, 2, 0)), Time(datetime(2023, 1, 1, 0, 5, 0))
-
-
-@pytest.fixture
 def test_separate_visibility_time_range() -> tuple[Time, Time]:
     """
     Fixture for a begin and end time that doesn't overlap with other windows.
@@ -237,39 +232,6 @@ def test_tle_ephemeris(
 
 
 @pytest.fixture
-def test_overlapping_tle_ephemeris(
-    test_overlapping_visibility_time_range: tuple[Time, Time],
-    test_step_size: TimeDelta,
-    test_tle: TLE,
-) -> Ephemeris:
-    """Fixture for a basic TLE Ephemeris instance for joint visibility testing."""
-    return compute_tle_ephemeris(
-        begin=test_overlapping_visibility_time_range[0],
-        end=test_overlapping_visibility_time_range[1],
-        step_size=test_step_size,
-        tle=test_tle,
-    )
-
-
-@pytest.fixture
-def test_separate_tle_ephemeris(
-    test_separate_visibility_time_range: tuple[Time, Time],
-    test_step_size: TimeDelta,
-    test_tle: TLE,
-) -> Ephemeris:
-    """
-    Fixture for a basic TLE Ephemeris instance for joint visibility testing.
-    Does not overlap with other windows.
-    """
-    return compute_tle_ephemeris(
-        begin=test_separate_visibility_time_range[0],
-        end=test_separate_visibility_time_range[1],
-        step_size=test_step_size,
-        tle=test_tle,
-    )
-
-
-@pytest.fixture
 def skycoord_near_limb(test_tle_ephemeris: Ephemeris) -> SkyCoord:
     """Fixture for a SkyCoord near the Earth limb."""
     sky_coord = SkyCoord(
@@ -282,6 +244,18 @@ def skycoord_near_limb(test_tle_ephemeris: Ephemeris) -> SkyCoord:
 def test_earth_limb_constraint() -> EarthLimbConstraint:
     """Fixture for an EarthLimbConstraint instance with min and max angles."""
     return EarthLimbConstraint(min_angle=33, max_angle=170)
+
+
+@pytest.fixture
+def test_earth_limb_constraint_2() -> EarthLimbConstraint:
+    """Fixture for another EarthLimbConstraint instance with different min/max angles"""
+    return EarthLimbConstraint(min_angle=30, max_angle=165)
+
+
+@pytest.fixture
+def test_extreme_constraint() -> EarthLimbConstraint:
+    """Fixture for an extreme EarthLimbConstraint which will provide no overlapping visibility"""
+    return EarthLimbConstraint(max_angle=29)
 
 
 @pytest.fixture
@@ -336,10 +310,10 @@ def computed_visibility(
 @pytest.fixture
 def computed_visibility_with_overlap(
     skycoord_near_limb: SkyCoord,
-    test_overlapping_visibility_time_range: tuple[Time, Time],
+    test_visibility_time_range: tuple[Time, Time],
     test_step_size: TimeDelta,
-    test_overlapping_tle_ephemeris: Ephemeris,
-    test_earth_limb_constraint: EarthLimbConstraint,
+    test_tle_ephemeris: Ephemeris,
+    test_earth_limb_constraint_2: EarthLimbConstraint,
     test_observatory_id_2: uuid.UUID,
     test_observatory_name_2: str,
 ) -> EphemerisVisibility:
@@ -349,12 +323,12 @@ def computed_visibility_with_overlap(
     """
     return compute_ephemeris_visibility(
         coordinate=skycoord_near_limb,
-        begin=test_overlapping_visibility_time_range[0],
-        end=test_overlapping_visibility_time_range[1],
+        begin=test_visibility_time_range[0],
+        end=test_visibility_time_range[1],
         step_size=test_step_size,
         observatory_name=test_observatory_name_2,
-        ephemeris=test_overlapping_tle_ephemeris,
-        constraints=[test_earth_limb_constraint],
+        ephemeris=test_tle_ephemeris,
+        constraints=[test_earth_limb_constraint_2],
         observatory_id=test_observatory_id_2,
     )
 
@@ -362,10 +336,10 @@ def computed_visibility_with_overlap(
 @pytest.fixture
 def computed_visibility_with_no_overlap(
     skycoord_near_limb: SkyCoord,
-    test_separate_visibility_time_range: tuple[Time, Time],
+    test_visibility_time_range: tuple[Time, Time],
     test_step_size: TimeDelta,
-    test_separate_tle_ephemeris: Ephemeris,
-    test_earth_limb_constraint: EarthLimbConstraint,
+    test_tle_ephemeris: Ephemeris,
+    test_extreme_constraint: EarthLimbConstraint,
     test_observatory_id_2: uuid.UUID,
     test_observatory_name_2: str,
 ) -> EphemerisVisibility:
@@ -375,12 +349,12 @@ def computed_visibility_with_no_overlap(
     """
     return compute_ephemeris_visibility(
         coordinate=skycoord_near_limb,
-        begin=test_separate_visibility_time_range[0],
-        end=test_separate_visibility_time_range[1],
+        begin=test_visibility_time_range[0],
+        end=test_visibility_time_range[1],
         step_size=test_step_size,
         observatory_name=test_observatory_name_2,
-        ephemeris=test_separate_tle_ephemeris,
-        constraints=[test_earth_limb_constraint],
+        ephemeris=test_tle_ephemeris,
+        constraints=[test_extreme_constraint],
         observatory_id=test_observatory_id_2,
     )
 
@@ -391,7 +365,7 @@ def computed_joint_visibility(
     computed_visibility_with_overlap: EphemerisVisibility,
     test_observatory_id: uuid.UUID,
     test_observatory_id_2: uuid.UUID,
-) -> list[VisibilityWindow]:
+) -> JointVisibility:
     """Fixture that returns computed joint visibility windows with overlap."""
     return compute_joint_visibility(
         visibilities=[
@@ -407,8 +381,9 @@ def computed_joint_visibility(
 
 @pytest.fixture
 def expected_joint_visibility_windows(
-    test_overlapping_visibility_time_range: tuple[Time, Time],
-    test_observatory_id_2: uuid.UUID,
+    test_visibility_time_range: tuple[Time, Time],
+    test_observatory_id: uuid.UUID,
+    test_observatory_name: str,
 ) -> list[VisibilityWindow]:
     """Fixture that provides expected joint visibility windows"""
     return [
@@ -416,20 +391,21 @@ def expected_joint_visibility_windows(
             {
                 "window": {
                     "begin": {
-                        "datetime": test_overlapping_visibility_time_range[0],
+                        "datetime": test_visibility_time_range[0],
                         "constraint": ConstraintType.WINDOW,
-                        "observatory_id": test_observatory_id_2,
+                        "observatory_id": test_observatory_id,
                     },
                     "end": {
-                        "datetime": test_overlapping_visibility_time_range[0] + timedelta(minutes=2),
-                        "constraint": ConstraintType.WINDOW,
-                        "observatory_id": test_observatory_id_2,
+                        "datetime": test_visibility_time_range[0]
+                        + timedelta(minutes=4, seconds=59, microseconds=999982),
+                        "constraint": ConstraintType.EARTH,
+                        "observatory_id": test_observatory_id,
                     },
                 },
-                "max_visibility_duration": 119,
+                "max_visibility_duration": 299,
                 "constraint_reason": {
-                    "start_reason": ConstraintType.WINDOW,
-                    "end_reason": ConstraintType.WINDOW,
+                    "start_reason": f"{test_observatory_name} {ConstraintType.WINDOW.value}",
+                    "end_reason": f"{test_observatory_name} {ConstraintType.EARTH.value}",
                 },
             }
         )

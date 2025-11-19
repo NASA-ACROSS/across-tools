@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from datetime import timedelta
-from typing import TypeVar
 from uuid import UUID, uuid4
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -197,6 +196,18 @@ class Visibility(ABC, BaseSchema):
         """
         raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
 
+    def _get_id(self, i: int) -> UUID:
+        """
+        For a given index, get the ID of the observatory or instrument
+        """
+        return self.observatory_id  # pragma: no cover
+
+    def _get_name(self, i: int) -> str:
+        """
+        For a given index, get the name of the observatory or instrument
+        """
+        return self.observatory_name  # pragma: no cover
+
     def _make_windows(self) -> list[VisibilityWindow]:
         """
         Create visibility windows from the inconstraint array.
@@ -228,18 +239,18 @@ class Visibility(ABC, BaseSchema):
             constrained_date_begin = ConstrainedDate(
                 datetime=self.timestamp[i[0]].datetime,
                 constraint=self._constraint(i[0] - 1),
-                observatory_id=self.observatory_id,
+                observatory_id=self._get_id(i[0] - 1),
             )
             constrained_date_end = ConstrainedDate(
                 datetime=self.timestamp[i[1]].datetime,
                 constraint=self._constraint(i[1] + 1),
-                observatory_id=self.observatory_id,
+                observatory_id=self._get_id(i[1] + 1),
             )
             window = Window(begin=constrained_date_begin, end=constrained_date_end)
             visibility = int((self.timestamp[i[1]] - self.timestamp[i[0]]).to_value(u.s))
             constraint_reason = ConstraintReason(
-                start_reason=f"{self.observatory_name} {self._constraint(i[0] - 1).value}",
-                end_reason=f"{self.observatory_name} {self._constraint(i[1] + 1).value}",
+                start_reason=f"{self._get_name(i[0] - 1)} {self._constraint(i[0] - 1).value}",
+                end_reason=f"{self._get_name(i[1] + 1)} {self._constraint(i[1] + 1).value}",
             )
 
             visibility_window = VisibilityWindow(
@@ -262,121 +273,3 @@ class Visibility(ABC, BaseSchema):
         self._compute_timestamp()
         self.prepare_data()
         self.visibility_windows = self._make_windows()
-
-
-T = TypeVar("T", bound=Visibility)
-
-
-def compute_joint_visibility(
-    visibilities: list[T],
-    instrument_ids: list[UUID],
-) -> list[VisibilityWindow]:
-    """
-    Compute joint visibility windows between multiple instruments.
-    Assumes that the visibilities are in the same order as instrument_ids
-
-    Parameters
-    ----------
-    visibilities: list[Visibility]
-        List of Visibility objects.
-    instrument_ids: list[UUID]
-        List of IDs of the instruments belonging to the Visibility objects.
-
-    Returns
-    -------
-    list[VisibilityWindow]
-        List of VisibilityWindows capturing joint visibility between all inputted instruments.
-    """
-    # Flatten the windows into a list
-    visibility_windows = []
-    for visibility, instrument_id in zip(visibilities, instrument_ids):
-        windows = visibility.visibility_windows
-        if not len(windows):
-            # One of the instruments doesn't have any windows, so no joint visibility by default
-            return []
-
-        for window in windows:
-            visibility_windows.append(
-                [
-                    instrument_id,
-                    window.window.begin.datetime,
-                    window.window.begin.constraint,
-                    window.window.end.datetime,
-                    window.window.end.constraint,
-                ]
-            )
-
-    # Transform list of windows into a numpy array to sort and filter
-    visibility_array = np.asarray(visibility_windows)
-
-    # Sort the array by begin time to get windows in chronological order
-    sorted_begin_time_indices = visibility_array[:, 1].argsort()
-    visibility_array = visibility_array[sorted_begin_time_indices]
-
-    # Get all the instrument ids
-    all_instrument_ids = set(visibility_array[:, 0])
-
-    joint_windows = []
-    for row in visibility_array:
-        current_start_datetime = row[1]
-        current_end_datetime = row[3]
-
-        # Filter only those rows with compatible start and end times to overlap with current row
-        mask = np.where(
-            (visibility_array[:, 1] < current_end_datetime)
-            & (visibility_array[:, 3] >= current_start_datetime)
-        )[0]
-        filtered_arr = visibility_array[mask]
-        filtered_arr = filtered_arr[filtered_arr[:, 1].argsort()]
-
-        # Filter out any rows with the same instrument ID as the current row
-        # Will only keep the first row, corresponding to the earliest window,
-        # in cases of duplicates.
-        _, unique_instrument_indices = np.unique(filtered_arr[:, 0], return_index=True)
-        filtered_arr = filtered_arr[unique_instrument_indices]
-
-        # Check that we have all the instrument IDs remaining
-        filtered_instrument_ids = set(filtered_arr[:, 0])
-        if all([id_ in filtered_instrument_ids for id_ in all_instrument_ids]):
-            # Get start info from most constrained start time
-            # Finds remaining row with latest begin time
-            new_window_start_time_row = filtered_arr[np.argmax(filtered_arr[:, 1]), :]
-            new_window_start_time = new_window_start_time_row[1]
-            new_window_begin_reason = new_window_start_time_row[2]
-            new_window_begin_instrument_id = new_window_start_time_row[0]
-
-            # Get end info from most constrained end time
-            # Finds remaining row with earliest end time
-            new_window_end_time_row = filtered_arr[np.argmin(filtered_arr[:, 3]), :]
-            new_window_end_time = new_window_end_time_row[3]
-            new_window_end_reason = new_window_end_time_row[4]
-            new_window_end_instrument_id = new_window_end_time_row[0]
-
-            # Check that it's a valid window
-            if new_window_end_time > new_window_start_time:
-                d = VisibilityWindow.model_validate(
-                    {
-                        "window": {
-                            "begin": {
-                                "datetime": new_window_start_time,
-                                "constraint": new_window_begin_reason,
-                                "observatory_id": new_window_begin_instrument_id,
-                            },
-                            "end": {
-                                "datetime": new_window_end_time,
-                                "constraint": new_window_end_reason,
-                                "observatory_id": new_window_end_instrument_id,
-                            },
-                        },
-                        "max_visibility_duration": int((new_window_end_time - new_window_start_time).sec),
-                        "constraint_reason": {
-                            "start_reason": new_window_begin_reason,
-                            "end_reason": new_window_end_reason,
-                        },
-                    }
-                )
-
-                if d not in joint_windows:
-                    joint_windows.append(d)
-
-    return joint_windows
