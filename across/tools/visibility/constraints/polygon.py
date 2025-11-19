@@ -13,9 +13,11 @@ class PolygonConstraint(ConstraintABC):
     polygon: Polygon | None = None
 
     @field_serializer("polygon")
-    def serialize_polygon(self, polygon: Polygon) -> list[tuple[float, ...]]:
+    def serialize_polygon(self, polygon: Polygon | None) -> list[tuple[float, ...]] | None:
         """Serialize the polygon to a list of tuples"""
-        return [co for co in polygon.exterior.coords]
+        if polygon:
+            return [co for co in polygon.exterior.coords]
+        return None
 
     @field_validator("polygon", mode="before")
     @classmethod
