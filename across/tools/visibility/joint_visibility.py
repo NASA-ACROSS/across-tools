@@ -48,12 +48,16 @@ class JointVisibility(Visibility):
         When these equalities have been validated, this method runs the base Visibility
         validate_parameters method to validate other parameter values.
         """
-        # Check that all ra/dec values are the same
-        if (
-            not len(set([visibility.ra for visibility in values["visibilities"]])) == 1
-            or not len(set([visibility.dec for visibility in values["visibilities"]])) == 1
-        ):
-            raise ValueError("All input visibilities must have the same coordinate")
+        # Check that all ra/dec values are the same within tolerance (~15 arcsec)
+        tolerance = 15.0 / 3600.0
+
+        ras = np.array([(visibility.ra) for visibility in values["visibilities"]], dtype=float)
+        decs = np.array([(visibility.dec) for visibility in values["visibilities"]], dtype=float)
+
+        if not (np.allclose(ras, ras[0], atol=tolerance) and np.allclose(decs, decs[0], atol=tolerance)):
+            raise ValueError(
+                f"All input visibilities must have the same coordinate within {tolerance} degrees"
+            )
         values["ra"] = values["visibilities"][0].ra
         values["dec"] = values["visibilities"][0].dec
 
