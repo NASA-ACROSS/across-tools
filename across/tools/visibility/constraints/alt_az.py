@@ -33,7 +33,7 @@ class AltAzConstraint(PolygonConstraint):
 
     short_name: str = "AltAz"
     name: Literal[ConstraintType.ALT_AZ] = ConstraintType.ALT_AZ
-    polygon: Polygon | None
+    polygon: Polygon | None = None
     altitude_min: float | None = Field(default=None, ge=0, le=90)
     altitude_max: float | None = Field(default=None, ge=0, le=90)
     azimuth_min: float | None = Field(default=None, ge=0, lt=360)
