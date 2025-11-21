@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 import numpy as np
@@ -10,10 +10,11 @@ from ..core.schemas import (
     AstropyTimeDelta,
 )
 from .base import Visibility
-from .ephemeris_visibility import EphemerisVisibility
+
+T = TypeVar("T", bound=Visibility)
 
 
-class JointVisibility(Visibility):
+class JointVisibility(Visibility, Generic[T]):
     """
     Computes joint visibility windows between multiple instruments.
 
@@ -22,14 +23,14 @@ class JointVisibility(Visibility):
 
     Parameters
     ----------
-    visibilities : list[Visibility]
-        List of Visibility objects with identical timestamp grids.
+    visibilities : list[T]
+        List of Visibility or Visibility child objects with identical timestamp grids.
     instrument_ids : list[UUID]
         List of IDs of the instruments belonging to the Visibility objects.
     """
 
     # Parameters
-    visibilities: list[Visibility | EphemerisVisibility] = Field(default_factory=list, exclude=True)
+    visibilities: list[T] = Field(default_factory=list, exclude=True)
     instrument_ids: list[UUID] = Field(default_factory=list, exclude=True)
 
     # Values derived from input parameters
@@ -129,17 +130,17 @@ class JointVisibility(Visibility):
 
 
 def compute_joint_visibility(
-    visibilities: list[Visibility | EphemerisVisibility],
+    visibilities: list[T],
     instrument_ids: list[UUID],
-) -> JointVisibility:
+) -> JointVisibility[T]:
     """
     Compute joint visibility windows for any number of instrument Visibilities.
     Assumes that the visibilities are in the same order as instrument_ids.
 
     Parameters
     ----------
-    visibilities: list[Visibility | EphemerisVisibility]
-        List of Visibility or EphemerisVisibility objects.
+    visibilities: list[T]
+        List of Visibility objects or children objects of Visibility.
     instrument_ids: list[UUID]
         List of IDs of the instruments belonging to the Visibility objects.
 

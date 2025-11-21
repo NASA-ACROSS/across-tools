@@ -141,21 +141,21 @@ class TestComputeJointVisibility:
 
     def test_compute_joint_visibility_should_return_joint_visibility(
         self,
-        computed_joint_visibility: JointVisibility,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
     ) -> None:
         """compute_joint_visibility should return a JointVisibility object."""
         assert isinstance(computed_joint_visibility, JointVisibility)
 
     def test_compute_joint_visibility_window_should_be_not_empty(
         self,
-        computed_joint_visibility: JointVisibility,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
     ) -> None:
         """computed joint visibility windows should not be empty."""
         assert len(computed_joint_visibility.visibility_windows) > 0
 
     def test_compute_joint_visibility_should_return_correct_type(
         self,
-        computed_joint_visibility: JointVisibility,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
     ) -> None:
         """compute_joint_visibility should contain a list of EphemerisVisibilities."""
         assert isinstance(computed_joint_visibility.visibility_windows[0], VisibilityWindow)
@@ -170,7 +170,7 @@ class TestComputeJointVisibility:
     )
     def test_compute_joint_visibility_should_return_expected_result(
         self,
-        computed_joint_visibility: JointVisibility,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
         field: str,
         expected_joint_visibility_windows: list[VisibilityWindow],
     ) -> None:

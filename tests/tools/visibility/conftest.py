@@ -365,7 +365,7 @@ def computed_joint_visibility(
     computed_visibility_with_overlap: EphemerisVisibility,
     test_observatory_id: uuid.UUID,
     test_observatory_id_2: uuid.UUID,
-) -> JointVisibility:
+) -> JointVisibility[EphemerisVisibility]:
     """Fixture that returns computed joint visibility windows with overlap."""
     return compute_joint_visibility(
         visibilities=[
