@@ -10,6 +10,7 @@ from ..core.schemas import (
     AstropyTimeDelta,
 )
 from .base import Visibility
+from .ephemeris_visibility import EphemerisVisibility
 
 
 class JointVisibility(Visibility):
@@ -28,7 +29,7 @@ class JointVisibility(Visibility):
     """
 
     # Parameters
-    visibilities: list[Visibility] = Field(default_factory=list, exclude=True)
+    visibilities: list[Visibility | EphemerisVisibility] = Field(default_factory=list, exclude=True)
     instrument_ids: list[UUID] = Field(default_factory=list, exclude=True)
 
     # Values derived from input parameters
@@ -128,7 +129,7 @@ class JointVisibility(Visibility):
 
 
 def compute_joint_visibility(
-    visibilities: list[Visibility],
+    visibilities: list[Visibility | EphemerisVisibility],
     instrument_ids: list[UUID],
 ) -> JointVisibility:
     """
@@ -137,8 +138,8 @@ def compute_joint_visibility(
 
     Parameters
     ----------
-    visibilities: list[Visibility]
-        List of Visibility objects.
+    visibilities: list[Visibility | EphemerisVisibility]
+        List of Visibility or EphemerisVisibility objects.
     instrument_ids: list[UUID]
         List of IDs of the instruments belonging to the Visibility objects.
 
