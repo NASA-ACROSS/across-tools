@@ -36,7 +36,8 @@ dependencies = [
     "pydantic_settings>=2.0",
     "shapely>=2.0.4",
     "plotly>=5.0.0",
-    "mocpy>=0.15.0"
+    "mocpy>=0.15.0",
+    "rust-ephem>=0.3.0",
 ]
 
 [project.urls]
