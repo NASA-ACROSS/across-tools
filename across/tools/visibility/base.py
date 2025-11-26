@@ -196,6 +196,18 @@ class Visibility(ABC, BaseSchema):
         """
         raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
 
+    def _get_id(self, i: int) -> UUID:
+        """
+        For a given index, get the ID of the observatory or instrument
+        """
+        return self.observatory_id  # pragma: no cover
+
+    def _get_name(self, i: int) -> str:
+        """
+        For a given index, get the name of the observatory or instrument
+        """
+        return self.observatory_name  # pragma: no cover
+
     def _make_windows(self) -> list[VisibilityWindow]:
         """
         Create visibility windows from the inconstraint array.
@@ -227,18 +239,18 @@ class Visibility(ABC, BaseSchema):
             constrained_date_begin = ConstrainedDate(
                 datetime=self.timestamp[i[0]].datetime,
                 constraint=self._constraint(i[0] - 1),
-                observatory_id=self.observatory_id,
+                observatory_id=self._get_id(i[0] - 1),
             )
             constrained_date_end = ConstrainedDate(
                 datetime=self.timestamp[i[1]].datetime,
                 constraint=self._constraint(i[1] + 1),
-                observatory_id=self.observatory_id,
+                observatory_id=self._get_id(i[1] + 1),
             )
             window = Window(begin=constrained_date_begin, end=constrained_date_end)
             visibility = int((self.timestamp[i[1]] - self.timestamp[i[0]]).to_value(u.s))
             constraint_reason = ConstraintReason(
-                start_reason=f"{self.observatory_name} {self._constraint(i[0] - 1).value}",
-                end_reason=f"{self.observatory_name} {self._constraint(i[1] + 1).value}",
+                start_reason=f"{self._get_name(i[0] - 1)} {self._constraint(i[0] - 1).value}",
+                end_reason=f"{self._get_name(i[1] + 1)} {self._constraint(i[1] + 1).value}",
             )
 
             visibility_window = VisibilityWindow(
