@@ -8,7 +8,7 @@
 [![Codecov](https://codecov.io/gh/ACROSS-Team/across-tools/branch/main/graph/badge.svg)](https://codecov.io/gh/ACROSS-Team/across-tools)
 [![Read The Docs](https://img.shields.io/readthedocs/across-tools)](https://across-tools.readthedocs.io/) -->
 
-The `across-tools` repository is the NASA-ACROSS library to perform specific astronomy-related calculations on the data hosted in the `across-server`. This repository is responsible for bandpasses, instrument footprint, ephemeris, two-line element (tle) analysis, and observatory/instrument visibility calculations. 
+The `across-tools` repository is the NASA-ACROSS library to perform specific astronomy-related calculations on the data hosted in the `across-server`. This repository is responsible for instrument bandpasses, footprint, ephemeris, two-line element (tle) analysis, and observatory/instrument visibility calculations. 
 
 ## Installation
 
@@ -25,7 +25,7 @@ _Direct `pypi` installation coming soon!_
 
 ## Usage
 
-Below is a small example on how to utilize the tools to initialize a simple footprint, and perform a projection and query on the footprint.
+Below is a small example on how to utilize the tools to initialize a simple footprint, and perform a healpix query on a projected instrument footprint.
 
 ```python
 from across.tools import Coordinate
