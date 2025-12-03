@@ -102,8 +102,11 @@ Setting Up Development Environment
    :hidden:
 
    Home page <self>
+   Configuration <configuration>
+   TLE Data <tle>
    Ephemeris Generation <ephemeris>
    Visibility Calculation <visibility>
    Footprint Analysis <footprint>
+   Bandpass & Spectral Types <bandpass>
    API Reference <autoapi/index>
    Notebooks <notebooks>
