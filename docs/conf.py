@@ -55,4 +55,12 @@ autoapi_ignore = ["*/__main__.py", "*/_version.py"]
 autoapi_add_toc_tree_entry = False
 autoapi_member_order = "bysource"
 
+# -- HTML output options -----------------------------------------------------
 html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+
+# Logo configuration
+html_logo = "_static/logo.png"
+
+# Favicon configuration (optional - browser tab icon)
+# html_favicon = "_static/favicon.ico"
