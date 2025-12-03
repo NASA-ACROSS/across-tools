@@ -9,6 +9,14 @@ ephemeris generation, and instrument footprint analysis. It provides tools for c
 when celestial targets are observable from space-based and ground-based observatories, 
 accounting for various observational constraints.
 
+**across-tools** is developed and maintained by NASA's Astrophysics
+Cross Observatory Science Support (ACROSS) Team, and is part of the larger
+ACROSS software ecosystem, which includes APIs and API clients for accessing
+information about astronomical observatories, instruments, and observation
+planning. **across-tools** is designed to be a shared module that focuses on
+core computational functionality, while higher-level interfaces and user-facing
+tools are provided by other ACROSS packages.
+
 Features
 --------
 
