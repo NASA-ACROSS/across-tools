@@ -83,11 +83,18 @@ Development
 Setting Up Development Environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+If you wish to help development or contribute to the project, follow these steps to set up
+a development environment using a python virtual environment:
+
 .. code-block:: console
 
+   # Clone the repo
+   git clone git@github.com:ACROSS-Team/across-tools.git
+   cd across-tools
+
    # Create and activate a virtual environment
-   conda create -n across-tools python=3.10
-   conda activate across-tools
+   python -m venv .venv
+   source .venv/bin/activate 
 
    # Install development dependencies
    pip install -e '.[dev]'
@@ -95,8 +102,8 @@ Setting Up Development Environment
    # Install pre-commit hooks
    pre-commit install
 
-   # Install pandoc for documentation building
-   conda install pandoc
+Note: please be sure in to run the last command to install the pre-commit hooks, which will
+help ensure code quality and consistency. 
 
 .. toctree::
    :hidden:
