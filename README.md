@@ -1,72 +1,58 @@
 
 # across-tools
 
-[![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
+<!-- [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
 [![PyPI](https://img.shields.io/pypi/v/across-tools?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/across-tools/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ACROSS-Team/across-tools/smoke-test.yml)](https://github.com/ACROSS-Team/across-tools/actions/workflows/smoke-test.yml)
 [![Codecov](https://codecov.io/gh/ACROSS-Team/across-tools/branch/main/graph/badge.svg)](https://codecov.io/gh/ACROSS-Team/across-tools)
-[![Read The Docs](https://img.shields.io/readthedocs/across-tools)](https://across-tools.readthedocs.io/)
+[![Read The Docs](https://img.shields.io/readthedocs/across-tools)](https://across-tools.readthedocs.io/) -->
 
-This project was automatically generated using the LINCC-Frameworks 
-[python-project-template](https://github.com/lincc-frameworks/python-project-template).
+The `across-tools` repository is the NASA-ACROSS library to perform specific astronomy-related calculations on the data hosted in the `across-server`. This repository is responsible for instrument bandpasses, footprint, ephemeris, two-line element (tle) analysis, and observatory/instrument visibility calculations. 
 
-A repository badge was added to show that this project uses the python-project-template, however it's up to
-you whether or not you'd like to display it!
+## Installation
 
-For more information about the project template see the 
-[documentation](https://lincc-ppt.readthedocs.io/en/latest/).
+This repository can be installed on python (`version >=3.10`) environments.
 
-## Dev Guide - Getting Started
-
-Before installing any dependencies or writing code, it's a great idea to create a
-virtual environment. LINCC-Frameworks engineers primarily use `conda` to manage virtual
-environments. If you have conda installed locally, you can run the following to
-create and activate a new environment.
-
-```
->> conda create -n <env_name> python=3.10
->> conda activate <env_name>
+```sh
+#activate your python environment (conda, mamba, venv... etc)
+git clone https://github.com/ACROSS-Team/across-tools.git
+cd across-tools
+python -m pip install .
 ```
 
-Once you have created a new environment, you can install this project for local
-development using the following commands:
+_Direct `pypi` installation coming soon!_
 
+## Usage
+
+Below is a small example on how to utilize the tools to initialize a simple footprint, and perform a healpix query on a projected instrument footprint.
+
+```python
+from across.tools import Coordinate
+from across.tools import Polygon
+from across.tools.footprint import Footprint
+
+simple_polygon = Polygon(
+   coordinates=[
+      Coordinate(ra=-0.5, dec=0.5),
+      Coordinate(ra=0.5, dec=0.5),
+      Coordinate(ra=0.5, dec=-0.5),
+      Coordinate(ra=-0.5, dec=-0.5),
+      Coordinate(ra=-0.5, dec=0.5)
+   ]
+)
+footprint = Footprint(detectors=[simple_polygon])
+
+projected_footprint = footprint.project(
+   coordinate=Coordinate(ra=42, dec=42), roll_angle=45
+)
+pixels = projected_footprint.query_pixels()
 ```
->> ./.setup_dev.sh
->> conda install pandoc
-```
 
-Notes:
-1. `./.setup_dev.sh` will initialize pre-commit for this local repository, so
-   that a set of tests will be run prior to completing a local commit. For more
-   information, see the Python Project Template documentation on 
-   [pre-commit](https://lincc-ppt.readthedocs.io/en/latest/practices/precommit.html)
-2. Install `pandoc` allows you to verify that automatic rendering of Jupyter notebooks
-   into documentation for ReadTheDocs works as expected. For more information, see
-   the Python Project Template documentation on
-   [Sphinx and Python Notebooks](https://lincc-ppt.readthedocs.io/en/latest/practices/sphinx.html#python-notebooks)
+## Contributing
 
-## The .github directory
+Found a bug? Want to make a feature request? Or create a pull request? Navigate to our [Contributing](CONTRIBUTING.md) document for more instructions!
 
-This directory contains various configurations and .yml files that are used to
-define GitHub actions and behaviors.
+## Other Links
 
-### Workflows
-
-The .yml files in ``./workflows`` are used to define the various continuous 
-integration scripts that will be run on your behalf e.g. nightly as a smoke check,
-or when you create a new PR.
-
-For more information about CI and workflows, look here: https://lincc-ppt.readthedocs.io/en/latest/practices/ci.html
-
-### Configurations
-
-Templates for various different issue types are defined in ``./ISSUE_TEMPLATE``
-and a pull request template is defined as ``pull_request_template.md``. Adding,
-removing, and modifying these templates to suit the needs of your project is encouraged.
-
-For more information about these templates, look here: https://lincc-ppt.readthedocs.io/en/latest/practices/issue_pr_templating.html
-
-
-Or if you still have questions contact us: https://lincc-ppt.readthedocs.io/en/latest/source/contact.html
+[Open Science at NASA](https://science.nasa.gov/open-science/)
