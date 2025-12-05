@@ -349,10 +349,10 @@ frequency (ν), or energy (E). These are related by:
 
 Where:
 
-- $h$ is Planck's constant ($6.626 \times 10^{-34}$ J·s)
-- $c$ is the speed of light ($3 \times 10^8$ m/s)
-- $\lambda$ is wavelength
-- $\nu$ is frequency
+- :math:`h` is Planck's constant (:math:`6.626 \times 10^{-34}` J·s)
+- :math:`c` is the speed of light (:math:`3 \times 10^8` m/s)
+- :math:`\lambda` is wavelength
+- :math:`\nu` is frequency
 
 Common Bandpass Examples
 ------------------------
