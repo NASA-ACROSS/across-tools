@@ -413,50 +413,51 @@ Here are some example bandpasses for common astronomical observations:
 Error Handling
 --------------
 
-The bandpass classes validate input values and raise specific exceptions:
+The bandpass classes validate input values using Pydantic validation. When validation 
+fails, a ``pydantic.ValidationError`` is raised containing details about the error:
 
 .. code-block:: python
 
    from across.tools import WavelengthBandpass, EnergyBandpass
    from across.tools.core.enums import WavelengthUnit, EnergyUnit
-   from across.tools.core.schemas.exceptions import MinMaxValueError, BandwidthValueError
+   from pydantic import ValidationError
 
-   # MinMaxValueError: max less than min
+   # Error: max less than min
    try:
        invalid = WavelengthBandpass(
            min=600,
            max=400,  # Error: max < min
            unit=WavelengthUnit.NANOMETER
        )
-   except MinMaxValueError as e:
+   except ValidationError as e:
        print(f"Error: {e}")
 
-   # MinMaxValueError: negative values
+   # Error: negative values
    try:
        invalid = EnergyBandpass(
            min=-1.0,  # Error: negative value
            max=10.0,
            unit=EnergyUnit.keV
        )
-   except MinMaxValueError as e:
+   except ValidationError as e:
        print(f"Error: {e}")
 
-   # MinMaxValueError: only one of min/max provided
+   # Error: only one of min/max provided
    try:
        invalid = WavelengthBandpass(
            min=500,
            # max not provided
            unit=WavelengthUnit.NANOMETER
        )
-   except MinMaxValueError as e:
+   except ValidationError as e:
        print(f"Error: {e}")
 
-**Exception Types**:
+**Common Validation Errors**:
 
-- ``MinMaxValueError``: Raised when min/max values are invalid (negative, missing, 
-  or max < min)
-- ``BandwidthValueError``: Raised when central_wavelength or bandwidth values are 
-  invalid for WavelengthBandpass
+- Max wavelength/energy/frequency less than min
+- Negative values for wavelength, energy, or frequency
+- Only one of min/max provided (both are required)
+- Missing central_wavelength or bandwidth for WavelengthBandpass
 
 API Reference
 -------------
