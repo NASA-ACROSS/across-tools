@@ -265,7 +265,20 @@ The ``inner()`` function returns pixels that are covered by **all** footprints
 
 .. code-block:: python
 
+   from across.tools import Coordinate, Polygon
    from across.tools.footprint import Footprint, inner
+
+   # Helper function to create a projected footprint at a given position
+   def create_footprint_at(ra: float, dec: float, roll_angle: float = 0.0) -> Footprint:
+       """Create a 0.5° x 0.5° footprint projected to the given sky position."""
+       detector = Polygon(coordinates=[
+           Coordinate(ra=-0.25, dec=-0.25),
+           Coordinate(ra=0.25, dec=-0.25),
+           Coordinate(ra=0.25, dec=0.25),
+           Coordinate(ra=-0.25, dec=0.25),
+       ])
+       base_footprint = Footprint(detectors=[detector])
+       return base_footprint.project(coordinate=Coordinate(ra=ra, dec=dec), roll_angle=roll_angle)
 
    # Two overlapping footprints
    footprint1 = create_footprint_at(ra=180.0, dec=45.0)
