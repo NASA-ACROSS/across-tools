@@ -4,8 +4,8 @@
 <!-- [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
 [![PyPI](https://img.shields.io/pypi/v/across-tools?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/across-tools/)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ACROSS-Team/across-tools/smoke-test.yml)](https://github.com/ACROSS-Team/across-tools/actions/workflows/smoke-test.yml)
-[![Codecov](https://codecov.io/gh/ACROSS-Team/across-tools/branch/main/graph/badge.svg)](https://codecov.io/gh/ACROSS-Team/across-tools)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/NASA-ACROSS/across-tools/smoke-test.yml)](https://github.com/NASA-ACROSS/across-tools/actions/workflows/smoke-test.yml)
+[![Codecov](https://codecov.io/gh/NASA-ACROSS/across-tools/branch/main/graph/badge.svg)](https://codecov.io/gh/NASA-ACROSS/across-tools)
 [![Read The Docs](https://img.shields.io/readthedocs/across-tools)](https://across-tools.readthedocs.io/) -->
 
 The `across-tools` repository is the NASA-ACROSS library to perform specific astronomy-related calculations on the data hosted in the `across-server`. This repository is responsible for instrument bandpasses, footprint, ephemeris, two-line element (tle) analysis, and observatory/instrument visibility calculations. 
@@ -16,7 +16,7 @@ This repository can be installed on python (`version >=3.10`) environments.
 
 ```sh
 #activate your python environment (conda, mamba, venv... etc)
-git clone https://github.com/ACROSS-Team/across-tools.git
+git clone https://github.com/NASA-ACROSS/across-tools.git
 cd across-tools
 python -m pip install .
 ```

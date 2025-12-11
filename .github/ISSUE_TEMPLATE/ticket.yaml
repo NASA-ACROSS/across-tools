@@ -1,6 +1,6 @@
 name: Ticket
 description: A ticket that relates to a tech spec requirement that will be refined during planning.
-projects: ["ACROSS-Team/22"]
+projects: ["NASA-ACROSS/22"]
 
 body:
   - type: markdown
@@ -31,7 +31,7 @@ body:
     attributes:
       label: "Stakeholders"
       description: Please reference the stakeholders for this ticket
-      placeholder: "@ACROSS-Team/developers"
+      placeholder: "@NASA-ACROSS/developers"
 
   - type: textarea
     id: interfaces

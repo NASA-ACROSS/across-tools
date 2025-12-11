@@ -3,7 +3,7 @@
 name = "across-tools"
 license = { file = "LICENSE" }
 readme = "README.md"
-authors = [{ name = "ACROSS-Team", email = "samuel.d.wyatt@nasa.gov" }]
+authors = [{ name = "NASA-ACROSS", email = "samuel.d.wyatt@nasa.gov" }]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Source Code" = "https://github.com/ACROSS-Team/across-tools"
+"Source Code" = "https://github.com/NASA-ACROSS/across-tools"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]

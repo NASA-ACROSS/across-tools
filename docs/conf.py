@@ -15,8 +15,8 @@ sys.path.insert(0, os.path.abspath("../across/"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "across-tools"
-copyright = "2024, ACROSS-Team"
-author = "ACROSS-Team"
+copyright = "2024, NASA-ACROSS"
+author = "NASA-ACROSS"
 release = version("across-tools")
 # for example take major/minor
 version = ".".join(release.split(".")[:2])

@@ -33,7 +33,7 @@ This project and everyone participating in it is governed by the [ACROSS Code of
 
 If you find a bug in our code don't hesitate to report it:
 
-1. Open an issue using the [bug report template](https://github.com/ACROSS-Team/across-tools/issues/new?template=bug.yaml).
+1. Open an issue using the [bug report template](https://github.com/NASA-ACROSS/across-tools/issues/new?template=bug.yaml).
 2. Describe the issue.
 3. Describe the expected behavior if the bug did not occur.
 4. Provide the reproduction steps that someone else can follow to recreate the bug or error on their own.
