@@ -3,14 +3,24 @@
 name = "across-tools"
 license = { file = "LICENSE" }
 readme = "README.md"
-authors = [{ name = "NASA-ACROSS", email = "samuel.d.wyatt@nasa.gov" }]
+authors = [
+    { name = "Samuel D. Wyatt", email = "samuel.d.wyatt@nasa.gov" },
+    { name = "Jamie A. Kennea", email = "jak51@psu.edu" },
+    { name = "Craig Pellegrino", email = "craig.m.pellegrino@nasa.gov" },
+    { name = "Nitzan  N. Frock", email = "nitzan.n.frock@nasa.gov" },
+]
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
+]
+maintainers = [
+    { name = "Samuel D. Wyatt", email = "samuel.d.wyatt@nasa.gov" },
+    { name = "Jamie A. Kennea", email = "jak51@psu.edu" },
+    { name = "Craig Pellegrino", email = "craig.m.pellegrino@nasa.gov" },
+    { name = "Nitzan  N. Frock", email = "nitzan.n.frock@nasa.gov" },
 ]
 dynamic = ["version"]
 requires-python = ">=3.10"
