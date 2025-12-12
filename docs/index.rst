@@ -39,7 +39,7 @@ Or install from source:
 
 .. code-block:: console
 
-   git clone https://github.com/ACROSS-Team/across-tools.git
+   git clone https://github.com/NASA-ACROSS/across-tools.git
    cd across-tools
    pip install -e .
 
@@ -97,7 +97,7 @@ a development environment using a python virtual environment:
 .. code-block:: console
 
    # Clone the repo
-   git clone git@github.com:ACROSS-Team/across-tools.git
+   git clone git@github.com:NASA-ACROSS/across-tools.git
    cd across-tools
 
    # Create and activate a virtual environment

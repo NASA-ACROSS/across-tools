@@ -1,7 +1,7 @@
 name: Spike
 description: Investigative piece of work that is expected to lead into a feature issue once requirements are understood more concretely.
 type: "spike"
-projects: ["ACROSS-Team/22"]
+projects: ["NASA-ACROSS/22"]
 
 body:
   - type: markdown
