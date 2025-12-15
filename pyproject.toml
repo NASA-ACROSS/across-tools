@@ -55,6 +55,8 @@ dev = [
     "sphinx-copybutton",
     "sphinx-rtd-theme",
     "types-shapely",
+    "build",
+    "twine"
 ]
 
 [build-system]
