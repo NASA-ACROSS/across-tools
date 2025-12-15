@@ -1,7 +1,7 @@
 name: Bug
 description: Issue a bug report
 type: "bug"
-projects: ["ACROSS-Team/22"]
+projects: ["NASA-ACROSS/22"]
 
 body:
   - type: markdown

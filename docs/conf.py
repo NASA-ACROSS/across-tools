@@ -15,8 +15,8 @@ sys.path.insert(0, os.path.abspath("../across/"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "across-tools"
-copyright = "2024, ACROSS-Team"
-author = "ACROSS-Team"
+copyright = "2024, NASA-ACROSS"
+author = "NASA-ACROSS"
 release = version("across-tools")
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
@@ -55,4 +55,12 @@ autoapi_ignore = ["*/__main__.py", "*/_version.py"]
 autoapi_add_toc_tree_entry = False
 autoapi_member_order = "bysource"
 
+# -- HTML output options -----------------------------------------------------
 html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+
+# Logo configuration
+html_logo = "_static/logo.png"
+
+# Favicon configuration (optional - browser tab icon)
+# html_favicon = "_static/favicon.ico"

@@ -1,25 +1,36 @@
-# Jupyter notebooks to run on-demand.
+# Example Notebooks
 
-Jupyter notebooks in this directory will be run each time you render your documentation.
+This directory contains Jupyter notebooks that demonstrate how to use the across-tools library.
 
-This means they should be able to be run with the resources in the repo, and in various environments:
+## Notebooks
 
-- any other developer's machine
-- github CI runners
-- ReadTheDocs doc generation
+- **getting_started.ipynb**: Introduction to the core functionality of across-tools, including ephemeris calculation, visibility constraints, and footprint analysis.
 
-This is great for notebooks that can run in a few minutes, on smaller datasets.
+## Running Notebooks
 
-If you would like to include these notebooks in automatically generated documentation
-simply add the notebook name to the ``../notebooks.rst`` file, and include a markdown
-cell at the beginning of your notebook with ``# Title`` that will be used as the text
-in the table of contents in the documentation.
+These notebooks are designed to be run with the across-tools package installed. To set up your environment:
 
-Be aware that you may also need to update the ``../requirements.txt`` file if
-your notebooks have dependencies that are not specified in ``../pyproject.toml``.
+```bash
+pip install across-tools
+```
 
-For notebooks that require large datasets, access to third party APIs, large CPU or GPU requirements, put them in `./pre_executed` instead.
+Or for development:
 
-For more information look here: https://lincc-ppt.readthedocs.io/en/latest/practices/sphinx.html#python-notebooks
+```bash
+pip install -e '.[dev]'
+```
 
-Or if you still have questions contact us: https://lincc-ppt.readthedocs.io/en/latest/source/contact.html
+## Documentation Integration
+
+Notebooks in this directory are automatically rendered and included in the ReadTheDocs documentation.
+To add a new notebook:
+
+1. Create the notebook in this directory
+2. Add an entry to `../notebooks.rst` referencing your notebook
+3. Include a markdown cell at the beginning with a `# Title` that will be used in the table of contents
+
+## Pre-executed Notebooks
+
+For notebooks that require large datasets, external API access, or significant compute resources,
+place them in the `../pre_executed/` directory instead. These notebooks should be run manually
+and their outputs saved before committing.
