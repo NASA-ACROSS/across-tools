@@ -25,17 +25,17 @@ maintainers = [
 dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
-    "astropy",
-    "numpy",
-    "healpy",
-    "pydantic",
-    "astroquery",
-    "sgp4",
+    "astropy>=5",
+    "numpy>=1.2",
+    "healpy>=1.1",
+    "pydantic>=2.1",
+    "astroquery>=0.4",
+    "sgp4>2.4",
     "spiceypy>=6.0.0",
-    "httpx",
-    "spacetrack",
-    "pydantic_settings",
-    "shapely",
+    "httpx>=0.6",
+    "spacetrack>1",
+    "pydantic_settings>2",
+    "shapely>1.2",
 ]
 
 [project.urls]
