@@ -23,7 +23,11 @@ cd across-tools
 python -m pip install .
 ```
 
-_Direct `pypi` installation coming soon!_
+or the latest released version with `pip`
+
+```sh
+python -m pip install across-tools
+```
 
 ## Usage
 
