@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']  # Update this list as new Python versions are released.
 
     steps:
     - uses: actions/checkout@v6
@@ -41,7 +41,7 @@ jobs:
       run: |
         python -m pytest
     - name: Send status to author's email      
-      if: ${{ failure() }} && github.event_name != 'workflow_dispatch' }} # Only email if the workflow failed and was not manually started. Customize this as necessary.
+      if: ${{ failure() && github.event_name != 'workflow_dispatch' }} # Only email if the workflow failed and was not manually started. Customize this as necessary.
       uses: dawidd6/action-send-mail@v4
       with:
         # Required mail server address if not connection_url:
