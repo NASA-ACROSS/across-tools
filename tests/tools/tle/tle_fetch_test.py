@@ -54,7 +54,7 @@ class TestTLEFetch:
     ) -> None:
         """Test TLEFetch get method returns TLE instance."""
         mock_client = MagicMock()
-        mock_client.tle.return_value = valid_spacetrack_tle_response
+        mock_client.gp_history.return_value = valid_spacetrack_tle_response
         mock_spacetrack.return_value.__enter__.return_value = mock_client
 
         result = tle_fetch_object.get()
@@ -65,7 +65,7 @@ class TestTLEFetch:
     ) -> None:
         """Test TLEFetch get method returns correct norad_id."""
         mock_client = MagicMock()
-        mock_client.tle.return_value = valid_spacetrack_tle_response
+        mock_client.gp_history.return_value = valid_spacetrack_tle_response
         mock_spacetrack.return_value.__enter__.return_value = mock_client
 
         result = tle_fetch_object.get()
@@ -77,7 +77,7 @@ class TestTLEFetch:
     ) -> None:
         """Test TLEFetch get method returns correct satellite name."""
         mock_client = MagicMock()
-        mock_client.tle.return_value = valid_spacetrack_tle_response
+        mock_client.gp_history.return_value = valid_spacetrack_tle_response
         mock_spacetrack.return_value.__enter__.return_value = mock_client
 
         result = tle_fetch_object.get()
@@ -87,7 +87,7 @@ class TestTLEFetch:
     def test_get_empty_response(self, mock_spacetrack: MagicMock) -> None:
         """Test TLEFetch get method with an empty response."""
         mock_client = MagicMock()
-        mock_client.tle.return_value = ""
+        mock_client.gp_history.return_value = ""
         mock_spacetrack.return_value.__enter__.return_value = mock_client
 
         tle_fetch = TLEFetch(
@@ -134,7 +134,7 @@ class TestGetTLE:
     ) -> None:
         """Test get_tle returns TLE instance"""
         mock_client = MagicMock()
-        mock_client.tle.return_value = valid_spacetrack_tle_response
+        mock_client.gp_history.return_value = valid_spacetrack_tle_response
         mock_spacetrack.return_value.__enter__.return_value = mock_client
 
         result = get_tle(
@@ -149,7 +149,7 @@ class TestGetTLE:
     def test_get_tle_no_results(self, mock_spacetrack: MagicMock) -> None:
         """Test when no TLEs are found"""
         mock_spacetrack.authenticate.return_value = True
-        mock_spacetrack.tle.return_value = ""
+        mock_spacetrack.gp_history.return_value = ""
 
         result = get_tle(
             norad_id=99999,
