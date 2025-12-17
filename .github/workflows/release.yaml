@@ -2,26 +2,17 @@
 name: Release PR Merged
 on:
   push:
-    branches: ["main"]
-    # look for the specific files that are changed in a release-pr
-    paths:
-      - CHANGELOG.md
-      - across_server/__init__.py
-      - .release-please-manifest.json
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches:
+      - main
 
 permissions:
-  id-token: write
-  deployments: write
+  contents: write
+  issues: write
   pull-requests: write
-  contents: read
 
 jobs:
   release-please:
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
         with:
