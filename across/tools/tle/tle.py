@@ -95,7 +95,7 @@ class TLEFetch:
                 raise SpaceTrackAuthenticationError("space-track.org authentication failed.") from e
 
             # Fetch the TLEs between the requested epochs
-            tletext = spacetrack_client.tle(
+            tletext = spacetrack_client.gp_history(
                 norad_cat_id=self.norad_id,
                 orderby="epoch desc",
                 limit=22,
