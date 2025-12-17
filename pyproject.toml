@@ -30,12 +30,12 @@ dependencies = [
     "healpy>=1.1",
     "pydantic>=2.1",
     "astroquery>=0.4",
-    "sgp4>2.4",
+    "sgp4>=2.2",
     "spiceypy>=6.0.0",
     "httpx>=0.6",
-    "spacetrack>1",
-    "pydantic_settings>2",
-    "shapely>1.2",
+    "spacetrack>=1.0.0",
+    "pydantic_settings>=2.0",
+    "shapely>=2.0.4",
 ]
 
 [project.urls]
