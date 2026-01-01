@@ -23,7 +23,11 @@ cd across-tools
 python -m pip install .
 ```
 
-_Direct `pypi` installation coming soon!_
+or the latest released version with `pip`
+
+```sh
+python -m pip install across-tools
+```
 
 ## Usage
 
@@ -53,7 +57,7 @@ pixels = projected_footprint.query_pixels()
 
 ## Contributing
 
-Found a bug? Want to make a feature request? Or create a pull request? Navigate to our [Contributing](CONTRIBUTING.md) document for more instructions!
+Found a bug? Want to make a feature request? Or create a pull request? Navigate to our [Contributing](https://github.com/NASA-ACROSS/across-tools/blob/main/CONTRIBUTING.md) document for more instructions!
 
 ## Other Links
 
