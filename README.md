@@ -1,6 +1,8 @@
 
 # across-tools
 
+[![Unit test smoke test](https://github.com/NASA-ACROSS/across-tools/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/NASA-ACROSS/across-tools/actions/workflows/smoke-test.yml)
+
 <!-- [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
 [![PyPI](https://img.shields.io/pypi/v/across-tools?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/across-tools/)
@@ -21,7 +23,11 @@ cd across-tools
 python -m pip install .
 ```
 
-_Direct `pypi` installation coming soon!_
+or the latest released version with `pip`
+
+```sh
+python -m pip install across-tools
+```
 
 ## Usage
 
@@ -51,7 +57,7 @@ pixels = projected_footprint.query_pixels()
 
 ## Contributing
 
-Found a bug? Want to make a feature request? Or create a pull request? Navigate to our [Contributing](CONTRIBUTING.md) document for more instructions!
+Found a bug? Want to make a feature request? Or create a pull request? Navigate to our [Contributing](https://github.com/NASA-ACROSS/across-tools/blob/main/CONTRIBUTING.md) document for more instructions!
 
 ## Other Links
 

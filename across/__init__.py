@@ -19,3 +19,5 @@ of the National Aeronautics and Space Administration and The Penn State
 Research Foundation.  All rights reserved. This software is licensed under the
 Apache 2.0 License.
 """
+
+__path__ = __import__("pkgutil").extend_path(__path__, __name__)
