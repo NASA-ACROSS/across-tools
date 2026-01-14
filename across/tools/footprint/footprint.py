@@ -107,7 +107,7 @@ class Footprint(BaseSchema):
         if fig is None:
             fig = go.Figure()
             fig.update_layout(
-                title="Astronomical Instrument Footprint",
+                title="Footprint Visualization",
                 geo=dict(
                     projection_type="mollweide",
                     showland=False,
@@ -128,7 +128,7 @@ class Footprint(BaseSchema):
                     lat=dec_values,
                     mode="lines",
                     fill="none",
-                    name=name if name else "Detector",
+                    name=name if name else None,
                     line=dict(color=color) if color else None,
                     showlegend=i == 0,  # Show legend only for the first detector
                 )
