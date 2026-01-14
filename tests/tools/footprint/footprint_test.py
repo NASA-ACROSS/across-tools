@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+from plotly.graph_objs import Figure  # type: ignore
 
 from across.tools import Coordinate, Polygon
 from across.tools.footprint import Footprint
@@ -186,3 +187,37 @@ class TestFootprintQueryPixels:
         footprint1 = Footprint(detectors=[simple_polygon])
         footprint2 = Footprint(detectors=[simple_polygon, simple_polygon])
         assert footprint1 != footprint2
+
+    def test_should_return_plotly_figure_when_plotting(self) -> None:
+        """
+        Should return a plotly Figure when plotting the footprint
+        """
+        fig = self.simple_footprint.plot()
+
+        assert isinstance(fig, Figure)
+
+    def test_plot_should_add_to_existing_figure(self) -> None:
+        """
+        Should add the footprint to an existing plotly Figure
+        """
+        existing_fig = Figure()
+        fig = self.simple_footprint.plot(fig=existing_fig)
+
+        assert fig is existing_fig
+
+    def test_plot_should_set_detector_color_and_name(self) -> None:
+        """
+        Should set the detector color and name when plotting the footprint
+        """
+        name = "Test Detector"
+        color = "red"
+        fig = self.simple_footprint.plot(name=name, color=color)
+
+        # Check that the detector name and color are set in the figure data
+        found = False
+        for trace in fig.data:
+            if trace.name == name and trace.line.color == color:
+                found = True
+                break
+
+        assert found

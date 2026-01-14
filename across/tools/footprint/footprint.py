@@ -3,6 +3,7 @@ from __future__ import annotations
 import astropy.coordinates  # type: ignore[import-untyped]
 import healpy as hp  # type: ignore[import-untyped]
 import numpy as np
+import plotly.graph_objects as go  # type: ignore[import-untyped]
 
 from ..core.schemas import BaseSchema, Coordinate, HealpixOrder, Polygon, RollAngle
 from .projection import project_detector
@@ -84,3 +85,53 @@ class Footprint(BaseSchema):
 
         unique_pixels = list(set(pixels_in_footprint))
         return unique_pixels
+
+    def plot(self, fig: go.Figure = None, name: str | None = None, color: str | None = None) -> go.Figure:
+        """
+        Method to plot the footprint using plotly
+
+        Parameters
+        ----------
+        fig : go.Figure, optional
+            An existing plotly figure to add the footprint to, by default None
+        name : str | None, optional
+            The name to assign to the detector traces, by default None
+        color : str | None, optional
+            The color to assign to the detector traces, by default None
+        Returns
+        -------
+        go.Figure
+            The plotly figure containing the footprint plot
+        """
+
+        if fig is None:
+            fig = go.Figure()
+            fig.update_layout(
+                title="Astronomical Instrument Footprint",
+                geo=dict(
+                    projection_type="mollweide",
+                    showland=False,
+                    showcountries=False,
+                    showcoastlines=False,
+                    lataxis=dict(showgrid=True, dtick=30),
+                    lonaxis=dict(showgrid=True, dtick=60),
+                ),
+            )
+
+        for i, detector in enumerate(self.detectors):
+            ra_values = [coord.ra for coord in detector.coordinates] + [detector.coordinates[0].ra]
+            dec_values = [coord.dec for coord in detector.coordinates] + [detector.coordinates[0].dec]
+
+            fig.add_trace(
+                go.Scattergeo(
+                    lon=ra_values,
+                    lat=dec_values,
+                    mode="lines",
+                    fill="none",
+                    name=name if name else "Detector",
+                    line=dict(color=color) if color else None,
+                    showlegend=i == 0,  # Show legend only for the first detector
+                )
+            )
+
+        return fig
