@@ -37,6 +37,7 @@ dependencies = [
     "pydantic_settings>=2.0",
     "shapely>=2.0.4",
     "plotly>=5.0.0",
+    "plotly-stubs>=0.1.0",
 ]
 
 [project.urls]
