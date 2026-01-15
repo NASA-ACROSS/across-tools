@@ -3,7 +3,7 @@ from __future__ import annotations
 import astropy.coordinates  # type: ignore[import-untyped]
 import healpy as hp  # type: ignore[import-untyped]
 import numpy as np
-import plotly.graph_objects as go  # type: ignore[import-untyped]
+import plotly.graph_objects as go
 
 from ..core.schemas import BaseSchema, Coordinate, HealpixOrder, Polygon, RollAngle
 from .projection import project_detector
