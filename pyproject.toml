@@ -129,6 +129,7 @@ ignore = [
 tools = ["py.typed"]
 
 [tool.coverage.run]
+source = ["across"]
 omit = ["across/tools/_version.py"]
 
 [tool.mypy]

@@ -86,7 +86,14 @@ class Footprint(BaseSchema):
         unique_pixels = list(set(pixels_in_footprint))
         return unique_pixels
 
-    def plot(self, fig: go.Figure = None, name: str | None = None, color: str | None = None) -> go.Figure:
+    def plot(
+        self,
+        fig: go.Figure | None = None,
+        name: str | None = None,
+        color: str | None = None,
+        lat_axis_tick: int = 30,
+        lon_axis_tick: int = 60,
+    ) -> go.Figure:
         """
         Method to plot the footprint using plotly
 
@@ -98,6 +105,10 @@ class Footprint(BaseSchema):
             The name to assign to the detector traces, by default None
         color : str | None, optional
             The color to assign to the detector traces, by default None
+        lat_axis_tick : int, optional
+            The latitude axis tick interval, by default 30
+        lon_axis_tick : int, optional
+            The longitude axis tick interval, by default 60
         Returns
         -------
         go.Figure
@@ -113,8 +124,8 @@ class Footprint(BaseSchema):
                     showland=False,
                     showcountries=False,
                     showcoastlines=False,
-                    lataxis=dict(showgrid=True, dtick=30),
-                    lonaxis=dict(showgrid=True, dtick=60),
+                    lataxis=dict(showgrid=True, dtick=lat_axis_tick),
+                    lonaxis=dict(showgrid=True, dtick=lon_axis_tick),
                 ),
             )
 
