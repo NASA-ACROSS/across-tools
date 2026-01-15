@@ -1,7 +1,7 @@
 from typing import Any
 
 import pytest
-from plotly.graph_objs import Figure  # type: ignore
+from plotly.graph_objs import Figure
 
 from across.tools import Coordinate, Polygon
 from across.tools.footprint import Footprint
@@ -216,7 +216,7 @@ class TestFootprintQueryPixels:
         # Check that the detector name and color are set in the figure data
         found = False
         for trace in fig.data:
-            if trace.name == name and trace.line.color == color:
+            if trace.name == name and trace.line.color == color:  # type: ignore[attr-defined]
                 found = True
                 break
 
