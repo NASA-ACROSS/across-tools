@@ -4,6 +4,7 @@ from typing import Any
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import plotly.graph_objects as go
 from astropy.coordinates import Angle  # type: ignore[import-untyped]
 from mocpy import MOC  # type: ignore[import-untyped]
 
@@ -106,3 +107,78 @@ class Footprint(BaseSchema):
             all_pixels.extend(moc_pixels.tolist())
 
         return list(set(all_pixels))
+
+    def plot(
+        self,
+        fig: go.Figure | None = None,
+        name: str | None = None,
+        color: str | None = None,
+        lat_axis_tick: int = 30,
+        lon_axis_tick: int = 60,
+    ) -> go.Figure:
+        """
+        Method to plot the footprint using plotly
+
+        Parameters
+        ----------
+        fig : go.Figure, optional
+            An existing plotly figure to add the footprint to, by default None
+        name : str | None, optional
+            The name to assign to the detector traces, by default None
+        color : str | None, optional
+            The color to assign to the detector traces, by default None
+        lat_axis_tick : int, optional
+            The latitude axis tick interval, by default 30
+        lon_axis_tick : int, optional
+            The longitude axis tick interval, by default 60
+        Returns
+        -------
+        go.Figure
+            The plotly figure containing the footprint plot
+        """
+
+        if fig is None:
+            fig = go.Figure()
+            fig.update_layout(
+                title="Footprint Visualization",
+                geo=dict(
+                    projection_type="mollweide",
+                    showland=False,
+                    showcountries=False,
+                    showcoastlines=False,
+                    lataxis=dict(showgrid=True, dtick=lat_axis_tick),
+                    lonaxis=dict(showgrid=True, dtick=lon_axis_tick),
+                ),
+            )
+
+        for i, detector in enumerate(self.detectors):
+            ra_values = [coord.ra for coord in detector.coordinates] + [detector.coordinates[0].ra]
+            dec_values = [coord.dec for coord in detector.coordinates] + [detector.coordinates[0].dec]
+
+            # Check if trace with same name already exists
+            name_exists = False
+            if name:
+                for trace in fig.data:
+                    name_exists = trace.name == name  # type: ignore[attr-defined]
+                    break
+
+            # Only show legend for first detector if name exists
+            show_legend = i == 0 and not name_exists
+
+            # Set legend group to name or unique id
+            legend_group = name if name else f"footprint-{id(self)}"
+
+            fig.add_trace(
+                go.Scattergeo(
+                    lon=ra_values,
+                    lat=dec_values,
+                    mode="lines",
+                    fill="none",
+                    name=name if name else legend_group,
+                    legendgroup=legend_group,
+                    line=dict(color=color) if color else None,
+                    showlegend=show_legend,
+                )
+            )
+
+        return fig

@@ -1,6 +1,7 @@
 from typing import Any
 
 import pytest
+from plotly.graph_objs import Figure
 
 from across.tools import Coordinate, Polygon
 from across.tools.footprint import Footprint
@@ -186,3 +187,50 @@ class TestFootprintQueryPixels:
         footprint1 = Footprint(detectors=[simple_polygon])
         footprint2 = Footprint(detectors=[simple_polygon, simple_polygon])
         assert footprint1 != footprint2
+
+    def test_should_return_plotly_figure_when_plotting(self) -> None:
+        """
+        Should return a plotly Figure when plotting the footprint
+        """
+        fig = self.simple_footprint.plot()
+
+        assert isinstance(fig, Figure)
+
+    def test_plot_should_add_to_existing_figure(self) -> None:
+        """
+        Should add the footprint to an existing plotly Figure
+        """
+        existing_fig = Figure()
+        fig = self.simple_footprint.plot(fig=existing_fig)
+
+        assert fig is existing_fig
+
+    def test_plot_should_set_detector_color_and_name(self) -> None:
+        """
+        Should set the detector color and name when plotting the footprint
+        """
+        name = "Test Detector"
+        color = "red"
+        fig = self.simple_footprint.plot(name=name, color=color)
+
+        # Check that the detector name and color are set in the figure data
+        found = False
+        for trace in fig.data:
+            if trace.name == name and trace.line.color == color:  # type: ignore[attr-defined]
+                found = True
+                break
+
+        assert found
+
+    def test_plot_should_only_show_legend_once(self) -> None:
+        """
+        Should only show the legend once when plotting multiple detectors with the same name
+        """
+        name = "Test Detector"
+        fig = self.simple_footprint.plot(name=name)
+        fig = self.simple_footprint.plot(fig=fig, name=name)
+
+        # find the unique legend entries
+        legend_count = len(set(trace.name for trace in fig.data if trace.name == name))  # type: ignore[attr-defined]
+
+        assert legend_count == 1
