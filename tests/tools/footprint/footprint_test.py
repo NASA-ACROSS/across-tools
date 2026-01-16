@@ -221,3 +221,16 @@ class TestFootprintQueryPixels:
                 break
 
         assert found
+
+    def test_plot_should_only_show_legend_once(self) -> None:
+        """
+        Should only show the legend once when plotting multiple detectors with the same name
+        """
+        name = "Test Detector"
+        fig = self.simple_footprint.plot(name=name)
+        fig = self.simple_footprint.plot(fig=fig, name=name)
+
+        # find the unique legend entries
+        legend_count = len(set(trace.name for trace in fig.data if trace.name == name))  # type: ignore[attr-defined]
+
+        assert legend_count == 1
