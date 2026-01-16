@@ -155,11 +155,18 @@ class Footprint(BaseSchema):
             ra_values = [coord.ra for coord in detector.coordinates] + [detector.coordinates[0].ra]
             dec_values = [coord.dec for coord in detector.coordinates] + [detector.coordinates[0].dec]
 
-            name_exists = any([trace.name == name and bool(name) for trace in fig.data])  # type: ignore[attr-defined]
+            # Check if trace with same name already exists
+            name_exists = False
+            if name:
+                for trace in fig.data:
+                    name_exists = trace.name == name  # type: ignore[attr-defined]
+                    break
 
-            legend_group = name if name else f"footprint-{id(self)}"
-
+            # Only show legend for first detector if name exists
             show_legend = i == 0 and not name_exists
+
+            # Set legend group to name or unique id
+            legend_group = name if name else f"footprint-{id(self)}"
 
             fig.add_trace(
                 go.Scattergeo(
