@@ -174,7 +174,7 @@ class Footprint(BaseSchema):
                     lat=dec_values,
                     mode="lines",
                     fill="none",
-                    name=name if name else None,
+                    name=name if name else legend_group,
                     legendgroup=legend_group,
                     line=dict(color=color) if color else None,
                     showlegend=show_legend,
