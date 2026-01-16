@@ -155,6 +155,12 @@ class Footprint(BaseSchema):
             ra_values = [coord.ra for coord in detector.coordinates] + [detector.coordinates[0].ra]
             dec_values = [coord.dec for coord in detector.coordinates] + [detector.coordinates[0].dec]
 
+            name_exists = any([trace.name == name and bool(name) for trace in fig.data])  # type: ignore[attr-defined]
+
+            legend_group = name if name else f"footprint-{id(self)}"
+
+            show_legend = i == 0 and not name_exists
+
             fig.add_trace(
                 go.Scattergeo(
                     lon=ra_values,
@@ -162,8 +168,9 @@ class Footprint(BaseSchema):
                     mode="lines",
                     fill="none",
                     name=name if name else None,
+                    legendgroup=legend_group,
                     line=dict(color=color) if color else None,
-                    showlegend=i == 0,  # Show legend only for the first detector
+                    showlegend=show_legend,
                 )
             )
 

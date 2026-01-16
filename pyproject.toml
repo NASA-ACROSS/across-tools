@@ -36,7 +36,6 @@ dependencies = [
     "pydantic_settings>=2.0",
     "shapely>=2.0.4",
     "plotly>=5.0.0",
-    "plotly-stubs",
     "mocpy>=0.15.0"
 ]
 
@@ -56,7 +55,8 @@ dev = [
     "nbsphinx",
     "sphinx-copybutton",
     "sphinx-rtd-theme",
-    "types-shapely"
+    "types-shapely",
+    "plotly-stubs",
 ]
 
 [build-system]
