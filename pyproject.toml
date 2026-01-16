@@ -27,7 +27,6 @@ requires-python = ">=3.10"
 dependencies = [
     "astropy>=5",
     "numpy>=1.2",
-    "healpy>=1.1",
     "pydantic>=2.1",
     "astroquery>=0.4",
     "sgp4>=2.2",
@@ -38,6 +37,7 @@ dependencies = [
     "shapely>=2.0.4",
     "plotly>=5.0.0",
     "plotly-stubs",
+    "mocpy>=0.15.0"
 ]
 
 [project.urls]
