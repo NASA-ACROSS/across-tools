@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import astropy.coordinates  # type: ignore[import-untyped]
-import healpy as hp  # type: ignore[import-untyped]
+from typing import Any
+
+import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+from astropy.coordinates import Angle  # type: ignore[import-untyped]
+from mocpy import MOC  # type: ignore[import-untyped]
 
 from ..core.schemas import BaseSchema, Coordinate, HealpixOrder, Polygon, RollAngle
 from .projection import project_detector
@@ -50,7 +53,16 @@ class Footprint(BaseSchema):
 
     def project(self, coordinate: Coordinate, roll_angle: float) -> Footprint:
         """
-        Method to project an astronomical instrument footprint on a sphere.
+        Projects the footprint to a new coordinate with a given roll angle.
+
+        Args:
+            coordinate (Coordinate):
+                The new center coordinate to project to.
+            roll_angle (float):
+                The roll angle in degrees to apply during projection.
+        Returns:
+            Footprint:
+                The projected footprint.
         """
         angle = RollAngle(value=roll_angle)
 
@@ -65,22 +77,32 @@ class Footprint(BaseSchema):
 
     def query_pixels(self, order: int = 10) -> list[int]:
         """
-        Method to query the healpix pixels in a footprint at a given healpix order
+        Convert a Footprint into HEALPix pixels using MOC.
+
+        Args:
+            footprint (Footprint):
+                The footprint to convert.
+            order (int):
+                HEALPix order (10 = NSIDE 1024)
+
+        Returns:
+            list[int]:
+                HEALPix NESTED pixel indices at requested order.
         """
         hp_order = HealpixOrder(value=order)
-
-        pixels_in_footprint: list[int] = []
-        nside = hp.order2nside(order=hp_order.value)
-
+        all_pixels: list[int] = []
         for detector in self.detectors:
-            detector_ra_values = np.deg2rad([coordinate.ra for coordinate in detector.coordinates][:-1])
-            detector_dec_values = np.deg2rad([coordinate.dec for coordinate in detector.coordinates][:-1])
-            cartesian_polygon = astropy.coordinates.spherical_to_cartesian(
-                1.0, detector_dec_values, detector_ra_values
-            )
-            healpy_polygon = np.array(cartesian_polygon).T
-            pixels_queried = hp.query_polygon(nside, healpy_polygon, inclusive=True)
-            pixels_in_footprint.extend(pixels_queried.tolist())
+            lon = Angle(np.array([coord.ra for coord in detector.coordinates]) * u.deg, unit=u.deg)
+            lat = Angle(np.array([coord.dec for coord in detector.coordinates]) * u.deg, unit=u.deg)
 
-        unique_pixels = list(set(pixels_in_footprint))
-        return unique_pixels
+            # Build MOC from polygon
+            moc = MOC.from_polygon(
+                lon=lon,
+                lat=lat,
+                max_depth=hp_order.value,
+            )
+            # Get HEALPix pixels by flattening MOC
+            moc_pixels: np.ndarray[Any, Any] = moc.flatten()
+            all_pixels.extend(moc_pixels.tolist())
+
+        return list(set(all_pixels))
