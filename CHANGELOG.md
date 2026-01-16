@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.1.0...v1.2.0) (2026-01-16)
+
+
+### Features
+
+* **footprint:** adding plotting functionality for footprints ([#92](https://github.com/NASA-ACROSS/across-tools/issues/92)) ([c875b6a](https://github.com/NASA-ACROSS/across-tools/commit/c875b6a3c3892a0656dead5fccacba1dbf68115b))
+* **footprint:** query_pixel to use mocpy instead of healpy ([#94](https://github.com/NASA-ACROSS/across-tools/issues/94)) ([dc4ca81](https://github.com/NASA-ACROSS/across-tools/commit/dc4ca81db3da51adad28b9e4e6b70f45c8ac773f))
+
 ## [1.1.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.0.0...v1.1.0) (2026-01-07)
 
 
