@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 
-import astropy.units as u  # type: ignore[import-untyped]
 import rust_ephem
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 
@@ -82,11 +81,9 @@ class TLEEphemeris(Ephemeris):
 
         # Calculate ephemeris using rust-ephem library
         self._tle_ephem = rust_ephem.TLEEphemeris(
-            begin=self.begin.datetime if isinstance(self.begin, Time) else self.begin,
-            end=self.end.datetime if isinstance(self.end, Time) else self.end,
-            step_size=int(self._step_seconds)
-            if isinstance(self.step_size, (TimeDelta, u.Quantity))
-            else int(self.step_size),
+            begin=self.begin.datetime,
+            end=self.end.datetime,
+            step_size=int(self._step_seconds),
             tle1=self.tle.tle1,
             tle2=self.tle.tle2,
         )
@@ -116,17 +113,17 @@ class TLEEphemeris(Ephemeris):
 
         # Get the longitude, latitude, height, and distance (from center of
         # Earth) of the satellite from the computed ephemeris.
-        self.latitude = self._tle_ephem.latitude_deg * u.deg
-        self.longitude = self._tle_ephem.longitude_deg * u.deg
-        self.height = self._tle_ephem.height_km * u.km
+        self.latitude = self._tle_ephem.latitude
+        self.longitude = self._tle_ephem.longitude
+        self.height = self._tle_ephem.height
         self.distance = self.gcrs.distance
 
         # Calculate Earth's angular radius from observatory, capped at 90 degrees
-        self.earth_radius_angle = self._tle_ephem.earth_radius_rad * u.rad
+        self.earth_radius_angle = self._tle_ephem.earth_radius
 
         # Similarly calculate the angular radii of the Sun and the Moon, capped at 90 degrees
-        self.moon_radius_angle = self._tle_ephem.moon_radius_rad * u.rad
-        self.sun_radius_angle = self._tle_ephem.sun_radius_rad * u.rad
+        self.moon_radius_angle = self._tle_ephem.moon_radius
+        self.sun_radius_angle = self._tle_ephem.sun_radius
 
 
 def compute_tle_ephemeris(
