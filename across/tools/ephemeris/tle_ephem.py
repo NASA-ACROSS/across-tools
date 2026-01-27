@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import time
 
 import astropy.units as u  # type: ignore[import-untyped]
 import rust_ephem
@@ -78,6 +77,9 @@ class TLEEphemeris(Ephemeris):
         if self.tle is None:
             raise ValueError("No TLE provided")
 
+        # Ensure planetary ephemeris data is prepared
+        rust_ephem.ensure_planetary_ephemeris()
+
         # Calculate ephemeris using rust-ephem library
         self._tle_ephem = rust_ephem.TLEEphemeris(
             begin=self.begin.datetime if isinstance(self.begin, Time) else self.begin,
@@ -96,9 +98,6 @@ class TLEEphemeris(Ephemeris):
         # array of x,y,z vectors in units of km, and velocity vector as array
         # of x,y,z vectors in units of km/s
         self.gcrs = self._tle_ephem.gcrs
-
-        self.timestamp = Time(self._tle_ephem.timestamp)
-
 
     def _calc(self) -> None:
         """
@@ -130,9 +129,6 @@ class TLEEphemeris(Ephemeris):
         self.sun_radius_angle = self._tle_ephem.sun_radius_deg * u.deg
 
 
-    def _compute_timestamp(self) -> Time:
-        return None  # Timestamps are computed in prepare_data()
-
 def compute_tle_ephemeris(
     begin: datetime | Time,
     end: datetime | Time,
@@ -159,10 +155,6 @@ def compute_tle_ephemeris(
         The computed ephemeris object containing the position and velocity data.
     """
     # Compute the ephemeris using the TLEEphemeris class
-    start = time.monotonic()
     ephemeris = TLEEphemeris(tle=tle, begin=begin, end=end, step_size=step_size)
-    print("Initialized TLE ephemeris in", time.monotonic() - start, "seconds")
-    start = time.monotonic()
     ephemeris.compute()
-    print("Total TLE ephemeris computation time:", time.monotonic() - start, "seconds")
     return ephemeris
