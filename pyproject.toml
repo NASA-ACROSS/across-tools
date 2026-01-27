@@ -37,7 +37,7 @@ dependencies = [
     "shapely>=2.0.4",
     "plotly>=5.0.0",
     "mocpy>=0.15.0",
-    "rust-ephem>=0.3.0",
+    "rust-ephem>=0.3.2",
 ]
 
 [project.urls]
