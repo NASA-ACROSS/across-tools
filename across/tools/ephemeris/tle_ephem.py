@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import time
 
 import astropy.units as u  # type: ignore[import-untyped]
 import rust_ephem
@@ -77,8 +78,8 @@ class TLEEphemeris(Ephemeris):
         if self.tle is None:
             raise ValueError("No TLE provided")
 
-        # Load in the TLE data
-        tle_ephem = rust_ephem.TLEEphemeris(
+        # Calculate ephemeris using rust-ephem library
+        self._tle_ephem = rust_ephem.TLEEphemeris(
             begin=self.begin.datetime if isinstance(self.begin, Time) else self.begin,
             end=self.end.datetime if isinstance(self.end, Time) else self.end,
             step_size=int(self.step_size.to_value(u.s))
@@ -89,16 +90,48 @@ class TLEEphemeris(Ephemeris):
         )
 
         # Calculate satellite position in ITRS coordinate system
-        self.earth_location = tle_ephem.itrs.earth_location
-        self.latitude = tle_ephem.latitude_deg * u.deg
-        self.longitude = tle_ephem.longitude_deg * u.deg
-        self.height = tle_ephem.height_km * u.km
+        self.earth_location = self._tle_ephem.itrs.earth_location
 
         # Calculate satellite position in GCRS coordinate system vector as
         # array of x,y,z vectors in units of km, and velocity vector as array
         # of x,y,z vectors in units of km/s
-        self.gcrs = tle_ephem.gcrs
+        self.gcrs = self._tle_ephem.gcrs
 
+        self.timestamp = Time(self._tle_ephem.timestamp)
+
+
+    def _calc(self) -> None:
+        """
+        Calculate ephemeris data based on the coordinates computed by
+        prepare_data(). Overloads the base class method to as rust-ephem already
+        computes all necessary data during prepare_data().
+        """
+        # Calculate the position of the Moon relative to the spacecraft
+        self.moon = self._tle_ephem.moon
+
+        # Calculate the position of the Sun relative to the spacecraft
+        self.sun = self._tle_ephem.sun
+
+        # Calculate the position of the Earth relative to the spacecraft
+        self.earth = self._tle_ephem.earth
+
+        # Get the longitude, latitude, height, and distance (from center of
+        # Earth) of the satellite from the computed ephemeris.
+        self.latitude = self._tle_ephem.latitude_deg * u.deg
+        self.longitude = self._tle_ephem.longitude_deg * u.deg
+        self.height = self._tle_ephem.height_km * u.km
+        self.distance = self.gcrs.distance
+
+        # Calculate Earth's angular radius from observatory, capped at 90 degrees
+        self.earth_radius_angle = self._tle_ephem.earth_radius_deg * u.deg
+
+        # Similarly calculate the angular radii of the Sun and the Moon, capped at 90 degrees
+        self.moon_radius_angle = self._tle_ephem.moon_radius_deg * u.deg
+        self.sun_radius_angle = self._tle_ephem.sun_radius_deg * u.deg
+
+
+    def _compute_timestamp(self) -> Time:
+        return None  # Timestamps are computed in prepare_data()
 
 def compute_tle_ephemeris(
     begin: datetime | Time,
@@ -126,6 +159,10 @@ def compute_tle_ephemeris(
         The computed ephemeris object containing the position and velocity data.
     """
     # Compute the ephemeris using the TLEEphemeris class
+    start = time.monotonic()
     ephemeris = TLEEphemeris(tle=tle, begin=begin, end=end, step_size=step_size)
+    print("Initialized TLE ephemeris in", time.monotonic() - start, "seconds")
+    start = time.monotonic()
     ephemeris.compute()
+    print("Total TLE ephemeris computation time:", time.monotonic() - start, "seconds")
     return ephemeris
