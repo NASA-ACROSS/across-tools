@@ -21,7 +21,8 @@ from across.tools.visibility import (
     constraints_from_json,
 )
 from across.tools.visibility.base import Visibility
-from across.tools.visibility.constraints import Constraint, EarthLimbConstraint
+from across.tools.visibility.constraints import Constraint, EarthLimbConstraint, SunAngleConstraint
+from across.tools.visibility.constraints.base import ConstraintABC
 
 
 @pytest.fixture
@@ -427,4 +428,73 @@ def constraint_json() -> Generator[str]:
 @pytest.fixture
 def constraints_from_fixture(constraint_json: str) -> list[Constraint]:
     """Fixture that provides constraints loaded from JSON."""
-    return constraints_from_json(constraint_json)
+    result = constraints_from_json(constraint_json)
+    # Ensure it's always a list for this fixture
+    return result if isinstance(result, list) else [result]
+
+
+# Constraint combinations for testing logical operators
+
+
+@pytest.fixture
+def always_satisfied_earth_constraint() -> EarthLimbConstraint:
+    """Fixture for an EarthLimbConstraint that is always satisfied (min_angle=0)."""
+    return EarthLimbConstraint(min_angle=0)
+
+
+@pytest.fixture
+def sun_constraint_45() -> SunAngleConstraint:
+    """Fixture for a SunAngleConstraint with min_angle=45."""
+    return SunAngleConstraint(min_angle=45)
+
+
+@pytest.fixture
+def earth_constraint_33() -> EarthLimbConstraint:
+    """Fixture for an EarthLimbConstraint with min_angle=33."""
+    return EarthLimbConstraint(min_angle=33)
+
+
+@pytest.fixture
+def or_always_satisfied(always_satisfied_earth_constraint: EarthLimbConstraint) -> ConstraintABC:
+    """Fixture for an OR constraint of two always-satisfied constraints."""
+    return always_satisfied_earth_constraint | always_satisfied_earth_constraint
+
+
+@pytest.fixture
+def and_always_satisfied(always_satisfied_earth_constraint: EarthLimbConstraint) -> ConstraintABC:
+    """Fixture for an AND constraint of two always-satisfied constraints."""
+    return always_satisfied_earth_constraint & always_satisfied_earth_constraint
+
+
+@pytest.fixture
+def xor_always_satisfied(always_satisfied_earth_constraint: EarthLimbConstraint) -> ConstraintABC:
+    """Fixture for an XOR constraint of two always-satisfied constraints."""
+    return always_satisfied_earth_constraint ^ always_satisfied_earth_constraint
+
+
+@pytest.fixture
+def xor_sun_earth(
+    sun_constraint_45: SunAngleConstraint, earth_constraint_33: EarthLimbConstraint
+) -> ConstraintABC:
+    """Fixture for an XOR constraint combining SUN and EARTH constraints."""
+    return sun_constraint_45 ^ earth_constraint_33
+
+
+@pytest.fixture
+def or_sun_earth(
+    sun_constraint_45: SunAngleConstraint, earth_constraint_33: EarthLimbConstraint
+) -> ConstraintABC:
+    """Fixture for an OR constraint combining SUN and EARTH constraints."""
+    return sun_constraint_45 | earth_constraint_33
+
+
+@pytest.fixture
+def not_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
+    """Fixture for a NOT constraint wrapping OR(SUN, EARTH)."""
+    return ~or_sun_earth
+
+
+@pytest.fixture
+def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
+    """Fixture for an AND constraint of two OR(SUN, EARTH) constraints."""
+    return or_sun_earth & or_sun_earth

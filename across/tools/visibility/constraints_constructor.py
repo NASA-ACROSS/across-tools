@@ -28,10 +28,11 @@ from pydantic import TypeAdapter
 
 from .constraints import Constraint
 
-Constraints = TypeAdapter(list[Constraint])
+Constraints: TypeAdapter[list[Constraint]] = TypeAdapter(list[Constraint])
+SingleConstraint: TypeAdapter[Constraint] = TypeAdapter(Constraint)
 
 
-def constraints_from_json(input: str) -> list[Constraint]:
+def constraints_from_json(input: str) -> Constraint | list[Constraint]:
     """
     Load constraints from a JSON string.
 
@@ -42,24 +43,32 @@ def constraints_from_json(input: str) -> list[Constraint]:
 
     Returns
     -------
-    list[Constraint]
-        List of Constraint objects loaded from the JSON string.
+    Constraint | list[Constraint]
+        Single Constraint object or list of Constraint objects loaded from the JSON string.
     """
-    return Constraints.validate_json(input)
+    # Try to parse as a single constraint first
+    try:
+        return SingleConstraint.validate_json(input)
+    except Exception:
+        # If that fails, try to parse as a list
+        return Constraints.validate_json(input)
 
 
-def constraints_to_json(constraints: list[Constraint]) -> str:
+def constraints_to_json(constraints: Constraint | list[Constraint]) -> str:
     """
     Convert constraints to a JSON string.
 
     Parameters
     ----------
-    constraints : list[Constraint]
-        List of Constraint objects to convert.
+    constraints : Constraint | list[Constraint]
+        Single Constraint object or list of Constraint objects to convert.
 
     Returns
     -------
     str
         JSON string representation of the constraints.
     """
-    return Constraints.dump_json(constraints, exclude_none=True).decode()
+    if isinstance(constraints, list):
+        return Constraints.dump_json(constraints, exclude_none=True).decode()
+    else:
+        return SingleConstraint.dump_json(constraints, exclude_none=True).decode()
