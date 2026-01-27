@@ -97,6 +97,8 @@ class Ephemeris(ABC):
     moon_radius_angle: Angle
     sun_radius_angle: Angle
     distance: u.Quantity
+    _start_unix: float
+    _step_seconds: float
 
     def __init__(
         self,
@@ -116,10 +118,16 @@ class Ephemeris(ABC):
         elif isinstance(step_size, (int, float)):
             self.step_size = TimeDelta(step_size * u.s)
 
+        # Cache scalars used frequently to avoid repeated unit conversions
+        self._step_seconds = float(self.step_size.to_value(u.s))
+
         # Align begin/end to step grid (floor)
-        s = self.step_size.to_value(u.s)
+        s = self._step_seconds
         self.begin = Time((self.begin.unix // s) * s, format="unix")
         self.end = Time((self.end.unix // s) * s, format="unix")
+
+        # Cache for index calculations to avoid repeated array access and conversions
+        self._start_unix = float(self.begin.unix)
 
         # Compute range of timestamps
         self.timestamp = self._compute_timestamp()
@@ -143,7 +151,7 @@ class Ephemeris(ABC):
         int
             The index of the nearest time in the ephemeris.
         """
-        index = int(np.round((t.unix - self.timestamp[0].unix) // (self.step_size.to_value(u.s))))
+        index = int(np.round((t.unix - self._start_unix) // self._step_seconds))
         assert index >= 0 and index < len(self), "Time outside of ephemeris of range"
         return index
 
@@ -157,12 +165,8 @@ class Ephemeris(ABC):
             If begin equals end, returns single timestamp.
             Otherwise returns array of timestamps from begin to end with specified step_size.
         """
-        return Time(
-            np.arange(
-                self.begin.unix, self.end.unix + self.step_size.to_value(u.s), self.step_size.to_value(u.s)
-            ),
-            format="unix",
-        )
+        step = self._step_seconds
+        return Time(np.arange(self.begin.unix, self.end.unix + step, step), format="unix")
 
     def _calc(self) -> None:
         """

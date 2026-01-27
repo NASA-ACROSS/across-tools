@@ -397,12 +397,12 @@ def expected_joint_visibility_windows(
                     },
                     "end": {
                         "datetime": test_visibility_time_range[0]
-                        + timedelta(minutes=3, seconds=59, microseconds=999986),
+                        + timedelta(minutes=4, seconds=59, microseconds=999982),
                         "constraint": ConstraintType.EARTH,
                         "observatory_id": test_observatory_id,
                     },
                 },
-                "max_visibility_duration": 239,
+                "max_visibility_duration": 299,
                 "constraint_reason": {
                     "start_reason": f"{test_observatory_name} {ConstraintType.WINDOW.value}",
                     "end_reason": f"{test_observatory_name} {ConstraintType.EARTH.value}",

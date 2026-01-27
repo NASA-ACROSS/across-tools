@@ -84,7 +84,7 @@ class TLEEphemeris(Ephemeris):
         self._tle_ephem = rust_ephem.TLEEphemeris(
             begin=self.begin.datetime if isinstance(self.begin, Time) else self.begin,
             end=self.end.datetime if isinstance(self.end, Time) else self.end,
-            step_size=int(self.step_size.to_value(u.s))
+            step_size=int(self._step_seconds)
             if isinstance(self.step_size, (TimeDelta, u.Quantity))
             else int(self.step_size),
             tle1=self.tle.tle1,
@@ -122,11 +122,11 @@ class TLEEphemeris(Ephemeris):
         self.distance = self.gcrs.distance
 
         # Calculate Earth's angular radius from observatory, capped at 90 degrees
-        self.earth_radius_angle = self._tle_ephem.earth_radius_deg * u.deg
+        self.earth_radius_angle = self._tle_ephem.earth_radius_rad * u.rad
 
         # Similarly calculate the angular radii of the Sun and the Moon, capped at 90 degrees
-        self.moon_radius_angle = self._tle_ephem.moon_radius_deg * u.deg
-        self.sun_radius_angle = self._tle_ephem.sun_radius_deg * u.deg
+        self.moon_radius_angle = self._tle_ephem.moon_radius_rad * u.rad
+        self.sun_radius_angle = self._tle_ephem.sun_radius_rad * u.rad
 
 
 def compute_tle_ephemeris(
