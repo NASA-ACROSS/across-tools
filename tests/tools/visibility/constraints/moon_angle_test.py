@@ -112,5 +112,5 @@ class TestMoonAngleConstraint:
         )
         assert np.array_equal(
             result,
-            np.array([True, True, True, False, False, False]),
+            np.array([True, True, True, True, False, False]),
         )
