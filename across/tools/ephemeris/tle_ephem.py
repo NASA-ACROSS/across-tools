@@ -1,15 +1,8 @@
 from datetime import datetime, timedelta
 
 import astropy.units as u  # type: ignore[import-untyped]
-from astropy.coordinates import (  # type: ignore[import-untyped]
-    GCRS,
-    TEME,
-    CartesianDifferential,
-    CartesianRepresentation,
-    SkyCoord,
-)
+import rust_ephem
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
-from sgp4.api import Satrec  # type: ignore[import-untyped]
 
 from ..core.schemas.tle import TLE
 from .base import Ephemeris
@@ -85,26 +78,26 @@ class TLEEphemeris(Ephemeris):
             raise ValueError("No TLE provided")
 
         # Load in the TLE data
-        satellite = Satrec.twoline2rv(self.tle.tle1, self.tle.tle2)
-
-        # Calculate TEME position/velocity and convert to ITRS
-        _, pos, vel = satellite.sgp4_array(self.timestamp.jd1, self.timestamp.jd2)
-        teme = SkyCoord(
-            CartesianRepresentation(pos.T * u.km).with_differentials(
-                CartesianDifferential(vel.T * u.km / u.s)
-            ),
-            frame=TEME(obstime=self.timestamp),
+        tle_ephem = rust_ephem.TLEEphemeris(
+            begin=self.begin.datetime if isinstance(self.begin, Time) else self.begin,
+            end=self.end.datetime if isinstance(self.end, Time) else self.end,
+            step_size=int(self.step_size.to_value(u.s))
+            if isinstance(self.step_size, (TimeDelta, u.Quantity))
+            else int(self.step_size),
+            tle1=self.tle.tle1,
+            tle2=self.tle.tle2,
         )
-        itrs = teme.transform_to("itrs")
-        self.earth_location = itrs.earth_location
-        self.latitude = itrs.earth_location.lat
-        self.longitude = itrs.earth_location.lon
-        self.height = itrs.earth_location.height
+
+        # Calculate satellite position in ITRS coordinate system
+        self.earth_location = tle_ephem.itrs.earth_location
+        self.latitude = tle_ephem.latitude_deg * u.deg
+        self.longitude = tle_ephem.longitude_deg * u.deg
+        self.height = tle_ephem.height_km * u.km
 
         # Calculate satellite position in GCRS coordinate system vector as
         # array of x,y,z vectors in units of km, and velocity vector as array
         # of x,y,z vectors in units of km/s
-        self.gcrs = itrs.transform_to(GCRS)
+        self.gcrs = tle_ephem.gcrs
 
 
 def compute_tle_ephemeris(
