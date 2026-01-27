@@ -165,8 +165,9 @@ class Ephemeris(ABC):
             If begin equals end, returns single timestamp.
             Otherwise returns array of timestamps from begin to end with specified step_size.
         """
-        step = self._step_seconds
-        return Time(np.arange(self.begin.unix, self.end.unix + step, step), format="unix")
+        return Time(
+            np.arange(self.begin.unix, self.end.unix + self._step_seconds, self._step_seconds), format="unix"
+        )
 
     def _calc(self) -> None:
         """
