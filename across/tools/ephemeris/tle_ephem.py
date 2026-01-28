@@ -1,15 +1,7 @@
 from datetime import datetime, timedelta
 
-import astropy.units as u  # type: ignore[import-untyped]
-from astropy.coordinates import (  # type: ignore[import-untyped]
-    GCRS,
-    TEME,
-    CartesianDifferential,
-    CartesianRepresentation,
-    SkyCoord,
-)
+import rust_ephem
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
-from sgp4.api import Satrec  # type: ignore[import-untyped]
 
 from ..core.schemas.tle import TLE
 from .base import Ephemeris
@@ -84,27 +76,54 @@ class TLEEphemeris(Ephemeris):
         if self.tle is None:
             raise ValueError("No TLE provided")
 
-        # Load in the TLE data
-        satellite = Satrec.twoline2rv(self.tle.tle1, self.tle.tle2)
+        # Ensure planetary ephemeris data is prepared
+        rust_ephem.ensure_planetary_ephemeris()
 
-        # Calculate TEME position/velocity and convert to ITRS
-        _, pos, vel = satellite.sgp4_array(self.timestamp.jd1, self.timestamp.jd2)
-        teme = SkyCoord(
-            CartesianRepresentation(pos.T * u.km).with_differentials(
-                CartesianDifferential(vel.T * u.km / u.s)
-            ),
-            frame=TEME(obstime=self.timestamp),
+        # Calculate ephemeris using rust-ephem library
+        self._tle_ephem = rust_ephem.TLEEphemeris(
+            begin=self.begin.datetime,
+            end=self.end.datetime,
+            step_size=int(self._step_seconds),
+            tle1=self.tle.tle1,
+            tle2=self.tle.tle2,
         )
-        itrs = teme.transform_to("itrs")
-        self.earth_location = itrs.earth_location
-        self.latitude = itrs.earth_location.lat
-        self.longitude = itrs.earth_location.lon
-        self.height = itrs.earth_location.height
+
+        # Calculate satellite position in ITRS coordinate system
+        self.earth_location = self._tle_ephem.itrs.earth_location
 
         # Calculate satellite position in GCRS coordinate system vector as
         # array of x,y,z vectors in units of km, and velocity vector as array
         # of x,y,z vectors in units of km/s
-        self.gcrs = itrs.transform_to(GCRS)
+        self.gcrs = self._tle_ephem.gcrs
+
+    def _calc(self) -> None:
+        """
+        Calculate ephemeris data based on the coordinates computed by
+        prepare_data(). Overloads the base class method to as rust-ephem already
+        computes all necessary data during prepare_data().
+        """
+        # Calculate the position of the Moon relative to the spacecraft
+        self.moon = self._tle_ephem.moon
+
+        # Calculate the position of the Sun relative to the spacecraft
+        self.sun = self._tle_ephem.sun
+
+        # Calculate the position of the Earth relative to the spacecraft
+        self.earth = self._tle_ephem.earth
+
+        # Get the longitude, latitude, height, and distance (from center of
+        # Earth) of the satellite from the computed ephemeris.
+        self.latitude = self._tle_ephem.latitude
+        self.longitude = self._tle_ephem.longitude
+        self.height = self._tle_ephem.height
+        self.distance = self.gcrs.distance
+
+        # Calculate Earth's angular radius from observatory, capped at 90 degrees
+        self.earth_radius_angle = self._tle_ephem.earth_radius
+
+        # Similarly calculate the angular radii of the Sun and the Moon, capped at 90 degrees
+        self.moon_radius_angle = self._tle_ephem.moon_radius
+        self.sun_radius_angle = self._tle_ephem.sun_radius
 
 
 def compute_tle_ephemeris(
