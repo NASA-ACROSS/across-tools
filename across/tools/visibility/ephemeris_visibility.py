@@ -76,7 +76,7 @@ class EphemerisVisibility(Visibility):
 
         # If we have composite constraints, we need to handle them differently
         # For now, just evaluate each constraint as a separate item
-        for constraint in self.constraints:  # FIXME: constraints constraints
+        for constraint in self.constraints:
             self.calculated_constraints[constraint.name] = constraint(
                 time=self.timestamp, ephemeris=self.ephemeris, coordinate=self.coordinate
             )

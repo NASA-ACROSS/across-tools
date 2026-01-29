@@ -11,7 +11,7 @@ from .saa import SAAPolygonConstraint
 from .sun_angle import SunAngleConstraint
 
 __all__ = [
-    "Constraint",
+    "AllConstraint",
     "get_slice",
     "EarthLimbConstraint",
     "MoonAngleConstraint",
