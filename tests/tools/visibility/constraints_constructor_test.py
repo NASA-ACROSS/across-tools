@@ -1,7 +1,7 @@
 import json
 
 from across.tools.visibility import constraints_from_json, constraints_to_json
-from across.tools.visibility.constraints import Constraint
+from across.tools.visibility.constraints import AllConstraint
 from across.tools.visibility.constraints.base import ConstraintABC
 from across.tools.visibility.constraints.moon_angle import MoonAngleConstraint
 from across.tools.visibility.constraints.sun_angle import SunAngleConstraint
@@ -27,13 +27,13 @@ class TestConstraintConstructor:
         assert isinstance(constraints, list)  # Ensure it's a list for this test
         assert len(constraints) == 3
 
-    def test_constraints_to_json_returns_string(self, constraints_from_fixture: list[Constraint]) -> None:
+    def test_constraints_to_json_returns_string(self, constraints_from_fixture: list[AllConstraint]) -> None:
         """Test that constraints_to_json returns a string."""
         json_output = constraints_to_json(constraints_from_fixture)
         assert isinstance(json_output, str)
 
     def test_constraints_to_json_preserves_data(
-        self, constraint_json: str, constraints_from_fixture: list[Constraint]
+        self, constraint_json: str, constraints_from_fixture: list[AllConstraint]
     ) -> None:
         """Test that converting to JSON preserves the original data."""
         json_output = constraints_to_json(constraints_from_fixture)
@@ -67,7 +67,7 @@ class TestConstraintConstructor:
 
     def test_constraints_to_json_list_constraint(self) -> None:
         """Test that constraints_to_json handles a list of constraints."""
-        list_constraints: list[Constraint] = [
+        list_constraints: list[AllConstraint] = [
             SunAngleConstraint(min_angle=45.0),
             MoonAngleConstraint(max_angle=30.0),
         ]

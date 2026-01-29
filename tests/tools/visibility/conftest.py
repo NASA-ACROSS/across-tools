@@ -21,7 +21,7 @@ from across.tools.visibility import (
     constraints_from_json,
 )
 from across.tools.visibility.base import Visibility
-from across.tools.visibility.constraints import Constraint, EarthLimbConstraint, SunAngleConstraint
+from across.tools.visibility.constraints import AllConstraint, EarthLimbConstraint, SunAngleConstraint
 from across.tools.visibility.constraints.base import ConstraintABC
 
 
@@ -426,14 +426,14 @@ def constraint_json() -> Generator[str]:
 
 
 @pytest.fixture
-def constraints_from_fixture(constraint_json: str) -> list[Constraint]:
+def constraints_from_fixture(constraint_json: str) -> list[AllConstraint]:
     """Fixture that provides constraints loaded from JSON."""
     result = constraints_from_json(constraint_json)
     # Ensure it's always a list for this fixture
     return result if isinstance(result, list) else [result]
 
 
-# Constraint combinations for testing logical operators
+# AllConstraint combinations for testing logical operators
 
 
 @pytest.fixture
