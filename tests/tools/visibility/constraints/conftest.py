@@ -32,6 +32,12 @@ def sky_coord() -> SkyCoord:
 
 
 @pytest.fixture
+def coordinate() -> SkyCoord:
+    """Create a SkyCoord instance for constraint testing."""
+    return SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
+
+
+@pytest.fixture
 def ephemeris_begin() -> datetime:
     """Fixture to provide a begin datetime for testing."""
     return datetime(2025, 2, 12, 0, 22, 0)
@@ -161,8 +167,20 @@ def moon_angle_constraint() -> MoonAngleConstraint:
 
 
 @pytest.fixture
+def moon_constraint() -> MoonAngleConstraint:
+    """Alias for moon_angle_constraint for convenience."""
+    return MoonAngleConstraint(min_angle=21.0, max_angle=170.0)
+
+
+@pytest.fixture
 def sun_angle_constraint() -> SunAngleConstraint:
     """Fixture to provide an instance of SunAngleConstraint for testing."""
+    return SunAngleConstraint(min_angle=45.0, max_angle=170.0)
+
+
+@pytest.fixture
+def sun_constraint() -> SunAngleConstraint:
+    """Alias for sun_angle_constraint for convenience."""
     return SunAngleConstraint(min_angle=45.0, max_angle=170.0)
 
 

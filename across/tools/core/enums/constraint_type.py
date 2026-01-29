@@ -14,3 +14,7 @@ class ConstraintType(str, Enum):
     SAA = "South Atlantic Anomaly"
     ALT_AZ = "Altitude/Azimuth Avoidance"
     TEST = "Test Constraint"
+    AND = "And"
+    OR = "Or"
+    NOT = "Not"
+    XOR = "Xor"

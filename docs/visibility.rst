@@ -208,6 +208,46 @@ You can also define complex exclusion regions using a Shapely polygon:
      - Polygon
      - Shapely Polygon defining exclusion region in (alt, az) space
 
+
+Visibility Constraints with Logical Operators
+==============================================
+
+Visibility constraints represent when a target is **NOT visible** (blocked). Combine multiple constraints with logical operators to create complex observation criteria:
+
+.. code-block:: python
+
+  from across.tools.visibility import compute_ephemeris_visibility
+  from across.tools.visibility.constraints import (
+     SunAngleConstraint,
+     MoonAngleConstraint,
+     EarthLimbConstraint,
+  )
+
+  # Create individual constraints (each defines when target is NOT visible)
+  sun = SunAngleConstraint(min_angle=45)        # Not visible if <45° from Sun
+  moon = MoonAngleConstraint(min_angle=10)      # Not visible if <10° from Moon
+  earth = EarthLimbConstraint(min_angle=33)     # Not visible if <33° above limb
+
+  # Typical usage: OR logic (if ANY constraint blocks, target not visible)
+  constraints = sun | moon | earth
+
+  # Rarely used: AND logic (if ALL constraints block together)
+  both_required = sun & moon & earth
+
+  # Rarely used: NOT logic (inverts constraint)
+  not_earth_blocked = ~earth
+
+  # Use in visibility calculation
+  visibility = compute_ephemeris_visibility(
+     begin=begin,
+     end=end,
+     ephemeris=ephemeris,
+     constraints=constraints,  # Works with composite constraints too
+     ra=83.6333,
+     dec=22.0145,
+  )
+
+
 Ephemeris Visibility
 --------------------
 
