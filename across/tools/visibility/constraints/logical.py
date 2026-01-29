@@ -15,28 +15,28 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
-from pydantic import TypeAdapter, field_validator
+from pydantic import TypeAdapter, field_validator, model_serializer
 
 from ...core.enums import ConstraintType
 from ...ephemeris import Ephemeris
 from .base import ConstraintABC
 
 if TYPE_CHECKING:
-    from . import Constraint
+    from . import AllConstraint
 
 
 @lru_cache(maxsize=1)
-def _constraint_adapter() -> TypeAdapter[Constraint]:
-    from . import Constraint
+def _constraint_adapter() -> TypeAdapter[AllConstraint]:
+    from . import AllConstraint
 
-    return TypeAdapter(Constraint)
+    return TypeAdapter(AllConstraint)
 
 
 @lru_cache(maxsize=1)
-def _constraints_adapter() -> TypeAdapter[list[Constraint]]:
-    from . import Constraint
+def _constraints_adapter() -> TypeAdapter[list[AllConstraint]]:
+    from . import AllConstraint
 
-    return TypeAdapter(list[Constraint])
+    return TypeAdapter(list[AllConstraint])
 
 
 class ConstraintCoercionMixin:
@@ -66,6 +66,23 @@ class ConstraintCoercionMixin:
         if isinstance(v, list) and all(isinstance(item, ConstraintABC) for item in v):
             return v
         return _constraints_adapter().validate_python(v)
+
+    @model_serializer
+    def serialize_logical_constraint(self) -> dict[str, Any]:
+        """Serialize logical constraint with full constraint details."""
+        result: dict[str, Any] = {
+            "short_name": self.short_name,  # type: ignore[attr-defined]
+            "name": self.name.value,  # type: ignore[attr-defined]
+        }
+
+        # Handle constraints field for And/Or/Xor
+        if hasattr(self, "constraints"):
+            result["constraints"] = [c.model_dump(exclude_none=True) for c in self.constraints]
+        # Handle constraint field for Not
+        elif hasattr(self, "constraint"):
+            result["constraint"] = self.constraint.model_dump(exclude_none=True)
+
+        return result
 
 
 class AndConstraint(ConstraintCoercionMixin, ConstraintABC):

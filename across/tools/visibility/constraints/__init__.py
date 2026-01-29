@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 # Define a type that covers all constraints
-Constraint = Annotated[
+AllConstraint = Annotated[
     EarthLimbConstraint
     | MoonAngleConstraint
     | SunAngleConstraint

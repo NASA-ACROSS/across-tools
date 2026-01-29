@@ -10,7 +10,6 @@ from pydantic import Field, field_validator
 from ..core.enums import ConstraintType
 from ..ephemeris.base import Ephemeris
 from .base import Visibility
-from .constraints import Constraint
 from .constraints.base import ConstraintABC
 
 
@@ -54,11 +53,11 @@ class EphemerisVisibility(Visibility):
     """
 
     ephemeris: Ephemeris = Field(..., exclude=True)
-    constraints: list[Constraint] = Field(default_factory=list)
+    constraints: list[ConstraintABC] = Field(default_factory=list)
 
     @field_validator("constraints", mode="before")
     @classmethod
-    def normalize_constraints(cls, v: Constraint | list[Constraint]) -> list[Constraint]:
+    def normalize_constraints(cls, v: ConstraintABC | list[ConstraintABC]) -> list[ConstraintABC]:
         """Normalize single constraint to list."""
         if isinstance(v, list):
             return v
@@ -217,7 +216,7 @@ def compute_ephemeris_visibility(
     begin: Time,
     end: Time,
     ephemeris: Ephemeris,
-    constraints: list[Constraint],
+    constraints: list[ConstraintABC],
     ra: float | None = None,
     dec: float | None = None,
     coordinate: SkyCoord | None = None,
