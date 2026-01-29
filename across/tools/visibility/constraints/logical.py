@@ -9,12 +9,13 @@ This module provides classes to combine multiple constraints using logical opera
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
-from pydantic import field_validator
+from pydantic import TypeAdapter, field_validator
 
 from ...core.enums import ConstraintType
 from ...ephemeris import Ephemeris
@@ -24,29 +25,50 @@ if TYPE_CHECKING:
     from . import Constraint
 
 
-class ConstraintValidationMixin:
-    """
-    Mixin to allow ConstraintABC instances to be passed trhough without
-    Pydantic validation.
+@lru_cache(maxsize=1)
+def _constraint_adapter() -> TypeAdapter[Constraint]:
+    from . import Constraint
 
-    Provides validators for both single 'constraint' and list 'constraints' fields.
-    Validators only apply to fields that exist in the class using this mixin.
+    return TypeAdapter(Constraint)
+
+
+@lru_cache(maxsize=1)
+def _constraints_adapter() -> TypeAdapter[list[Constraint]]:
+    from . import Constraint
+
+    return TypeAdapter(list[Constraint])
+
+
+class ConstraintCoercionMixin:
+    """
+    Coerce constraint inputs into ConstraintABC instances.
+
+    Accepts either already-instantiated ConstraintABC objects or JSON-like dicts
+    that are parsed through the Constraint discriminated union.
     """
 
-    @field_validator("constraints", "constraint", mode="wrap", check_fields=False)
+    @field_validator("constraint", mode="before", check_fields=False)
     @classmethod
-    def validate_constraints(cls, v: Any, handler: Callable[[Any], Any]) -> Any:
-        """Allow both Constraint union types and arbitrary ConstraintABC instances."""
-        # For lists of ConstraintABC (including test types), store as-is without validation
+    def validate_constraint(cls, v: Any) -> Any:
+        """
+        Coerce single constraint input into ConstraintABC instance.
+        """
         if isinstance(v, ConstraintABC):
             return v
-        if isinstance(v, list) and v and isinstance(v[0], ConstraintABC):
+        return _constraint_adapter().validate_python(v)
+
+    @field_validator("constraints", mode="before", check_fields=False)
+    @classmethod
+    def validate_constraints(cls, v: Any) -> Any:
+        """
+        Coerce list of constraints input into list of ConstraintABC instances.
+        """
+        if isinstance(v, list) and all(isinstance(item, ConstraintABC) for item in v):
             return v
-        # For other inputs (dicts from JSON), use normal validation
-        return handler(v)
+        return _constraints_adapter().validate_python(v)
 
 
-class AndConstraint(ConstraintValidationMixin, ConstraintABC):
+class AndConstraint(ConstraintCoercionMixin, ConstraintABC):
     """
     Combines two or more constraints with AND logic.
 
@@ -87,7 +109,7 @@ class AndConstraint(ConstraintValidationMixin, ConstraintABC):
 
     name: Literal[ConstraintType.AND] = ConstraintType.AND
     short_name: Literal["And"] = "And"
-    constraints: list[Constraint]
+    constraints: list[ConstraintABC]
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
@@ -120,7 +142,7 @@ class AndConstraint(ConstraintValidationMixin, ConstraintABC):
         return result
 
 
-class OrConstraint(ConstraintValidationMixin, ConstraintABC):
+class OrConstraint(ConstraintCoercionMixin, ConstraintABC):
     """
     Combines two or more constraints with OR logic.
 
@@ -165,7 +187,7 @@ class OrConstraint(ConstraintValidationMixin, ConstraintABC):
 
     name: Literal[ConstraintType.OR] = ConstraintType.OR
     short_name: Literal["Or"] = "Or"
-    constraints: list[Constraint]
+    constraints: list[ConstraintABC]
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
@@ -198,7 +220,7 @@ class OrConstraint(ConstraintValidationMixin, ConstraintABC):
         return result
 
 
-class NotConstraint(ConstraintValidationMixin, ConstraintABC):
+class NotConstraint(ConstraintCoercionMixin, ConstraintABC):
     """
     Negates a constraint with NOT logic.
 
@@ -240,7 +262,7 @@ class NotConstraint(ConstraintValidationMixin, ConstraintABC):
 
     name: Literal[ConstraintType.NOT] = ConstraintType.NOT
     short_name: Literal["Not"] = "Not"
-    constraint: Constraint
+    constraint: ConstraintABC
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
@@ -263,7 +285,7 @@ class NotConstraint(ConstraintValidationMixin, ConstraintABC):
         return ~self.constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
 
 
-class XorConstraint(ConstraintValidationMixin, ConstraintABC):
+class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
     """
     Combines two or more constraints with XOR (exclusive OR) logic.
 
@@ -309,7 +331,7 @@ class XorConstraint(ConstraintValidationMixin, ConstraintABC):
 
     name: Literal[ConstraintType.XOR] = ConstraintType.XOR
     short_name: Literal["Xor"] = "Xor"
-    constraints: list[Constraint]
+    constraints: list[ConstraintABC]
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """

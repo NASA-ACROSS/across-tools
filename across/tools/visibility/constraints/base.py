@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -102,7 +104,7 @@ class ConstraintABC(BaseSchema, ABC):
         """
         raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
 
-    def __and__(self, other: "ConstraintABC") -> "ConstraintABC":
+    def __and__(self, other: ConstraintABC) -> ConstraintABC:
         """
         Combine two constraints with AND logic using the & operator.
 
@@ -133,9 +135,9 @@ class ConstraintABC(BaseSchema, ABC):
         # Import here to avoid circular imports
         from .logical import AndConstraint
 
-        return AndConstraint(constraints=[self, other])  # type: ignore[list-item]
+        return AndConstraint(constraints=[self, other])
 
-    def __or__(self, other: "ConstraintABC") -> "ConstraintABC":
+    def __or__(self, other: ConstraintABC) -> ConstraintABC:
         """
         Combine two constraints with OR logic using the | operator.
 
@@ -166,9 +168,9 @@ class ConstraintABC(BaseSchema, ABC):
         # Import here to avoid circular imports
         from .logical import OrConstraint
 
-        return OrConstraint(constraints=[self, other])  # type: ignore[list-item]
+        return OrConstraint(constraints=[self, other])
 
-    def __invert__(self) -> "ConstraintABC":
+    def __invert__(self) -> ConstraintABC:
         """
         Negate a constraint using the ~ operator.
 
@@ -191,9 +193,9 @@ class ConstraintABC(BaseSchema, ABC):
         # Import here to avoid circular imports
         from .logical import NotConstraint
 
-        return NotConstraint(constraint=self)  # type: ignore[arg-type]
+        return NotConstraint(constraint=self)
 
-    def __xor__(self, other: "ConstraintABC") -> "ConstraintABC":
+    def __xor__(self, other: ConstraintABC) -> ConstraintABC:
         """
         Combine two constraints with XOR logic using the ^ operator.
 
@@ -225,4 +227,4 @@ class ConstraintABC(BaseSchema, ABC):
         # Import here to avoid circular imports
         from .logical import XorConstraint
 
-        return XorConstraint(constraints=[self, other])  # type: ignore[list-item]
+        return XorConstraint(constraints=[self, other])

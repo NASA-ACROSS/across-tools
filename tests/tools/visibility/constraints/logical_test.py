@@ -149,7 +149,7 @@ class TestAndConstraint:
     ) -> None:
         """Test AndConstraint with a single constraint returns same result."""
         dummy = DummyConstraint()
-        and_constraint = AndConstraint(constraints=[dummy])  # type: ignore[list-item]  # type: ignore[list-item]
+        and_constraint = AndConstraint(constraints=[dummy])
         result = and_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         expected = dummy(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.array_equal(result, expected)
@@ -176,17 +176,17 @@ class TestAndConstraint:
                 return np.zeros(len(time), dtype=bool)
 
         # True AND True = True
-        and_constraint = AndConstraint(constraints=[TrueConstraint(), TrueConstraint()])  # type: ignore[list-item]
+        and_constraint = AndConstraint(constraints=[TrueConstraint(), TrueConstraint()])
         result = and_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # True AND False = False
-        and_constraint = AndConstraint(constraints=[TrueConstraint(), FalseConstraint()])  # type: ignore[list-item]
+        and_constraint = AndConstraint(constraints=[TrueConstraint(), FalseConstraint()])
         result = and_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # False AND False = False
-        and_constraint = AndConstraint(constraints=[FalseConstraint(), FalseConstraint()])  # type: ignore[list-item]
+        and_constraint = AndConstraint(constraints=[FalseConstraint(), FalseConstraint()])
         result = and_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
@@ -207,7 +207,7 @@ class TestOrConstraint:
     ) -> None:
         """Test OrConstraint with a single constraint returns same result."""
         dummy = DummyConstraint()
-        or_constraint = OrConstraint(constraints=[dummy])  # type: ignore[list-item]  # type: ignore[list-item]
+        or_constraint = OrConstraint(constraints=[dummy])
         result = or_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         expected = dummy(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.array_equal(result, expected)
@@ -234,17 +234,17 @@ class TestOrConstraint:
                 return np.zeros(len(time), dtype=bool)
 
         # True OR True = True
-        or_constraint = OrConstraint(constraints=[TrueConstraint(), TrueConstraint()])  # type: ignore[list-item]
+        or_constraint = OrConstraint(constraints=[TrueConstraint(), TrueConstraint()])
         result = or_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # True OR False = True
-        or_constraint = OrConstraint(constraints=[TrueConstraint(), FalseConstraint()])  # type: ignore[list-item]
+        or_constraint = OrConstraint(constraints=[TrueConstraint(), FalseConstraint()])
         result = or_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False OR False = False
-        or_constraint = OrConstraint(constraints=[FalseConstraint(), FalseConstraint()])  # type: ignore[list-item]
+        or_constraint = OrConstraint(constraints=[FalseConstraint(), FalseConstraint()])
         result = or_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
@@ -274,12 +274,12 @@ class TestNotConstraint:
                 return np.zeros(len(time), dtype=bool)
 
         # NOT True = False
-        not_constraint = NotConstraint(constraint=TrueConstraint())  # type: ignore[arg-type]
+        not_constraint = NotConstraint(constraint=TrueConstraint())
         result = not_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # NOT False = True
-        not_constraint = NotConstraint(constraint=FalseConstraint())  # type: ignore[arg-type]
+        not_constraint = NotConstraint(constraint=FalseConstraint())
         result = not_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
@@ -300,7 +300,7 @@ class TestXorConstraint:
     ) -> None:
         """Test XorConstraint with a single constraint returns same result."""
         dummy = DummyConstraint()
-        xor_constraint = XorConstraint(constraints=[dummy])  # type: ignore[list-item]
+        xor_constraint = XorConstraint(constraints=[dummy])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         expected = dummy(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.array_equal(result, expected)
@@ -327,22 +327,22 @@ class TestXorConstraint:
                 return np.zeros(len(time), dtype=bool)
 
         # True XOR True = False
-        xor_constraint = XorConstraint(constraints=[TrueConstraint(), TrueConstraint()])  # type: ignore[list-item]
+        xor_constraint = XorConstraint(constraints=[TrueConstraint(), TrueConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # True XOR False = True
-        xor_constraint = XorConstraint(constraints=[TrueConstraint(), FalseConstraint()])  # type: ignore[list-item]
+        xor_constraint = XorConstraint(constraints=[TrueConstraint(), FalseConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False XOR True = True
-        xor_constraint = XorConstraint(constraints=[FalseConstraint(), TrueConstraint()])  # type: ignore[list-item]
+        xor_constraint = XorConstraint(constraints=[FalseConstraint(), TrueConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False XOR False = False
-        xor_constraint = XorConstraint(constraints=[FalseConstraint(), FalseConstraint()])  # type: ignore[list-item]
+        xor_constraint = XorConstraint(constraints=[FalseConstraint(), FalseConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
@@ -368,30 +368,22 @@ class TestXorConstraint:
                 return np.zeros(len(time), dtype=bool)
 
         # True XOR True XOR True = True (odd number: 3)
-        xor_constraint = XorConstraint(
-            constraints=[TrueConstraint(), TrueConstraint(), TrueConstraint()]  # type: ignore[list-item]
-        )
+        xor_constraint = XorConstraint(constraints=[TrueConstraint(), TrueConstraint(), TrueConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # True XOR True XOR False = False (even number: 2)
-        xor_constraint = XorConstraint(
-            constraints=[TrueConstraint(), TrueConstraint(), FalseConstraint()]  # type: ignore[list-item]
-        )
+        xor_constraint = XorConstraint(constraints=[TrueConstraint(), TrueConstraint(), FalseConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # True XOR False XOR False = True (odd number: 1)
-        xor_constraint = XorConstraint(
-            constraints=[TrueConstraint(), FalseConstraint(), FalseConstraint()]  # type: ignore[list-item]
-        )
+        xor_constraint = XorConstraint(constraints=[TrueConstraint(), FalseConstraint(), FalseConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False XOR False XOR False = False (even number: 0)
-        xor_constraint = XorConstraint(
-            constraints=[FalseConstraint(), FalseConstraint(), FalseConstraint()]  # type: ignore[list-item]
-        )
+        xor_constraint = XorConstraint(constraints=[FalseConstraint(), FalseConstraint(), FalseConstraint()])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
