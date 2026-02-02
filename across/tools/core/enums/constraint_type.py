@@ -25,3 +25,4 @@ class ConstraintType(str, Enum):
     OR = "Or"
     NOT = "Not"
     XOR = "Xor"
+    POINTING = "Pointing"
