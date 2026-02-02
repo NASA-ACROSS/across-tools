@@ -132,20 +132,8 @@ class EphemerisVisibility(Visibility):
             return ConstraintType.UNKNOWN
 
         # If it's a logical constraint, drill down to find the actual violated constraint
-        if isinstance(constraint, OrConstraint):
+        if isinstance(constraint, (OrConstraint, AndConstraint, XorConstraint)):
             # For OR: any sub-constraint that is violated
-            for sub_constraint in constraint.constraints:
-                sub_result = sub_constraint(
-                    time=self.timestamp[index : index + 1],
-                    ephemeris=self.ephemeris,
-                    coordinate=self.coordinate,
-                )
-                if sub_result[0]:  # If this constraint is violated
-                    return self._find_violated_constraint(sub_constraint, index)
-            return ConstraintType.UNKNOWN
-
-        elif isinstance(constraint, AndConstraint):
-            # For AND: all sub-constraints must be violated, return first one
             for sub_constraint in constraint.constraints:
                 sub_result = sub_constraint(
                     time=self.timestamp[index : index + 1],
@@ -159,18 +147,6 @@ class EphemerisVisibility(Visibility):
         elif isinstance(constraint, NotConstraint):
             # For NOT: drill down to the wrapped constraint
             return self._find_violated_constraint(constraint.constraint, index)
-
-        elif isinstance(constraint, XorConstraint):
-            # For XOR: find first sub-constraint that is violated
-            for sub_constraint in constraint.constraints:
-                sub_result = sub_constraint(
-                    time=self.timestamp[index : index + 1],
-                    ephemeris=self.ephemeris,
-                    coordinate=self.coordinate,
-                )
-                if sub_result[0]:  # If this constraint is violated
-                    return self._find_violated_constraint(sub_constraint, index)
-            return ConstraintType.UNKNOWN
 
         else:
             # It's a regular constraint, return its type
