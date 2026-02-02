@@ -22,6 +22,7 @@ from across.tools.visibility.constraints import (
     SunAngleConstraint,
     XorConstraint,
 )
+from across.tools.visibility.constraints.base import ConstraintABC
 
 from .conftest import DummyConstraint
 
@@ -155,38 +156,26 @@ class TestAndConstraint:
         assert np.array_equal(result, expected)
 
     def test_and_constraint_logic(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
     ) -> None:
         """Test that AndConstraint correctly applies AND logic."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
         # True AND True = True
-        and_constraint = AndConstraint(constraints=[TrueConstraint(), TrueConstraint()])
+        and_constraint = AndConstraint(constraints=[true_constraint, true_constraint])
         result = and_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # True AND False = False
-        and_constraint = AndConstraint(constraints=[TrueConstraint(), FalseConstraint()])
+        and_constraint = AndConstraint(constraints=[true_constraint, false_constraint])
         result = and_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # False AND False = False
-        and_constraint = AndConstraint(constraints=[FalseConstraint(), FalseConstraint()])
+        and_constraint = AndConstraint(constraints=[false_constraint, false_constraint])
         result = and_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
@@ -213,38 +202,26 @@ class TestOrConstraint:
         assert np.array_equal(result, expected)
 
     def test_or_constraint_logic(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
     ) -> None:
         """Test that OrConstraint correctly applies OR logic."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
         # True OR True = True
-        or_constraint = OrConstraint(constraints=[TrueConstraint(), TrueConstraint()])
+        or_constraint = OrConstraint(constraints=[true_constraint, true_constraint])
         result = or_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # True OR False = True
-        or_constraint = OrConstraint(constraints=[TrueConstraint(), FalseConstraint()])
+        or_constraint = OrConstraint(constraints=[true_constraint, false_constraint])
         result = or_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False OR False = False
-        or_constraint = OrConstraint(constraints=[FalseConstraint(), FalseConstraint()])
+        or_constraint = OrConstraint(constraints=[false_constraint, false_constraint])
         result = or_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
@@ -253,33 +230,21 @@ class TestNotConstraint:
     """Test suite for NotConstraint functionality."""
 
     def test_not_constraint_logic(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
     ) -> None:
         """Test that NotConstraint correctly applies NOT logic."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
         # NOT True = False
-        not_constraint = NotConstraint(constraint=TrueConstraint())
+        not_constraint = NotConstraint(constraint=true_constraint)
         result = not_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # NOT False = True
-        not_constraint = NotConstraint(constraint=FalseConstraint())
+        not_constraint = NotConstraint(constraint=false_constraint)
         result = not_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
@@ -306,84 +271,60 @@ class TestXorConstraint:
         assert np.array_equal(result, expected)
 
     def test_xor_constraint_logic(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
     ) -> None:
         """Test that XorConstraint correctly applies XOR logic."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
         # True XOR True = False
-        xor_constraint = XorConstraint(constraints=[TrueConstraint(), TrueConstraint()])
+        xor_constraint = XorConstraint(constraints=[true_constraint, true_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # True XOR False = True
-        xor_constraint = XorConstraint(constraints=[TrueConstraint(), FalseConstraint()])
+        xor_constraint = XorConstraint(constraints=[true_constraint, false_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False XOR True = True
-        xor_constraint = XorConstraint(constraints=[FalseConstraint(), TrueConstraint()])
+        xor_constraint = XorConstraint(constraints=[false_constraint, true_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False XOR False = False
-        xor_constraint = XorConstraint(constraints=[FalseConstraint(), FalseConstraint()])
+        xor_constraint = XorConstraint(constraints=[false_constraint, false_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
     def test_xor_constraint_three_constraints(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
     ) -> None:
         """Test that XorConstraint with three constraints returns True for odd violations."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
         # True XOR True XOR True = True (odd number: 3)
-        xor_constraint = XorConstraint(constraints=[TrueConstraint(), TrueConstraint(), TrueConstraint()])
+        xor_constraint = XorConstraint(constraints=[true_constraint, true_constraint, true_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # True XOR True XOR False = False (even number: 2)
-        xor_constraint = XorConstraint(constraints=[TrueConstraint(), TrueConstraint(), FalseConstraint()])
+        xor_constraint = XorConstraint(constraints=[true_constraint, true_constraint, false_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
         # True XOR False XOR False = True (odd number: 1)
-        xor_constraint = XorConstraint(constraints=[TrueConstraint(), FalseConstraint(), FalseConstraint()])
+        xor_constraint = XorConstraint(constraints=[true_constraint, false_constraint, false_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # False XOR False XOR False = False (even number: 0)
-        xor_constraint = XorConstraint(constraints=[FalseConstraint(), FalseConstraint(), FalseConstraint()])
+        xor_constraint = XorConstraint(constraints=[false_constraint, false_constraint, false_constraint])
         result = xor_constraint(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
@@ -421,70 +362,39 @@ class TestComplexConstraintCombinations:
         assert isinstance(double_negated.constraint, NotConstraint)
 
     def test_complex_and_or_combination(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
     ) -> None:
         """Test complex combination: (A & B) | C."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
         # (True & True) | False = True | False = True
-        combined = (TrueConstraint() & TrueConstraint()) | FalseConstraint()
+        combined = (true_constraint & true_constraint) | false_constraint
         result = combined(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
     def test_complex_not_combination(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord, true_constraint: ConstraintABC
     ) -> None:
         """Test complex combination: ~(A & B)."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
         # ~(True & True) = ~True = False
-        combined = ~(TrueConstraint() & TrueConstraint())
+        combined = ~(true_constraint & true_constraint)
         result = combined(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)
 
-    def test_demorgan_law(self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord) -> None:
+    def test_demorgan_law(
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
+    ) -> None:
         """Test De Morgan's law: ~(A & B) == ~A | ~B."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
-        constraint_a = TrueConstraint()
-        constraint_b = FalseConstraint()
+        constraint_a = true_constraint
+        constraint_b = false_constraint
 
         # ~(A & B)
         left = ~(constraint_a & constraint_b)
@@ -507,32 +417,20 @@ class TestComplexConstraintCombinations:
         assert isinstance(combined.constraints[0], XorConstraint)
 
     def test_complex_xor_combination(
-        self, mock_ephemeris: Ephemeris, time_array: Time, sky_coord: SkyCoord
+        self,
+        mock_ephemeris: Ephemeris,
+        time_array: Time,
+        sky_coord: SkyCoord,
+        true_constraint: ConstraintABC,
+        false_constraint: ConstraintABC,
     ) -> None:
         """Test complex combination: (A ^ B) & C."""
-
-        class TrueConstraint(DummyConstraint):
-            """Constraint that always returns True."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.ones(len(time), dtype=bool)
-
-        class FalseConstraint(DummyConstraint):
-            """Constraint that always returns False."""
-
-            def __call__(
-                self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord
-            ) -> np.typing.NDArray[np.bool_]:
-                return np.zeros(len(time), dtype=bool)
-
         # (True ^ False) & True = True & True = True
-        combined = (TrueConstraint() ^ FalseConstraint()) & TrueConstraint()
+        combined = (true_constraint ^ false_constraint) & true_constraint
         result = combined(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(result)
 
         # (True ^ True) & True = False & True = False
-        combined = (TrueConstraint() ^ TrueConstraint()) & TrueConstraint()
+        combined = (true_constraint ^ true_constraint) & true_constraint
         result = combined(time=time_array, ephemeris=mock_ephemeris, coordinate=sky_coord)
         assert np.all(~result)

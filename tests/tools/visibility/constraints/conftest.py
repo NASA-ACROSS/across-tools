@@ -64,7 +64,7 @@ def ephemeris_step_size() -> int:
 class DummyConstraint(ConstraintABC):
     """Dummy constraint for testing purposes."""
 
-    short_name: Literal["Dummy"] = "Dummy"
+    short_name: str = "Dummy"
     name: Literal[ConstraintType.UNKNOWN] = ConstraintType.UNKNOWN
     min_angle: float | None = None
     max_angle: float | None = None
@@ -80,6 +80,28 @@ class DummyConstraint(ConstraintABC):
         Returns:
             Boolean array indicating constraint satisfaction
         """
+        return np.zeros(len(time), dtype=bool)
+
+
+class TrueConstraint(DummyConstraint):
+    """Constraint that always returns True (always violated)."""
+
+    short_name: Literal["True"] = "True"
+    name: Literal[ConstraintType.UNKNOWN] = ConstraintType.UNKNOWN
+
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+        """Always return True (constraint always violated)."""
+        return np.ones(len(time), dtype=bool)
+
+
+class FalseConstraint(DummyConstraint):
+    """Constraint that always returns False (never violated)."""
+
+    short_name: Literal["False"] = "False"
+    name: Literal[ConstraintType.UNKNOWN] = ConstraintType.UNKNOWN
+
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+        """Always return False (constraint never violated)."""
         return np.zeros(len(time), dtype=bool)
 
 
@@ -99,6 +121,26 @@ def dummy_constraint() -> DummyConstraint:
         DummyConstraint instance
     """
     return DummyConstraint()
+
+
+@pytest.fixture
+def true_constraint() -> TrueConstraint:
+    """Fixture for a TrueConstraint instance that always returns True.
+
+    Returns:
+        TrueConstraint instance
+    """
+    return TrueConstraint()
+
+
+@pytest.fixture
+def false_constraint() -> FalseConstraint:
+    """Fixture for a FalseConstraint instance that always returns False.
+
+    Returns:
+        FalseConstraint instance
+    """
+    return FalseConstraint()
 
 
 @pytest.fixture
