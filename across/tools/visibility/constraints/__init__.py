@@ -2,12 +2,18 @@ from typing import Annotated
 
 from pydantic import Field
 
+from .airmass import AirmassConstraint
 from .alt_az import AltAzConstraint
 from .base import get_slice
+from .bright_star import BrightStarConstraint
 from .earth_limb import EarthLimbConstraint
+from .ecliptic_latitude import EclipticLatitudeConstraint
+from .galactic_bulge import GalacticBulgeConstraint
+from .galactic_plane import GalacticPlaneConstraint
 from .logical import AndConstraint, NotConstraint, OrConstraint, XorConstraint
 from .moon_angle import MoonAngleConstraint
 from .saa import SAAPolygonConstraint
+from .solar_system import SolarSystemConstraint
 from .sun_angle import SunAngleConstraint
 
 __all__ = [
@@ -18,6 +24,12 @@ __all__ = [
     "SunAngleConstraint",
     "SAAPolygonConstraint",
     "AltAzConstraint",
+    "GalacticPlaneConstraint",
+    "BrightStarConstraint",
+    "AirmassConstraint",
+    "EclipticLatitudeConstraint",
+    "GalacticBulgeConstraint",
+    "SolarSystemConstraint",
     "AndConstraint",
     "OrConstraint",
     "NotConstraint",
@@ -31,6 +43,12 @@ AllConstraint = Annotated[
     | SunAngleConstraint
     | SAAPolygonConstraint
     | AltAzConstraint
+    | GalacticPlaneConstraint
+    | BrightStarConstraint
+    | AirmassConstraint
+    | EclipticLatitudeConstraint
+    | GalacticBulgeConstraint
+    | SolarSystemConstraint
     | AndConstraint
     | OrConstraint
     | NotConstraint

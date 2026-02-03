@@ -101,9 +101,9 @@ class ConstraintABC(BaseSchema, ABC):
 
         Returns
         -------
-        bool
-            `True` if the coordinate is inside the constraint, `False`
-            otherwise.
+        np.typing.NDArray[np.bool_]
+            Boolean array where True indicates the coordinate violates the constraint
+            (is not visible).
         """
         raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
 
