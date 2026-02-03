@@ -1,5 +1,5 @@
 from .base import Visibility
-from .constraints_constructor import constraints_from_json, constraints_to_json
+from .constraints_constructor import Constraint, Constraints, constraints_from_json, constraints_to_json
 from .ephemeris_visibility import EphemerisVisibility, compute_ephemeris_visibility
 from .joint_visibility import JointVisibility, compute_joint_visibility
 
@@ -11,4 +11,6 @@ __all__ = [
     "constraints_to_json",
     "compute_ephemeris_visibility",
     "compute_joint_visibility",
+    "Constraint",
+    "Constraints",
 ]

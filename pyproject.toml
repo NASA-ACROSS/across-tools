@@ -27,7 +27,6 @@ requires-python = ">=3.10"
 dependencies = [
     "astropy>=5",
     "numpy>=1.2",
-    "healpy>=1.1",
     "pydantic>=2.1",
     "astroquery>=0.4",
     "sgp4>=2.2",
@@ -36,6 +35,9 @@ dependencies = [
     "spacetrack>=1.0.0",
     "pydantic_settings>=2.0",
     "shapely>=2.0.4",
+    "plotly>=5.0.0",
+    "mocpy>=0.15.0",
+    "rust-ephem>=0.3.2",
 ]
 
 [project.urls]
@@ -44,17 +46,18 @@ dependencies = [
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
 dev = [
-    "jupyter",           # Clears output from Jupyter notebooks
-    "mypy",              # Used for static type checking of files
-    "pre-commit",        # Used to run checks before finalizing a git commit
-    "pytest",
-    "pytest-cov",        # Used to report total code coverage
-    "ruff",              # Used for static linting of files
-    "sphinx-autoapi",    # Read the docs
-    "nbsphinx",
-    "sphinx-copybutton",
-    "sphinx-rtd-theme",
-    "types-shapely"
+    "jupyter>=1.1.1",
+    "mypy>=1.19.1",
+    "nbsphinx>=0.9.8",
+    "plotly-stubs>=0.0.6",
+    "pre-commit>=4.5.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.14",
+    "sphinx-autoapi>=3.6.1",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-rtd-theme>=3.1.0",
+    "types-shapely>=2.1.0.20250917",
 ]
 
 [build-system]
@@ -128,7 +131,10 @@ ignore = [
 tools = ["py.typed"]
 
 [tool.coverage.run]
+source = ["across"]
 omit = ["across/tools/_version.py"]
 
 [tool.mypy]
 strict = true
+explicit_package_bases = true
+namespace_packages = true
