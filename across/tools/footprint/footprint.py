@@ -108,6 +108,41 @@ class Footprint(BaseSchema):
 
         return list(set(all_pixels))
 
+    def contains(self, coordinate: Coordinate, order: int = 10) -> bool:
+        """
+        Tests if a point exists in a footprint.
+
+        Args:
+            footprint (Footprint):
+                The footprint to convert.
+            coordinate (Coordinate):
+                The coordinate to check for containment.
+            order (int):
+                HEALPix order (10 = NSIDE 1024)
+
+        Returns:
+            bool:
+                True if the coordinate is contained within the footprint, False otherwise.
+        """
+        hp_order = HealpixOrder(value=order)
+        for detector in self.detectors:
+            lon = Angle(np.array([coord.ra for coord in detector.coordinates]) * u.deg, unit=u.deg)
+            lat = Angle(np.array([coord.dec for coord in detector.coordinates]) * u.deg, unit=u.deg)
+
+            # Build MOC from polygon
+            moc = MOC.from_polygon(
+                lon=lon,
+                lat=lat,
+                max_depth=hp_order.value,
+            )
+            # Query polygon containment
+            coord_lon = Angle([coordinate.ra * u.deg], unit=u.deg)
+            coord_lat = Angle([coordinate.dec * u.deg], unit=u.deg)
+            if any(moc.contains(coord_lon, coord_lat)):
+                return True
+
+        return False
+
     def plot(
         self,
         fig: go.Figure | None = None,
