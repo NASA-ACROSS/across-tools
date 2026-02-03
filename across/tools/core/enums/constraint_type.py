@@ -19,6 +19,7 @@ class ConstraintType(str, Enum):
     ECLIPTIC_LATITUDE = "Ecliptic Latitude"
     GALACTIC_BULGE = "Galactic Bulge Avoidance"
     SOLAR_SYSTEM = "Solar System Object Avoidance"
+    DAYTIME = "Daytime Avoidance"
     TEST = "Test Constraint"
     AND = "And"
     OR = "Or"

@@ -6,6 +6,7 @@ from .airmass import AirmassConstraint
 from .alt_az import AltAzConstraint
 from .base import get_slice
 from .bright_star import BrightStarConstraint
+from .daytime import DaytimeConstraint
 from .earth_limb import EarthLimbConstraint
 from .ecliptic_latitude import EclipticLatitudeConstraint
 from .galactic_bulge import GalacticBulgeConstraint
@@ -30,6 +31,7 @@ __all__ = [
     "EclipticLatitudeConstraint",
     "GalacticBulgeConstraint",
     "SolarSystemConstraint",
+    "DaytimeConstraint",
     "AndConstraint",
     "OrConstraint",
     "NotConstraint",
@@ -49,6 +51,7 @@ AllConstraint = Annotated[
     | EclipticLatitudeConstraint
     | GalacticBulgeConstraint
     | SolarSystemConstraint
+    | DaytimeConstraint
     | AndConstraint
     | OrConstraint
     | NotConstraint
