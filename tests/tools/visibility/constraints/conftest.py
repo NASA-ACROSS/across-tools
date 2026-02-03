@@ -241,7 +241,7 @@ def ground_ephemeris(ephemeris_begin: Time, ephemeris_end: Time, ephemeris_step_
     ephemeris = GroundEphemeris(
         ephemeris_begin, ephemeris_end, ephemeris_step_size, latitude, longitude, height
     )
-    ephemeris.prepare_data()
+    ephemeris.compute()
     return ephemeris
 
 
