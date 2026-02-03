@@ -36,8 +36,8 @@ class PointingConstraint(PolygonConstraint):
     def __call__(
         self,
         time: Time,
-        coordinate: SkyCoord,
         ephemeris: Ephemeris | None = None,
+        coordinate: SkyCoord | None = None,
     ) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate the constraint at the given time(s) and coordinate.
@@ -61,13 +61,15 @@ class PointingConstraint(PolygonConstraint):
             coordinate is outside the polygon, OR if the time is outside
             the start and end time.
         """
+        if coordinate is None:
+            raise ValueError("PointingConstraint requires a coordinate")
         assert self.polygon is not None
         assert all([self.start_time is not None, self.end_time is not None])
 
         if all(time < self.start_time) or all(time > self.end_time):
             raise ValueError("Start and stop times outside pointing range")
 
-        # Is the coordinate inside the pointing polygon
+        # Is the coordinate inside the pointing polygon?
         # Return a boolean array of len(time)
         in_polygon = np.asarray(
             [self.polygon.contains(points(coordinate.ra.deg, coordinate.dec.deg))] * len(time)
@@ -79,4 +81,8 @@ class PointingConstraint(PolygonConstraint):
         # Return the result as True or False, or an array of True/False
         # "True" means the target is constrained, because it is either outside the
         # polygon or outside the pointing time range.
-        return np.asarray(np.logical_or(np.logical_not(in_polygon), np.logical_not(in_pointing_time)))
+        in_constraint = np.asarray(
+            np.logical_or(np.logical_not(in_polygon), np.logical_not(in_pointing_time))
+        )
+
+        return in_constraint

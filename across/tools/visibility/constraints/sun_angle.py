@@ -47,11 +47,11 @@ class SunAngleConstraint(ConstraintABC):
 
         Parameters
         ----------
-        coordinate : SkyCoord
+        coordinate : SkyCoord | None
             The coordinate to check.
         time : Time
             The time to check.
-        ephemeris : Ephemeris
+        ephemeris : Ephemeris | None
             The ephemeris object.
 
         Returns
@@ -61,6 +61,8 @@ class SunAngleConstraint(ConstraintABC):
             otherwise.
 
         """
+        if ephemeris is None or coordinate is None:
+            raise ValueError("SunAngleConstraint requires both an ephemeris and coordinate")
         # Find a slice what the part of the ephemeris that we're using
         i = get_slice(time, ephemeris)
 

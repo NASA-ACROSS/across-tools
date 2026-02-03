@@ -52,6 +52,9 @@ class SAAPolygonConstraint(PolygonConstraint):
             single boolean value.
         """
         # Find a slice what the part of the ephemeris that we're using
+        if ephemeris is None:
+            raise ValueError("AltAzConstraint requires an ephemeris")
+
         i = get_slice(time, ephemeris)
         if ephemeris.longitude is None or ephemeris.latitude is None:
             raise ValueError("Ephemeris must contain longitude and latitude")

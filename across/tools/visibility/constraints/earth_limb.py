@@ -52,9 +52,9 @@ class EarthLimbConstraint(ConstraintABC):
 
         Parameters
         ----------
-        coordinate : SkyCoord
+        coordinate : SkyCoord | None
             The coordinate to check.
-        time : Time
+        time : Time | None
             The time to check.
         ephemeris : Ephemeris
             The ephemeris object.
@@ -66,6 +66,8 @@ class EarthLimbConstraint(ConstraintABC):
             otherwise.
 
         """
+        if ephemeris is None or coordinate is None:
+            raise ValueError("EarthLimbConstraint requires both an ephemeris and coordinate")
         # Find a slice what the part of the ephemeris that we're using
         i = get_slice(time, ephemeris)
 
