@@ -40,7 +40,9 @@ class EarthLimbConstraint(ConstraintABC):
         default=None, ge=0, le=180, description="Maximum angle from the Earth limb"
     )
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(
+        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
+    ) -> np.typing.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the Earth limb constraint. This is done by checking if the
@@ -51,9 +53,9 @@ class EarthLimbConstraint(ConstraintABC):
 
         Parameters
         ----------
-        coordinate : SkyCoord
+        coordinate : SkyCoord | None
             The coordinate to check.
-        time : Time
+        time : Time | None
             The time to check.
         ephemeris : Ephemeris
             The ephemeris object.
@@ -65,6 +67,8 @@ class EarthLimbConstraint(ConstraintABC):
             otherwise.
 
         """
+        if ephemeris is None or coordinate is None:
+            raise ValueError("EarthLimbConstraint requires both an ephemeris and coordinate")
         # Find a slice what the part of the ephemeris that we're using
         i = get_slice(time, ephemeris)
 

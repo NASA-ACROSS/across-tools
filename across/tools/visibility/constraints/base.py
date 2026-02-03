@@ -85,7 +85,9 @@ class ConstraintABC(BaseSchema, ABC):
     computed_values: VisibilityComputedValues = Field(default_factory=VisibilityComputedValues, exclude=True)
 
     @abstractmethod
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(
+        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
+    ) -> np.typing.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the constraint.
@@ -94,10 +96,10 @@ class ConstraintABC(BaseSchema, ABC):
         ----------
         time : Time
             The time to check.
-        ephemeris : Ephemeris
-            The ephemeris object.
-        coordinate : SkyCoord
-            The coordinate to check.
+        ephemeris : Ephemeris | None
+            The ephemeris object, if one exists.
+        coordinate : SkyCoord | None
+            The coordinate to check, if one exists.
 
         Returns
         -------

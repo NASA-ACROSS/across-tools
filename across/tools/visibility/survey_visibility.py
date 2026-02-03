@@ -70,7 +70,7 @@ class SurveyVisibility(Visibility):
         -------
             None.
         """
-        # Calculate all the individual constraints
+        # Calculate all the individual pointing constraints
         pointing_constraints: list[np.typing.NDArray[np.bool_]] = []
         for pointing in self.pointings:
             pointing_constraints.append(pointing(time=self.timestamp, coordinate=self.coordinate))
