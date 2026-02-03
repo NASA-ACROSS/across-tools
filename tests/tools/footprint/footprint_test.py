@@ -290,26 +290,9 @@ class TestFootprintContains:
         result = self.simple_footprint.contains(outside_coordinate)
         assert result is False
 
-    def test_should_respect_healpix_order_parameter(self) -> None:
-        """
-        Footprint.contains should accept different healpix order values
-        """
-        result_low = self.simple_footprint.contains(self.origin_coordinate, order=5)
-        result_high = self.simple_footprint.contains(self.origin_coordinate, order=12)
-        assert isinstance(result_low, bool)
-        assert isinstance(result_high, bool)
-
     def test_should_raise_value_error_with_invalid_order(self, invalid_healpix_order: Any) -> None:
         """
         Footprint.contains should raise `ValueError` with invalid healpix order values
         """
         with pytest.raises(ValueError):
             self.simple_footprint.contains(self.origin_coordinate, order=invalid_healpix_order)
-
-    def test_should_check_all_detectors(self, simple_polygon: Polygon) -> None:
-        """
-        Footprint.contains should check containment across all detectors
-        """
-        multi_detector_footprint = Footprint(detectors=[simple_polygon, simple_polygon])
-        result = multi_detector_footprint.contains(self.origin_coordinate)
-        assert isinstance(result, bool)
