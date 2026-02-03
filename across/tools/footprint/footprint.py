@@ -138,7 +138,7 @@ class Footprint(BaseSchema):
             # Query polygon containment
             coord_lon = Angle([coordinate.ra * u.deg], unit=u.deg)
             coord_lat = Angle([coordinate.dec * u.deg], unit=u.deg)
-            if any(moc.contains(coord_lon, coord_lat)):
+            if any(moc.contains_lonlat(coord_lon, coord_lat)):
                 return True
 
         return False
