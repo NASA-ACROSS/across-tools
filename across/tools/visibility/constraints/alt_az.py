@@ -62,7 +62,7 @@ class AltAzConstraint(PolygonConstraint):
 
         # Convert the sky coordinates to Alt/Az coordinates
         assert ephemeris.earth_location is not None
-        alt_az = coordinate.transform_to(
+        self.computed_values.alt_az = coordinate.transform_to(
             AltAz(
                 obstime=time[i],
                 location=ephemeris.earth_location
@@ -72,21 +72,23 @@ class AltAzConstraint(PolygonConstraint):
         )
 
         # Initialize the constraint array as all False
-        in_constraint = np.zeros(len(alt_az), dtype=bool)
+        in_constraint = np.zeros(len(self.computed_values.alt_az), dtype=bool)
 
         # Calculate the basic Alt/Az min/max constraints
         if self.altitude_min is not None:
-            in_constraint |= alt_az.alt < self.altitude_min * u.deg
+            in_constraint |= self.computed_values.alt_az.alt < self.altitude_min * u.deg
         if self.altitude_max is not None:
-            in_constraint |= alt_az.alt > self.altitude_max * u.deg
+            in_constraint |= self.computed_values.alt_az.alt > self.altitude_max * u.deg
         if self.azimuth_min is not None:
-            in_constraint |= alt_az.az < self.azimuth_min * u.deg
+            in_constraint |= self.computed_values.alt_az.az < self.azimuth_min * u.deg
         if self.azimuth_max is not None:
-            in_constraint |= alt_az.az > self.azimuth_max * u.deg
+            in_constraint |= self.computed_values.alt_az.az > self.azimuth_max * u.deg
 
         # If a polygon is defined, then check if the Alt/Az is inside the polygon
         if self.polygon is not None:
-            in_constraint |= self.polygon.contains(points(alt_az.alt, alt_az.az))
+            in_constraint |= self.polygon.contains(
+                points(self.computed_values.alt_az.alt, self.computed_values.alt_az.az)
+            )
 
         # Return the value as a scalar or array
         return in_constraint

@@ -108,6 +108,13 @@ class EphemerisVisibility(Visibility):
             self.ephemeris.index(self.begin) : self.ephemeris.index(self.end)
         ]
 
+    def _merge_computed_values(self) -> None:
+        """
+        Merge computed values from all constraints into the main computed_values attribute.
+        """
+        for constraint in self.constraints:
+            self.computed_values.merge(constraint.computed_values)
+
     def _find_violated_constraint(self, constraint: ConstraintABC, index: int) -> ConstraintType:
         """
         Find which actual constraint is violated at a given index.

@@ -72,16 +72,14 @@ class SunAngleConstraint(ConstraintABC):
         # Construct the constraint based on the minimum and maximum angles
         in_constraint = np.zeros(len(ephemeris.sun[i]), dtype=bool)
 
+        self.computed_values.sun_angle = SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(
+            coordinate
+        )
+
         if self.min_angle is not None:
-            in_constraint |= (
-                SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(coordinate)
-                < self.min_angle * u.deg
-            )
+            in_constraint |= self.computed_values.sun_angle < self.min_angle * u.deg
         if self.max_angle is not None:
-            in_constraint |= (
-                SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(coordinate)
-                > self.max_angle * u.deg
-            )
+            in_constraint |= self.computed_values.sun_angle > self.max_angle * u.deg
 
         # Return the result as True or False, or an array of True/False
         return in_constraint

@@ -155,6 +155,7 @@ class AndConstraint(ConstraintCoercionMixin, ConstraintABC):
         # AND all constraints together
         for constraint in self.constraints:
             result &= constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+            self.computed_values.merge(constraint.computed_values)
 
         return result
 
@@ -233,6 +234,7 @@ class OrConstraint(ConstraintCoercionMixin, ConstraintABC):
         # OR all constraints together
         for constraint in self.constraints:
             result |= constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+            self.computed_values.merge(constraint.computed_values)
 
         return result
 
@@ -299,7 +301,9 @@ class NotConstraint(ConstraintCoercionMixin, ConstraintABC):
         np.typing.NDArray[np.bool_]
             Boolean array where True indicates constraint is violated.
         """
-        return ~self.constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+        constraint = ~self.constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+        self.computed_values.merge(self.constraint.computed_values)
+        return constraint
 
 
 class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
@@ -377,5 +381,6 @@ class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
         # XOR all constraints together
         for constraint in self.constraints:
             result ^= constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+            self.computed_values.merge(constraint.computed_values)
 
         return result

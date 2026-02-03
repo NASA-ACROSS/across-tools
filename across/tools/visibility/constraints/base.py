@@ -5,9 +5,11 @@ from abc import ABC, abstractmethod
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
+from pydantic import Field
 
 from ...core.enums import ConstraintType
 from ...core.schemas.base import BaseSchema
+from ...core.schemas.visibility import VisibilityComputedValues
 from ...ephemeris import Ephemeris
 
 
@@ -80,6 +82,7 @@ class ConstraintABC(BaseSchema, ABC):
 
     short_name: str
     name: ConstraintType
+    computed_values: VisibilityComputedValues = Field(default_factory=VisibilityComputedValues, exclude=True)
 
     @abstractmethod
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
