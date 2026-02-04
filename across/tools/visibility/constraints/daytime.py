@@ -83,32 +83,27 @@ class DaytimeConstraint(ConstraintABC):
         """
         Check daytime for ground-based telescopes using Sun altitude.
         """
-        if ephemeris.earth_location is None:
-            raise ValueError("Earth location required for ground-based daytime calculations")
-
         # Find the slice of ephemeris data we need
         i = get_slice(time, ephemeris)
 
         # Get Sun position
         sun_altaz = ephemeris.sun[i].transform_to(AltAz(obstime=time[i], location=ephemeris.earth_location))
 
-        sun_altitude = sun_altaz.alt.deg
+        self.computed_values.sun_altitude = sun_altaz.alt
 
         # Define daytime based on twilight type
         if self.twilight_type == TwilightType.SUNSET:
             # Twilight starts after sunset
-            in_constraint = sun_altitude > -0.866
+            in_constraint = self.computed_values.sun_altitude.deg > -0.866
         elif self.twilight_type == TwilightType.CIVIL:
             # Sun within 6° of horizon (civil twilight)
-            in_constraint = sun_altitude > -6
+            in_constraint = self.computed_values.sun_altitude.deg > -6
         elif self.twilight_type == TwilightType.NAUTICAL:
             # Sun within 12° of horizon (nautical twilight)
-            in_constraint = sun_altitude > -12
+            in_constraint = self.computed_values.sun_altitude.deg > -12
         elif self.twilight_type == TwilightType.ASTRONOMICAL:
             # Sun within 18° of horizon (astronomical twilight)
-            in_constraint = sun_altitude > -18
-        else:
-            raise ValueError(f"Unsupported twilight type: {self.twilight_type}")
+            in_constraint = self.computed_values.sun_altitude.deg > -18
 
         return np.asarray(in_constraint, dtype=bool)
 
@@ -126,22 +121,10 @@ class DaytimeConstraint(ConstraintABC):
         # Calculate angular separation between Sun and Earth centers as seen from spacecraft
         sun_earth_separation = ephemeris.sun[i].separation(ephemeris.earth[i])
 
-        # Calculate angular radii of Earth and Sun as seen from spacecraft
-        # Earth's angular radius = arcsin(Earth_radius / distance_to_spacecraft)
-        earth_angular_radius = np.arcsin(ephemeris.earth_radius_angle[i].rad)
-
-        # Sun's angular radius = arcsin(Sun_radius / distance_to_sun)
-        sun_angular_radius = np.arcsin(ephemeris.sun_radius_angle[i].rad)
-
-        # Convert to degrees for consistency
-        earth_angular_radius_deg = np.degrees(earth_angular_radius)
-        sun_angular_radius_deg = np.degrees(sun_angular_radius)
-        separation_deg = sun_earth_separation.deg
-
         # Spacecraft is in eclipse (not in sunlight) if the angular separation
         # between Sun and Earth centers is less than the sum of their angular radii
         # This means the Earth is blocking the Sun from the spacecraft's perspective
-        in_eclipse = separation_deg < (earth_angular_radius_deg + sun_angular_radius_deg)
+        in_eclipse = sun_earth_separation < ephemeris.earth_radius_angle[i] + ephemeris.sun_radius_angle[i]
 
         # For space telescopes, daytime means the spacecraft is in sunlight
         # So in_constraint is True when NOT in eclipse (i.e., in sunlight)
