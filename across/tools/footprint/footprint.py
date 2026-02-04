@@ -56,15 +56,15 @@ class Footprint(BaseSchema):
         """
         Convert a Footprint into a MOC object.
 
-        Args:
-            footprint (Footprint):
-                The footprint to convert.
-            order (int):
-                HEALPix order (10 = NSIDE 1024)
+        Parameters
+        ----------
+        order : int, optional
+            HEALPix order (10 = NSIDE 1024), by default 10
 
-        Returns:
-            list[MOC]:
-                MOC object representing the footprint.
+        Returns
+        -------
+        list[MOC]
+            MOC object representing the footprint.
         """
         hp_order = HealpixOrder(value=order)
         vertices: list[SkyCoord] = []
@@ -87,14 +87,17 @@ class Footprint(BaseSchema):
         """
         Projects the footprint to a new coordinate with a given roll angle.
 
-        Args:
-            coordinate (Coordinate):
-                The new center coordinate to project to.
-            roll_angle (float):
-                The roll angle in degrees to apply during projection.
-        Returns:
-            Footprint:
-                The projected footprint.
+        Parameters
+        ----------
+        coordinate : Coordinate
+            The new center coordinate to project to.
+        roll_angle : float
+            The roll angle in degrees to apply during projection.
+
+        Returns
+        -------
+        Footprint
+            The projected footprint.
         """
         angle = RollAngle(value=roll_angle)
 
@@ -111,15 +114,15 @@ class Footprint(BaseSchema):
         """
         Queries the healpix pixels of a footprint at a given order.
 
-        Args:
-            footprint (Footprint):
-                The footprint to convert.
-            order (int):
-                HEALPix order (10 = NSIDE 1024)
+        Parameters
+        ----------
+        order : int, optional
+            HEALPix order (10 = NSIDE 1024), by default 10
 
-        Returns:
-            list[int]:
-                HEALPix NESTED pixel indices at requested order.
+        Returns
+        -------
+        list[int]
+            HEALPix NESTED pixel indices at requested order.
         """
         footprint_moc = self._to_moc(order=order)
 
