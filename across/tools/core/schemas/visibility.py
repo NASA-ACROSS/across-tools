@@ -58,6 +58,7 @@ class VisibilityComputedValues(BaseSchema):
         default=None, description="Angular distance between the Earth and the coordinate"
     )
     alt_az: SkyCoord | None = Field(default=None, description="AltAz coordinates of the coordinate")
+    air_mass: u.Quantity | None = Field(default=None, description="Airmass value for the coordinate")
 
     def merge(self, other: "VisibilityComputedValues") -> None:
         """
