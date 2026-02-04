@@ -1,6 +1,8 @@
 from uuid import UUID
 
 import astropy.units as u  # type: ignore[import-untyped]
+import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from pydantic import Field
 
@@ -65,6 +67,9 @@ class VisibilityComputedValues(BaseSchema):
     )
     body_coordinates: dict[str, SkyCoord] | None = Field(
         default=None, description="Sky coordinates of specified Solar System bodies"
+    )
+    body_magnitude: dict[str, npt.NDArray[np.float64]] | None = Field(
+        default=None, description="Apparent magnitude of specified Solar System bodies"
     )
 
     def merge(self, other: "VisibilityComputedValues") -> None:

@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Literal
 
 import numpy as np
@@ -6,18 +5,9 @@ from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
 
-from ...core.enums import ConstraintType
+from ...core.enums import ConstraintType, TwilightType
 from ...ephemeris import Ephemeris, GroundEphemeris
 from .base import ConstraintABC, get_slice
-
-
-class TwilightType(str, Enum):
-    """Enumeration of twilight types for daytime constraints."""
-
-    ASTRONOMICAL = "astronomical"  # Sun 12-18° below horizon
-    NAUTICAL = "nautical"  # Sun 6-12° below horizon
-    CIVIL = "civil"  # Sun 0-6° below horizon
-    SUNSET = "sunset"  # Sun at horizon
 
 
 class DaytimeConstraint(ConstraintABC):

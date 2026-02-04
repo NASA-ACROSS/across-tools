@@ -5,10 +5,10 @@ import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from across.tools.core.enums import TwilightType
 from across.tools.ephemeris import Ephemeris, GroundEphemeris
 from across.tools.ephemeris.tle_ephem import TLEEphemeris
 from across.tools.visibility.constraints import DaytimeConstraint
-from across.tools.visibility.constraints.daytime import TwilightType
 
 
 class TestDaytimeConstraint:
