@@ -5,7 +5,7 @@ from typing import Any
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import plotly.graph_objects as go
-from astropy.coordinates import Angle  # type: ignore[import-untyped]
+from astropy.coordinates import Angle, SkyCoord  # type: ignore[import-untyped]
 from mocpy import MOC  # type: ignore[import-untyped]
 
 from ..core.schemas import BaseSchema, Coordinate, HealpixOrder, Polygon, RollAngle
@@ -52,6 +52,37 @@ class Footprint(BaseSchema):
                 equivalence.append(self.detectors[detector_iterable] == other.detectors[detector_iterable])
             return all(equivalence)
 
+    def _to_moc(self, order: int = 10) -> list[MOC]:
+        """
+        Convert a Footprint into a MOC object.
+
+        Args:
+            footprint (Footprint):
+                The footprint to convert.
+            order (int):
+                HEALPix order (10 = NSIDE 1024)
+
+        Returns:
+            list[MOC]:
+                MOC object representing the footprint.
+        """
+        hp_order = HealpixOrder(value=order)
+        vertices: list[SkyCoord] = []
+        for detector in self.detectors:
+            lon = [coord.ra for coord in detector.coordinates]
+            lat = [coord.dec for coord in detector.coordinates]
+
+            # Build MOC from polygon
+            vertices.append(
+                SkyCoord(
+                    lon,
+                    lat,
+                    unit="deg",
+                )
+            )
+        mocs: list[MOC] = MOC.from_polygons(vertices, max_depth=hp_order.value)
+        return mocs
+
     def project(self, coordinate: Coordinate, roll_angle: float) -> Footprint:
         """
         Projects the footprint to a new coordinate with a given roll angle.
@@ -78,7 +109,7 @@ class Footprint(BaseSchema):
 
     def query_pixels(self, order: int = 10) -> list[int]:
         """
-        Convert a Footprint into HEALPix pixels using MOC.
+        Queries the healpix pixels of a footprint at a given order.
 
         Args:
             footprint (Footprint):
@@ -90,54 +121,37 @@ class Footprint(BaseSchema):
             list[int]:
                 HEALPix NESTED pixel indices at requested order.
         """
-        hp_order = HealpixOrder(value=order)
-        all_pixels: list[int] = []
-        for detector in self.detectors:
-            lon = Angle(np.array([coord.ra for coord in detector.coordinates]) * u.deg, unit=u.deg)
-            lat = Angle(np.array([coord.dec for coord in detector.coordinates]) * u.deg, unit=u.deg)
+        footprint_moc = self._to_moc(order=order)
 
-            # Build MOC from polygon
-            moc = MOC.from_polygon(
-                lon=lon,
-                lat=lat,
-                max_depth=hp_order.value,
-            )
-            # Get HEALPix pixels by flattening MOC
+        all_pixels: list[int] = []
+        for moc in footprint_moc:
             moc_pixels: np.ndarray[Any, Any] = moc.flatten()
             all_pixels.extend(moc_pixels.tolist())
 
-        return list(set(all_pixels))
+        return all_pixels
 
     def contains(self, coordinate: Coordinate, order: int = 10) -> bool:
         """
         Tests if a point exists in a footprint.
 
-        Args:
-            footprint (Footprint):
-                The footprint to convert.
-            coordinate (Coordinate):
-                The coordinate to check for containment.
-            order (int):
-                HEALPix order (10 = NSIDE 1024)
+        Parameters
+        ----------
+        coordinate : Coordinate
+            The coordinate to check for containment.
+        order : int, optional
+            HEALPix order (10 = NSIDE 1024), by default 10
 
-        Returns:
-            bool:
-                True if the coordinate is contained within the footprint, False otherwise.
+        Returns
+        -------
+        bool
+            True if the coordinate is contained within the footprint, False otherwise.
         """
-        hp_order = HealpixOrder(value=order)
-        for detector in self.detectors:
-            lon = Angle(np.array([coord.ra for coord in detector.coordinates]) * u.deg, unit=u.deg)
-            lat = Angle(np.array([coord.dec for coord in detector.coordinates]) * u.deg, unit=u.deg)
+        footprint_moc = self._to_moc(order=order)
 
-            # Build MOC from polygon
-            moc = MOC.from_polygon(
-                lon=lon,
-                lat=lat,
-                max_depth=hp_order.value,
-            )
-            # Query polygon containment
-            coord_lon = Angle([coordinate.ra * u.deg], unit=u.deg)
-            coord_lat = Angle([coordinate.dec * u.deg], unit=u.deg)
+        coord_lon = Angle([coordinate.ra * u.deg], unit=u.deg)
+        coord_lat = Angle([coordinate.dec * u.deg], unit=u.deg)
+
+        for moc in footprint_moc:  # noqa: SIM110
             if any(moc.contains_lonlat(coord_lon, coord_lat)):
                 return True
 

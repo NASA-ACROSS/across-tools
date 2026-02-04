@@ -169,9 +169,9 @@ class TestFootprintQueryPixels:
         Footprint.query_pixels should equal precalculated result with same parameters
         """
         projected_footprint = self.simple_footprint.project(self.ra45_dec45_coordinate, 0)
-        footprint_pixels = projected_footprint.query_pixels(order=9)
+        footprint_pixels = sorted(projected_footprint.query_pixels(order=9))
 
-        assert precalculated_hp_query_polygon == footprint_pixels
+        assert sorted(precalculated_hp_query_polygon) == footprint_pixels
 
     def test_should_raise_value_error_with_invalid_order(self, invalid_healpix_order: Any) -> None:
         """
