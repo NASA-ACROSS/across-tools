@@ -145,11 +145,16 @@ class TestCalculateBodyMagnitude:
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
         sun_coord = SkyCoord(ra=180 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
 
-        class MockEphemeris:
-            def __init__(self, sun):
+        class MockEphemeris(Ephemeris):
+            def __init__(self, sun: SkyCoord) -> None:
                 self.sun = sun
 
-        ephemeris = MockEphemeris([sun_coord])  # List to simulate array
+            def prepare_data(self) -> None:
+                pass
+
+        # Create SkyCoord array from single coordinate
+        sun_array = SkyCoord([sun_coord.ra], [sun_coord.dec], distance=[sun_coord.distance])
+        ephemeris = MockEphemeris(sun_array)
         i = slice(0, 1)
 
         result = constraint._calculate_body_magnitude(SolarSystemObject.MERCURY, body_coord, ephemeris, i)
@@ -165,11 +170,16 @@ class TestCalculateBodyMagnitude:
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
         sun_coord = SkyCoord(ra=90 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
 
-        class MockEphemeris:
-            def __init__(self, sun):
+        class MockEphemeris(Ephemeris):
+            def __init__(self, sun: SkyCoord) -> None:
                 self.sun = sun
 
-        ephemeris = MockEphemeris([sun_coord])
+            def prepare_data(self) -> None:
+                pass
+
+        # Create SkyCoord array from single coordinate
+        sun_array = SkyCoord([sun_coord.ra], [sun_coord.dec], distance=[sun_coord.distance])
+        ephemeris = MockEphemeris(sun_array)
         i = slice(0, 1)
 
         result = constraint._calculate_body_magnitude(SolarSystemObject.VENUS, body_coord, ephemeris, i)
@@ -184,10 +194,11 @@ class TestCalculateBodyMagnitude:
         # Mock body_coord at 1.5 AU
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=1.5 * u.AU)
 
-        class MockEphemeris:
-            pass  # Not needed for Mars
+        class MockEphemeris(Ephemeris):
+            def prepare_data(self) -> None:
+                pass
 
-        ephemeris = MockEphemeris()
+        ephemeris = MockEphemeris(begin=Time.now(), end=Time.now())
         i = slice(0, 1)
 
         result = constraint._calculate_body_magnitude(SolarSystemObject.MARS, body_coord, ephemeris, i)
@@ -202,10 +213,11 @@ class TestCalculateBodyMagnitude:
         # Mock body_coord at 5 AU
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=5 * u.AU)
 
-        class MockEphemeris:
-            pass
+        class MockEphemeris(Ephemeris):
+            def prepare_data(self) -> None:
+                pass
 
-        ephemeris = MockEphemeris()
+        ephemeris = MockEphemeris(begin=Time.now(), end=Time.now())
         i = slice(0, 1)
 
         result = constraint._calculate_body_magnitude(SolarSystemObject.JUPITER, body_coord, ephemeris, i)
@@ -220,10 +232,11 @@ class TestCalculateBodyMagnitude:
         # Mock body_coord at 9 AU
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=9 * u.AU)
 
-        class MockEphemeris:
-            pass
+        class MockEphemeris(Ephemeris):
+            def prepare_data(self) -> None:
+                pass
 
-        ephemeris = MockEphemeris()
+        ephemeris = MockEphemeris(begin=Time.now(), end=Time.now())
         i = slice(0, 1)
 
         result = constraint._calculate_body_magnitude(SolarSystemObject.SATURN, body_coord, ephemeris, i)
@@ -238,10 +251,11 @@ class TestCalculateBodyMagnitude:
         # Mock body_coord at 19 AU
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=19 * u.AU)
 
-        class MockEphemeris:
-            pass
+        class MockEphemeris(Ephemeris):
+            def prepare_data(self) -> None:
+                pass
 
-        ephemeris = MockEphemeris()
+        ephemeris = MockEphemeris(begin=Time.now(), end=Time.now())
         i = slice(0, 1)
 
         result = constraint._calculate_body_magnitude(SolarSystemObject.URANUS, body_coord, ephemeris, i)
@@ -256,10 +270,11 @@ class TestCalculateBodyMagnitude:
         # Mock body_coord at 30 AU
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=30 * u.AU)
 
-        class MockEphemeris:
-            pass
+        class MockEphemeris(Ephemeris):
+            def prepare_data(self) -> None:
+                pass
 
-        ephemeris = MockEphemeris()
+        ephemeris = MockEphemeris(begin=Time.now(), end=Time.now())
         i = slice(0, 1)
 
         result = constraint._calculate_body_magnitude(SolarSystemObject.NEPTUNE, body_coord, ephemeris, i)
