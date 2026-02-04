@@ -46,14 +46,20 @@ class TestEclipticLatitudeConstraintInitialization:
 class TestEclipticLatitudeConstraintCall:
     """Test suite for EclipticLatitudeConstraint __call__ method."""
 
-    def test_constraint_returns_bool_array(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, coordinate: SkyCoord
+    def test_constraint_returns_array_like(
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
     ) -> None:
-        """Test that constraint returns boolean array."""
+        """Test that constraint returns array-like result."""
         constraint = EclipticLatitudeConstraint(min_latitude=15.0)
-        result = constraint(begin_time_array, ground_ephemeris, coordinate)
-        # Result should be array-like (even if single element)
+        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
         assert hasattr(result, "dtype")
+
+    def test_constraint_returns_bool_dtype(
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that constraint returns boolean dtype."""
+        constraint = EclipticLatitudeConstraint(min_latitude=15.0)
+        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
         assert result.dtype == bool
 
     def test_constraint_no_violation_when_latitude_above_min(

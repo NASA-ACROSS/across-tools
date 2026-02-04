@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
@@ -53,39 +51,20 @@ class TestDaytimeConstraint:
         result = constraint(time=ground_ephemeris.timestamp, ephemeris=ground_ephemeris, coordinate=sky_coord)
         assert len(result) == len(ground_ephemeris.timestamp)
 
-    def test_daytime_constraint_sunset_validation(self, ground_ephemeris: GroundEphemeris) -> None:
+    def test_daytime_constraint_sunset_validation(
+        self, mauna_kea_ephemeris: GroundEphemeris, dummy_coord: SkyCoord
+    ) -> None:
         """Test that daytime constraint correctly identifies sunset times using independent validation.
 
         This test validates that the daytime constraint correctly calculates when the Sun
         is above/below the horizon by comparing against astropy's independent sunset
         calculations for a specific location and time.
         """
-        # Use a specific date and location for reproducible testing
-        # Mauna Kea Observatory coordinates
-        latitude = 19.8207 * u.deg
-        longitude = -155.4681 * u.deg
-        height = 4205 * u.m
-
-        # Create ephemeris for a 24-hour period starting at midnight
-        start_time = Time("2024-06-15T00:00:00")  # Summer solstice for longer days
-        end_time = Time("2024-06-16T00:00:00")
-        step_size = 300  # 5 minutes
-
-        ephem = GroundEphemeris(
-            begin=start_time.datetime,
-            end=end_time.datetime,
-            step_size=step_size,
-            latitude=latitude,
-            longitude=longitude,
-            height=height,
-        )
-        ephem.compute()
+        # Use the Mauna Kea ephemeris fixture
+        ephem = mauna_kea_ephemeris
 
         # Test civil twilight (Sun 0-6° below horizon)
         constraint = DaytimeConstraint(twilight_type=TwilightType.CIVIL)
-
-        # Create a dummy coordinate (not used in ground-based calculations)
-        dummy_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
 
         # Get constraint results
         results = constraint(ephem.timestamp, ephem, dummy_coord)
@@ -104,9 +83,10 @@ class TestDaytimeConstraint:
 
         # Independent validation using astropy's astronomical calculations
         # Calculate sunrise/sunset times for civil twilight
-        from astropy.coordinates import AltAz, EarthLocation
+        from astropy.coordinates import AltAz
 
-        location = EarthLocation(lat=latitude, lon=longitude, height=height)
+        # Use the location from the ephemeris fixture
+        location = ephem.earth_location
 
         # For civil twilight, Sun is at -6° altitude
         twilight_altitude = -6 * u.deg
@@ -183,38 +163,41 @@ class TestDaytimeConstraint:
         assert astronomical_constraint.twilight_type == TwilightType.ASTRONOMICAL
         assert sunset_constraint.twilight_type == TwilightType.SUNSET
 
-    def test_daytime_constraint_ground_no_earth_location_raises_error(
-        self, test_tle_ephemeris: TLEEphemeris
+    def test_daytime_constraint_space_based_returns_array(
+        self, test_tle_ephemeris: TLEEphemeris, dummy_coord: SkyCoord
     ) -> None:
-        """Test that ground-based daytime constraint raises error when earth_location is None."""
+        """Test that space-based daytime constraint returns array."""
         constraint = DaytimeConstraint()
-
-        # Create a mock ground ephemeris with no earth_location
-        ephem = GroundEphemeris(
-            begin=datetime(2024, 6, 15, 12, 0, 0),
-            end=datetime(2024, 6, 15, 13, 0, 0),
-            step_size=3600,
-            latitude=19.8207 * u.deg,
-            longitude=-155.4681 * u.deg,
-            height=4205 * u.m,
-        )
-        ephem.compute()  # This sets earth_location
-        constraint = DaytimeConstraint()
-        coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
-
+        coord = dummy_coord
         # Use the TLE ephemeris which should trigger space-based calculations
         result = constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, coord)
-
-        # Should return boolean array of correct length
         assert isinstance(result, np.ndarray)
+
+    def test_daytime_constraint_space_based_returns_bool_dtype(
+        self, test_tle_ephemeris: TLEEphemeris, dummy_coord: SkyCoord
+    ) -> None:
+        """Test that space-based daytime constraint returns boolean dtype."""
+        constraint = DaytimeConstraint()
+        coord = dummy_coord
+        # Use the TLE ephemeris which should trigger space-based calculations
+        result = constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, coord)
         assert result.dtype == np.bool_
+
+    def test_daytime_constraint_space_based_returns_correct_length(
+        self, test_tle_ephemeris: TLEEphemeris, dummy_coord: SkyCoord
+    ) -> None:
+        """Test that space-based daytime constraint returns correct length."""
+        constraint = DaytimeConstraint()
+        coord = dummy_coord
+        # Use the TLE ephemeris which should trigger space-based calculations
+        result = constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, coord)
         assert len(result) == len(test_tle_ephemeris.timestamp)
 
     def test_daytime_constraint_different_twilight_types_ground_based(
-        self, ground_ephemeris: GroundEphemeris
+        self, ground_ephemeris: GroundEphemeris, dummy_coord: SkyCoord
     ) -> None:
         """Test that different twilight types produce different results for ground-based observations."""
-        coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
+        coord = dummy_coord
 
         # Test all twilight types
         civil_constraint = DaytimeConstraint(twilight_type=TwilightType.CIVIL)
@@ -239,11 +222,11 @@ class TestDaytimeConstraint:
         assert len(civil_result) == len(nautical_result) == len(astronomical_result) == len(sunset_result)
 
     def test_daytime_constraint_space_based_with_different_twilight_types(
-        self, test_tle_ephemeris: Ephemeris
+        self, test_tle_ephemeris: Ephemeris, dummy_coord: SkyCoord
     ) -> None:
         """Test that space-based constraint works with different twilight types."""
         # Skip space-based test due to ephemeris compatibility issues
-        coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
+        coord = dummy_coord
 
         # Test all twilight types with space-based ephemeris
         for twilight_type in [

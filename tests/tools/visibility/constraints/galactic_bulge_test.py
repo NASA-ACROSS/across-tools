@@ -46,14 +46,21 @@ class TestGalacticBulgeConstraintInitialization:
 class TestGalacticBulgeConstraintCall:
     """Test suite for GalacticBulgeConstraint __call__ method."""
 
-    def test_constraint_returns_bool_array(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, coordinate: SkyCoord
+    def test_constraint_returns_array_like(
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
     ) -> None:
-        """Test that constraint returns boolean array."""
+        """Test that constraint returns array-like result."""
         constraint = GalacticBulgeConstraint(min_separation=10.0)
-        result = constraint(begin_time_array, ground_ephemeris, coordinate)
+        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
         # Result should be array-like (even if single element)
         assert hasattr(result, "dtype")
+
+    def test_constraint_returns_bool_dtype(
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Test that constraint returns boolean dtype."""
+        constraint = GalacticBulgeConstraint(min_separation=10.0)
+        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
         assert result.dtype == bool
 
     def test_constraint_no_violation_when_far_from_bulge(
