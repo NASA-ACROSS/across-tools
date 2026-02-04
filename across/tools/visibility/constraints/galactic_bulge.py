@@ -2,6 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -37,7 +38,7 @@ class GalacticBulgeConstraint(ConstraintABC):
         default=10.0, gt=0, description="Minimum angular separation (degrees) from Galactic Bulge"
     )
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Check if the coordinate is too close to the Galactic Bulge.
 
@@ -52,7 +53,7 @@ class GalacticBulgeConstraint(ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates the coordinate violates the constraint
             (is too close to the Galactic Bulge).
         """
@@ -63,6 +64,6 @@ class GalacticBulgeConstraint(ConstraintABC):
         separation = coordinate.separation(galactic_bulge)
 
         # Constrain observations closer than the minimum separation
-        in_constraint: np.typing.NDArray[np.bool_] = separation < (self.min_separation * u.deg)
+        in_constraint: npt.NDArray[np.bool_] = separation < (self.min_separation * u.deg)
 
         return in_constraint

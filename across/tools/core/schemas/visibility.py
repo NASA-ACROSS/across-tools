@@ -60,6 +60,12 @@ class VisibilityComputedValues(BaseSchema):
     alt_az: SkyCoord | None = Field(default=None, description="AltAz coordinates of the coordinate")
     air_mass: u.Quantity | None = Field(default=None, description="Airmass value for the coordinate")
     sun_altitude: u.Quantity | None = Field(default=None, description="Altitude of the Sun at the given time")
+    body_separation: dict[str, u.Quantity] | None = Field(
+        default=None, description="Angular separation from specified Solar System bodies"
+    )
+    body_coordinates: dict[str, SkyCoord] | None = Field(
+        default=None, description="Sky coordinates of specified Solar System bodies"
+    )
 
     def merge(self, other: "VisibilityComputedValues") -> None:
         """

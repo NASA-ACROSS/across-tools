@@ -75,14 +75,28 @@ class SolarSystemConstraint(ConstraintABC):
         # Check separation from each specified Solar System body
         for body_name in self.bodies:
             try:
-                # Get the body's position at the observation time
-                body_coord = get_body(body_name, time[i], ephemeris.earth_location)
+                # Initialize body_separation dict if needed
+                if self.computed_values.body_coordinates is None:
+                    self.computed_values.body_coordinates = {}
 
-                # Calculate angular separation
-                separation = coordinate.separation(body_coord)
+                # Get the body's position at the observation time
+                self.computed_values.body_coordinates[body_name] = get_body(
+                    body_name, time[i], ephemeris.earth_location
+                )
+
+                # Initialize body_separation dict if needed
+                if self.computed_values.body_separation is None:
+                    self.computed_values.body_separation = {}
+
+                # Calculate angular separation (and record it in computed values)
+                self.computed_values.body_separation[body_name] = coordinate.separation(
+                    self.computed_values.body_coordinates[body_name]
+                )
 
                 # Check if too close
-                in_constraint |= separation < (self.min_separation * u.deg)
+                in_constraint |= self.computed_values.body_separation[body_name] < (
+                    self.min_separation * u.deg
+                )
 
             except Exception:
                 # Skip bodies that can't be calculated (e.g., if ephemeris data unavailable)
