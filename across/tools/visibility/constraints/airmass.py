@@ -56,6 +56,9 @@ class AirmassConstraint(ConstraintABC):
             (constraint violated).
         """
 
+        if ephemeris.earth_location is None:
+            raise ValueError("Earth location required for airmass calculations")
+
         # Find the slice of ephemeris data we need
         i = get_slice(time, ephemeris)
 
