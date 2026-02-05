@@ -190,3 +190,25 @@ class TestBandpassSchema:
                     np.isclose(wavelength_bandpass.max, max_wave),  # type:ignore
                 ]
             )
+
+        def test_should_throw_value_error_when_bandwidth_equals_central_wavelength(self) -> None:
+            """
+            Test that validates WavelengthBandpass raises ValueError when bandwidth == central_wavelength
+            """
+            with pytest.raises(ValueError):
+                WavelengthBandpass(
+                    central_wavelength=100.0,
+                    bandwidth=100.0,
+                    unit=enums.WavelengthUnit.ANGSTROM,
+                )
+
+        def test_should_throw_value_error_when_bandwidth_exceeds_central_wavelength(self) -> None:
+            """
+            Test that validates WavelengthBandpass raises ValueError when bandwidth >= central_wavelength
+            """
+            with pytest.raises(ValueError):
+                WavelengthBandpass(
+                    central_wavelength=100.0,
+                    bandwidth=150.0,
+                    unit=enums.WavelengthUnit.ANGSTROM,
+                )

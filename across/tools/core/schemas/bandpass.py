@@ -11,10 +11,14 @@ class BaseBandpass(BaseSchema):
     """
     A base class for defining bandpass filters with a specified range.
 
-    Attributes:
-        filter_name (str): The name of the filter, if provided.
-        min (float | None): The minimum value of the bandpass range.
-        max (float | None): The maximum value of the bandpass range.
+    Attributes
+    ----------
+    filter_name : str or None
+        The name of the filter, if provided.
+    min : float or None
+        The minimum value of the bandpass range.
+    max : float or None
+        The maximum value of the bandpass range.
     """
 
     filter_name: str | None = None
@@ -29,15 +33,16 @@ class WavelengthBandpass(BaseBandpass):
     Inherits from `BaseBandpass`, this class specializes the filter to operate in the
     wavelength domain and provides additional functionality for wavelength-based filters.
 
-    Attributes:
-        type (Literal['WAVELENGTH']): A constant string indicating the type of the bandpass filter.
-        central_wavelength (float | None): The central wavelength of the filter.
-        bandwidth (float | None): The bandwidth of the filter.
-        unit (WavelengthUnit): The unit of measurement for the wavelength.
-
-    Methods:
-        model_post_init(__context: Any) -> None:
-            Performs validation and calculation of central wavelength and bandwidth based on the min/max range
+    Attributes
+    ----------
+    type : Literal['WAVELENGTH']
+        A constant string indicating the type of the bandpass filter.
+    central_wavelength : float or None
+        The central wavelength of the filter.
+    bandwidth : float or None
+        The bandwidth of the filter.
+    unit : WavelengthUnit
+        The unit of measurement for the wavelength.
     """
 
     type: Literal["WAVELENGTH"] = "WAVELENGTH"
@@ -52,9 +57,11 @@ class WavelengthBandpass(BaseBandpass):
         and bandwidth if they are not provided. Also ensures the values are positive and that the max
         wavelength is greater than the min wavelength. Lastly, it converts the units to angstroms.
 
-        Raises:
-            ValueError: If the min/max values are invalid or if the calculated values for central wavelength
-                        or bandwidth are non-positive.
+        Raises
+        ------
+        ValueError
+            If the min/max values are invalid or if the calculated values for central wavelength
+            or bandwidth are non-positive.
         """
         if (self.min and not self.max) or (self.max and not self.min):
             raise MinMaxValueError("Both min and max must be defined.")
@@ -74,6 +81,9 @@ class WavelengthBandpass(BaseBandpass):
 
         if not all([self.central_wavelength > 0, self.bandwidth > 0]):
             raise BandwidthValueError("Central wavelength and bandwidth must be positive.")
+
+        if self.bandwidth >= self.central_wavelength:
+            raise BandwidthValueError("Bandwidth must be less than the central wavelength.")
 
         self.bandwidth = float(
             (self.bandwidth * u.Unit(self.unit.value)).to(u.Unit(WavelengthUnit.ANGSTROM.value)).value
@@ -98,13 +108,12 @@ class EnergyBandpass(BaseBandpass):
 
     Inherits from `BaseBandpass`, this class specializes the filter to operate in the energy domain.
 
-    Attributes:
-        type (Literal['ENERGY']): A constant string indicating the type of the bandpass filter.
-        unit (EnergyUnit): The unit of measurement for the energy.
-
-    Methods:
-        model_post_init(__context: Any) -> None:
-            Ensures the min and max energy values are positive and valid.
+    Attributes
+    ----------
+    type : Literal['ENERGY']
+        A constant string indicating the type of the bandpass filter.
+    unit : EnergyUnit
+        The unit of measurement for the energy.
     """
 
     type: Literal["ENERGY"] = "ENERGY"
@@ -114,8 +123,10 @@ class EnergyBandpass(BaseBandpass):
         """
         Validates that the min and max energy values are positive.
 
-        Raises:
-            ValueError: If the min or max energy values are not defined, are non-positive, and max is greater
+        Raises
+        ------
+        ValueError
+            If the min or max energy values are not defined, are non-positive, and max is greater
             than min.
         """
         if not (self.min and self.max):
@@ -134,13 +145,12 @@ class FrequencyBandpass(BaseBandpass):
 
     Inherits from `BaseBandpass`, this class specializes the filter to operate in the frequency domain.
 
-    Attributes:
-        type (Literal['FREQUENCY']): A constant string indicating the type of the bandpass filter.
-        unit (FrequencyUnit): The unit of measurement for the frequency.
-
-    Methods:
-        model_post_init(__context: Any) -> None:
-            Ensures the min and max frequency values are positive and valid.
+    Attributes
+    ----------
+    type : Literal['FREQUENCY']
+        A constant string indicating the type of the bandpass filter.
+    unit : FrequencyUnit
+        The unit of measurement for the frequency.
     """
 
     type: Literal["FREQUENCY"] = "FREQUENCY"
@@ -150,8 +160,10 @@ class FrequencyBandpass(BaseBandpass):
         """
         Validates that the min and max frequency values are positive.
 
-        Raises:
-            ValueError: If the min or max energy values are not defined, are non-positive, and max is greater
+        Raises
+        ------
+        ValueError
+            If the min or max energy values are not defined, are non-positive, and max is greater
             than min.
         """
         if not (self.min and self.max):
@@ -168,16 +180,21 @@ def convert_to_wave(bandpass: EnergyBandpass | FrequencyBandpass) -> WavelengthB
     """
     Converts a given EnergyBandpass or FrequencyBandpass to a WavelengthBandPass.
 
-    Args:
-        bandpass (EnergyBandpass | FrequencyBandpass): The bandpass filter in energy or frequency domain.
+    Parameters
+    ----------
+    bandpass : EnergyBandpass or FrequencyBandpass
+        The bandpass filter in energy or frequency domain.
 
-    Returns:
-        WavelengthBandPass: The corresponding bandpass filter in the wavelength domain.
+    Returns
+    -------
+    WavelengthBandpass
+        The corresponding bandpass filter in the wavelength domain.
 
-    Important Note:
-        When converting from Energy/Frequency to wavelength, the min/max values are inverted
-        in relation to their corresponding wavelengths. Thus, the min/max values are switched during
-        conversion.
+    Notes
+    -----
+    When converting from Energy/Frequency to wavelength, the min/max values are inverted
+    in relation to their corresponding wavelengths. Thus, the min/max values are switched during
+    conversion.
     """
     bandpass_min_angstrom = (
         (bandpass.max * u.Unit(bandpass.unit.value))
