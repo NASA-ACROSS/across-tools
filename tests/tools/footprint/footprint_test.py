@@ -169,9 +169,9 @@ class TestFootprintQueryPixels:
         Footprint.query_pixels should equal precalculated result with same parameters
         """
         projected_footprint = self.simple_footprint.project(self.ra45_dec45_coordinate, 0)
-        footprint_pixels = projected_footprint.query_pixels(order=9)
+        footprint_pixels = sorted(projected_footprint.query_pixels(order=9))
 
-        assert precalculated_hp_query_polygon == footprint_pixels
+        assert sorted(precalculated_hp_query_polygon) == footprint_pixels
 
     def test_should_raise_value_error_with_invalid_order(self, invalid_healpix_order: Any) -> None:
         """
@@ -187,6 +187,19 @@ class TestFootprintQueryPixels:
         footprint1 = Footprint(detectors=[simple_polygon])
         footprint2 = Footprint(detectors=[simple_polygon, simple_polygon])
         assert footprint1 != footprint2
+
+
+class TestFootprintPlotting:
+    """
+    Class to run set of `Footprint.plot` tests
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, simple_footprint: Footprint) -> None:
+        """
+        Init with fixtures
+        """
+        self.simple_footprint = simple_footprint
 
     def test_should_return_plotly_figure_when_plotting(self) -> None:
         """
@@ -234,3 +247,52 @@ class TestFootprintQueryPixels:
         legend_count = len(set(trace.name for trace in fig.data if trace.name == name))  # type: ignore[attr-defined]
 
         assert legend_count == 1
+
+
+class TestFootprintContains:
+    """
+    Class to run set of `Footprint.contains` tests
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        simple_footprint: Footprint,
+        ra45_dec45_coordinate: Coordinate,
+        origin_coordinate: Coordinate,
+    ) -> None:
+        """
+        Init with fixtures
+        """
+        self.simple_footprint = simple_footprint
+        self.ra45_dec45_coordinate = ra45_dec45_coordinate
+        self.origin_coordinate = origin_coordinate
+
+    def test_should_return_bool(self) -> None:
+        """
+        Footprint.contains should return a boolean
+        """
+        result = self.simple_footprint.contains(self.origin_coordinate)
+        assert isinstance(result, bool)
+
+    def test_should_return_true_for_coordinate_inside_footprint(self) -> None:
+        """
+        Footprint.contains should return True for a coordinate inside the footprint
+        """
+        result = self.simple_footprint.contains(self.origin_coordinate)
+        assert result is True
+
+    def test_should_return_false_for_coordinate_outside_footprint(self) -> None:
+        """
+        Footprint.contains should return False for a coordinate outside the footprint
+        """
+        outside_coordinate = Coordinate(ra=180.0, dec=45.0)
+        result = self.simple_footprint.contains(outside_coordinate)
+        assert result is False
+
+    def test_should_raise_value_error_with_invalid_order(self, invalid_healpix_order: Any) -> None:
+        """
+        Footprint.contains should raise `ValueError` with invalid healpix order values
+        """
+        with pytest.raises(ValueError):
+            self.simple_footprint.contains(self.origin_coordinate, order=invalid_healpix_order)
