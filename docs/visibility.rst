@@ -388,6 +388,100 @@ After computing visibility, you can check if the target is visible at specific t
    visible_array = visibility.visible(times)
    print(f"Visibility: {visible_array}")
 
+Computed Values
+---------------
+
+The ``computed_values`` attribute provides access to geometric quantities calculated 
+during visibility analysis. After running a visibility calculation, you can inspect 
+these values for further analysis or visualization.
+
+Overview
+^^^^^^^^
+
+During visibility calculations, constraints compute various geometric quantities such as 
+angular separations and positional coordinates. These values are stored in the 
+``computed_values`` attribute (a ``VisibilityComputedValues`` object) so you can access 
+them after the calculation completes.
+
+Available Computed Values
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table:: Computed Values Fields
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - Field
+     - Type
+     - Description
+   * - ``sun_angle``
+     - Quantity (array)
+     - Angular separation between target and Sun at each time step (degrees)
+   * - ``moon_angle``
+     - Quantity (array)
+     - Angular separation between target and Moon at each time step (degrees)
+   * - ``earth_angle``
+     - Quantity (array)
+     - Angular separation between target and Earth limb at each time step (degrees)
+   * - ``alt_az``
+     - SkyCoord
+     - Altitude-azimuth coordinates of target from observatory
+
+.. note::
+   Not all fields are populated for every visibility calculation. Values are only 
+   computed and stored by constraints that need them.
+
+Accessing Computed Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After running a visibility calculation, you can access the computed values for analysis:
+
+.. code-block:: python
+
+   # Compute visibility with Sun and Moon constraints
+   visibility = compute_ephemeris_visibility(
+       ra=180.0, dec=45.0,
+       begin=begin, end=end,
+       ephemeris=ephem,
+       constraints=[
+           SunAngleConstraint(min_angle=45),
+           MoonAngleConstraint(min_angle=15),
+       ],
+       observatory_name="Swift",
+   )
+
+   # Access computed angular separations
+   if visibility.computed_values.sun_angle is not None:
+       print(f"Min Sun angle: {visibility.computed_values.sun_angle.min():.2f}")
+       print(f"Max Sun angle: {visibility.computed_values.sun_angle.max():.2f}")
+       print(f"Mean Sun angle: {visibility.computed_values.sun_angle.mean():.2f}")
+
+   if visibility.computed_values.moon_angle is not None:
+       print(f"Min Moon angle: {visibility.computed_values.moon_angle.min():.2f}")
+       print(f"Max Moon angle: {visibility.computed_values.moon_angle.max():.2f}")
+
+   # Use for plotting or further analysis
+   import matplotlib.pyplot as plt
+   
+   if visibility.computed_values.sun_angle is not None:
+       plt.plot(visibility.timestamp.datetime, visibility.computed_values.sun_angle)
+       plt.xlabel('Time')
+       plt.ylabel('Sun Angle (degrees)')
+       plt.title('Target - Sun Angular Separation Over Time')
+       plt.show()
+
+Which Constraints Populate Which Values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Different constraints compute and store different values:
+
+1. ``SunAngleConstraint`` → stores ``sun_angle``
+2. ``MoonAngleConstraint`` → stores ``moon_angle``
+3. ``EarthLimbConstraint`` → stores ``earth_angle``
+4. ``AltAzConstraint`` → stores ``alt_az``
+
+Only the constraints you actually use will populate their corresponding fields in 
+``computed_values``.
+
 Joint Visibility
 ----------------
 
