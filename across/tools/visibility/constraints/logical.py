@@ -128,9 +128,7 @@ class AndConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["And"] = "And"
     constraints: list[ConstraintABC]
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate AND constraint: returns True only if all sub-constraints are True.
 
@@ -209,9 +207,7 @@ class OrConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["Or"] = "Or"
     constraints: list[ConstraintABC]
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate OR constraint: returns True if any sub-constraint is True.
 
@@ -287,9 +283,7 @@ class NotConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["Not"] = "Not"
     constraint: ConstraintABC
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate NOT constraint: returns the negation of the sub-constraint.
 
@@ -360,9 +354,7 @@ class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["Xor"] = "Xor"
     constraints: list[ConstraintABC]
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate XOR constraint: returns True when odd number of sub-constraints are True.
 

@@ -28,9 +28,7 @@ class SAAPolygonConstraint(PolygonConstraint):
     name: Literal[ConstraintType.SAA] = ConstraintType.SAA
     short_name: str = "SAA"
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None = None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate the constraint at the given time(s) and ephemeris position(s).
 
@@ -53,9 +51,6 @@ class SAAPolygonConstraint(PolygonConstraint):
             single boolean value.
         """
         # Find a slice what the part of the ephemeris that we're using
-        if ephemeris is None:
-            raise ValueError("AltAzConstraint requires an ephemeris")
-
         i = get_slice(time, ephemeris)
         if ephemeris.longitude is None or ephemeris.latitude is None:
             raise ValueError("Ephemeris must contain longitude and latitude")

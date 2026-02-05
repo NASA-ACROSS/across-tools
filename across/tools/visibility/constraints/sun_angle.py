@@ -36,9 +36,7 @@ class SunAngleConstraint(ConstraintABC):
     min_angle: float | None = Field(default=None, ge=0, le=180, description="Minimum angle from the Sun")
     max_angle: float | None = Field(default=None, ge=0, le=180, description="Maximum angle from the Sun")
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the Sun constraint. This is done by checking if the
@@ -48,11 +46,11 @@ class SunAngleConstraint(ConstraintABC):
 
         Parameters
         ----------
-        coordinate : SkyCoord | None
+        coordinate : SkyCoord
             The coordinate to check.
         time : Time
             The time to check.
-        ephemeris : Ephemeris | None
+        ephemeris : Ephemeris
             The ephemeris object.
 
         Returns
@@ -62,8 +60,6 @@ class SunAngleConstraint(ConstraintABC):
             otherwise.
 
         """
-        if ephemeris is None or coordinate is None:
-            raise ValueError("SunAngleConstraint requires both an ephemeris and coordinate")
         # Find a slice what the part of the ephemeris that we're using
         i = get_slice(time, ephemeris)
 
