@@ -67,9 +67,7 @@ class DummyConstraint(ConstraintABC):
     min_angle: float | None = None
     max_angle: float | None = None
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """Dummy implementation of the constraint.
 
         Args:
@@ -102,9 +100,7 @@ class FalseConstraint(DummyConstraint):
     short_name: Literal["False"] = "False"
     name: Literal[ConstraintType.UNKNOWN] = ConstraintType.UNKNOWN
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """Always return False (constraint never violated)."""
         return np.zeros(len(time), dtype=bool)
 

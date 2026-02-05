@@ -17,9 +17,7 @@ class MockConstraint(PolygonConstraint):
     name: Literal[ConstraintType.TEST] = ConstraintType.TEST
     polygon: ShapelyPolygon | None = None
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """Dummy call method for testing purposes."""
         return np.zeros(len(time), dtype=bool)
 
