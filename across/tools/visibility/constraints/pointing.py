@@ -3,41 +3,39 @@ from typing import Literal
 import numpy as np
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
-from shapely import Polygon, points
 
 from ...core.enums.constraint_type import ConstraintType
-from ...core.schemas import AstropyDateTime
+from ...core.schemas import Coordinate
 from ...ephemeris import Ephemeris
-from .polygon import PolygonConstraint
+from ...footprint import Pointing
+from .base import ConstraintABC
 
 
-class PointingConstraint(PolygonConstraint):
+class PointingConstraint(ConstraintABC):
     """
-    Polygon based pointing constraint. Defined as a Shapely Polygon with a
-    start and end time. This constraint will calculate, for a given set
-    of times, whether a target at a given coordinate is in the polygon.
+    Footprint based pointing constraint. A Pointing is defined
+    as a Footprint with a start and end time. This constraint will
+    calculate whether a target was within any set of pointings.
 
     Attributes
     ----------
-    polygon
-        Shapely Polygon object defining the survey pointing.
+    pointings
+        List of Pointing objects.
     start_time
         AstropyDateTime defining the start of the pointing
     end_time
         AstropyDateTime defining the end of the pointing
     """
 
-    polygon: Polygon | None = None
+    pointings: list[Pointing]
     name: Literal[ConstraintType.POINTING] = ConstraintType.POINTING
     short_name: str = "POINTING"
-    start_time: AstropyDateTime | None = None
-    end_time: AstropyDateTime | None = None
 
     def __call__(
         self,
         time: Time,
-        ephemeris: Ephemeris | None = None,
-        coordinate: SkyCoord | None = None,
+        ephemeris: Ephemeris,
+        coordinate: SkyCoord,
     ) -> np.typing.NDArray[np.bool_]:
         """
         Evaluate the constraint at the given time(s) and coordinate.
@@ -58,31 +56,30 @@ class PointingConstraint(PolygonConstraint):
             A boolean array indicating whether the constraint is satisfied at
             the given time(s) and position(s). If time is scalar, returns a
             single boolean value. The constraint is satisfied if the
-            coordinate is outside the polygon, OR if the time is outside
+            coordinate is outside the footprint, OR if the time is outside
             the start and end time.
         """
-        if coordinate is None:
-            raise ValueError("PointingConstraint requires a coordinate")
-        assert self.polygon is not None
-        assert all([self.start_time is not None, self.end_time is not None])
-
-        if all(time < self.start_time) or all(time > self.end_time):
-            raise ValueError("Start and stop times outside pointing range")
-
-        # Is the coordinate inside the pointing polygon?
+        # For each pointing, is the coordinate within the footprint
+        # and time range?
         # Return a boolean array of len(time)
-        in_polygon = np.asarray(
-            [self.polygon.contains(points(coordinate.ra.deg, coordinate.dec.deg))] * len(time)
-        )
+        in_constraint = np.ones(len(time), dtype=bool)
 
-        # Are the times inside the start and end time of the pointing?
-        in_pointing_time = np.array([t >= self.start_time and t < self.end_time for t in time])
+        for pointing in self.pointings:
+            # Is the target inside the footprint of the pointing?
+            in_footprint = np.asarray(
+                [
+                    pointing.footprint.contains(Coordinate(ra=coordinate.ra.deg, dec=coordinate.dec.deg))
+                    * len(time)
+                ],
+                dtype=bool,
+            )
 
-        # Return the result as True or False, or an array of True/False
-        # "True" means the target is constrained, because it is either outside the
-        # polygon or outside the pointing time range.
-        in_constraint = np.asarray(
-            np.logical_or(np.logical_not(in_polygon), np.logical_not(in_pointing_time))
-        )
+            # Are the times inside the start and end time of the pointing?
+            in_pointing_time = np.array([t >= pointing.start_time and t < pointing.end_time for t in time])
+
+            # Return the result as True or False, or an array of True/False
+            # "True" means the target is constrained, because it is either outside the
+            # footprint or outside the pointing time range.
+            in_constraint &= np.logical_or(np.logical_not(in_footprint), np.logical_not(in_pointing_time))
 
         return in_constraint

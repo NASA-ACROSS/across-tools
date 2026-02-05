@@ -2,12 +2,10 @@ from .base import Visibility
 from .constraints_constructor import Constraint, Constraints, constraints_from_json, constraints_to_json
 from .ephemeris_visibility import EphemerisVisibility, compute_ephemeris_visibility
 from .joint_visibility import JointVisibility, compute_joint_visibility
-from .survey_visibility import SurveyVisibility
 
 __all__ = [
     "EphemerisVisibility",
     "JointVisibility",
-    "SurveyVisibility",
     "Visibility",
     "constraints_from_json",
     "constraints_to_json",

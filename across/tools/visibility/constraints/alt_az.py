@@ -48,9 +48,9 @@ class AltAzConstraint(PolygonConstraint):
         ----------
         time : Time
             The time for which to calculate the constraint.
-        ephemeris : Ephemeris | None
+        ephemeris : Ephemeris
             The ephemeris containing the Earth location.
-        coordinate : SkyCoord | None
+        coordinate : SkyCoord
             The sky coordinates to calculate the constraint for.
 
         Returns
@@ -58,8 +58,6 @@ class AltAzConstraint(PolygonConstraint):
         np.ndarray
             The calculated constraint values as a NumPy array.
         """
-        if ephemeris is None or coordinate is None:
-            raise ValueError("AltAzConstraint requires both an ephemeris and coordinate")
         # Get the range of the ephemeris that we're using
         i = get_slice(time, ephemeris)
 

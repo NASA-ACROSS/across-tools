@@ -95,10 +95,10 @@ class ConstraintABC(BaseSchema, ABC):
         ----------
         time : Time
             The time to check.
-        ephemeris : Ephemeris | None
-            The ephemeris object, if one exists.
-        coordinate : SkyCoord | None
-            The coordinate to check, if one exists.
+        ephemeris : Ephemeris
+            The ephemeris object.
+        coordinate : SkyCoord
+            The coordinate to check.
 
         Returns
         -------
