@@ -55,6 +55,14 @@ autoapi_ignore = ["*/__main__.py", "*/_version.py"]
 autoapi_add_toc_tree_entry = False
 autoapi_member_order = "bysource"
 
+# -- Type hints configuration ------------------------------------------------
+# Automatically extract type information from type hints
+autodoc_typehints = "description"  # Options: 'signature', 'description', 'both', 'none'
+autodoc_typehints_description_target = "documented"  # Add types to documented parameters
+napoleon_use_param = True
+napoleon_use_rtype = True
+napoleon_attr_annotations = True  # Document attribute type hints
+
 # -- HTML output options -----------------------------------------------------
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
