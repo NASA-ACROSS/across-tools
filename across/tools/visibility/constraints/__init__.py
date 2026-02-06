@@ -7,6 +7,7 @@ from .base import get_slice
 from .earth_limb import EarthLimbConstraint
 from .logical import AndConstraint, NotConstraint, OrConstraint, XorConstraint
 from .moon_angle import MoonAngleConstraint
+from .pointing import PointingConstraint
 from .saa import SAAPolygonConstraint
 from .sun_angle import SunAngleConstraint
 
@@ -22,6 +23,7 @@ __all__ = [
     "OrConstraint",
     "NotConstraint",
     "XorConstraint",
+    "PointingConstraint",
 ]
 
 # Define a type that covers all constraints
@@ -34,7 +36,8 @@ AllConstraint = Annotated[
     | AndConstraint
     | OrConstraint
     | NotConstraint
-    | XorConstraint,
+    | XorConstraint
+    | PointingConstraint,
     Field(discriminator="name"),
 ]
 

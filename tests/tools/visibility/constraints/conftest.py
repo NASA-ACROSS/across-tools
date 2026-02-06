@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -14,13 +14,18 @@ from astropy.time import Time  # type: ignore[import-untyped]
 from shapely import Polygon
 
 from across.tools.core.enums.constraint_type import ConstraintType
+from across.tools.core.schemas.coordinate import Coordinate
+from across.tools.core.schemas.polygon import Polygon as ACROSSPolygon
 from across.tools.core.schemas.tle import TLE
 from across.tools.ephemeris import Ephemeris
 from across.tools.ephemeris.ground_ephem import GroundEphemeris
 from across.tools.ephemeris.tle_ephem import TLEEphemeris, compute_tle_ephemeris
+from across.tools.footprint import Footprint
+from across.tools.footprint.schemas import Pointing
 from across.tools.visibility.constraints.base import ConstraintABC
 from across.tools.visibility.constraints.earth_limb import EarthLimbConstraint
 from across.tools.visibility.constraints.moon_angle import MoonAngleConstraint
+from across.tools.visibility.constraints.pointing import PointingConstraint
 from across.tools.visibility.constraints.saa import SAAPolygonConstraint
 from across.tools.visibility.constraints.sun_angle import SunAngleConstraint
 
@@ -292,3 +297,37 @@ def az_eight_alt_five_sky_coord(ground_ephemeris: Ephemeris, ephemeris_begin: da
     return SkyCoord(
         AltAz(alt=8 * u.deg, az=5 * u.deg, location=ground_ephemeris.earth_location, obstime=ephemeris_begin)
     )
+
+
+@pytest.fixture
+def mock_pointing(ephemeris_begin: datetime) -> Pointing:
+    """Fixture to instantiate a mock Pointing for testing."""
+    return Pointing(
+        footprint=Footprint(
+            detectors=[
+                ACROSSPolygon(
+                    coordinates=[
+                        Coordinate(ra=-20.0, dec=-20.0),
+                        Coordinate(ra=-20.0, dec=0.0),
+                        Coordinate(ra=0.0, dec=0.0),
+                        Coordinate(ra=0.0, dec=-20.0),
+                        Coordinate(ra=-20.0, dec=-20.0),
+                    ]
+                )
+            ]
+        ),
+        start_time=ephemeris_begin,
+        end_time=ephemeris_begin + timedelta(hours=1),
+    )
+
+
+@pytest.fixture
+def pointing_constraint(mock_pointing: Pointing) -> PointingConstraint:
+    """Fixture to provide an instance of EarthLimbConstraint for testing."""
+    return PointingConstraint(pointings=[mock_pointing])
+
+
+@pytest.fixture
+def origin_sky_coord() -> SkyCoord:
+    """Create a basic SkyCoord instance at the origin."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
