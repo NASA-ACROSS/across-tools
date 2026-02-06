@@ -29,7 +29,7 @@ class PointingConstraint(ConstraintABC):
 
     pointings: list[Pointing]
     name: Literal[ConstraintType.POINTING] = ConstraintType.POINTING
-    short_name: str = "POINTING"
+    short_name: Literal["Pointing"] = "Pointing"
 
     def __call__(
         self,
