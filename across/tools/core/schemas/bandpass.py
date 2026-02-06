@@ -19,7 +19,6 @@ class BaseBandpass(BaseSchema):
         The minimum value of the bandpass range.
     max : float or None
         The maximum value of the bandpass range.
-
     """
 
     filter_name: str | None = None
@@ -44,7 +43,6 @@ class WavelengthBandpass(BaseBandpass):
         The bandwidth of the filter.
     unit : WavelengthUnit
         The unit of measurement for the wavelength.
-
     """
 
     type: Literal["WAVELENGTH"] = "WAVELENGTH"
@@ -64,7 +62,6 @@ class WavelengthBandpass(BaseBandpass):
         ValueError
             If the min/max values are invalid or if the calculated values for central wavelength
             or bandwidth are non-positive.
-
         """
         if (self.min and not self.max) or (self.max and not self.min):
             raise MinMaxValueError("Both min and max must be defined.")
@@ -114,7 +111,6 @@ class EnergyBandpass(BaseBandpass):
         A constant string indicating the type of the bandpass filter.
     unit : EnergyUnit
         The unit of measurement for the energy.
-
     """
 
     type: Literal["ENERGY"] = "ENERGY"
@@ -129,7 +125,6 @@ class EnergyBandpass(BaseBandpass):
         ValueError
             If the min or max energy values are not defined, are non-positive, and max is greater
             than min.
-
         """
         if not (self.min and self.max):
             raise MinMaxValueError("Both min and max energy values must be defined.")
@@ -153,7 +148,6 @@ class FrequencyBandpass(BaseBandpass):
         A constant string indicating the type of the bandpass filter.
     unit : FrequencyUnit
         The unit of measurement for the frequency.
-
     """
 
     type: Literal["FREQUENCY"] = "FREQUENCY"
@@ -168,7 +162,6 @@ class FrequencyBandpass(BaseBandpass):
         ValueError
             If the min or max energy values are not defined, are non-positive, and max is greater
             than min.
-
         """
         if not (self.min and self.max):
             raise MinMaxValueError("Both min and max frequency values must be defined.")
@@ -199,7 +192,6 @@ def convert_to_wave(bandpass: EnergyBandpass | FrequencyBandpass) -> WavelengthB
     When converting from Energy/Frequency to wavelength, the min/max values are inverted
     in relation to their corresponding wavelengths. Thus, the min/max values are switched during
     conversion.
-
     """
     bandpass_min_angstrom = (
         (bandpass.max * u.Unit(bandpass.unit.value))
