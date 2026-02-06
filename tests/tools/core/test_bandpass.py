@@ -37,7 +37,7 @@ class TestBandpassSchema:
 
         @pytest.mark.parametrize(
             "central_wavelength, bandwidth",
-            [(None, None), (None, 1), (1, None), (-1, 1), (1, -1)],
+            [(None, None), (None, 1), (1, None), (-1, 1), (1, -1), (1, 2), (1, 1)],
         )
         def test_should_throw_value_error_central_wavelength_bandwidth(
             self, central_wavelength: float | None, bandwidth: float | None
@@ -47,6 +47,7 @@ class TestBandpassSchema:
                 Should raise ValueError when central_wavelength=None, bandwidth=None
                 Should raise ValueError when central_wavelength < 0
                 Should raise ValueError when bandwidth < 0
+                Should raise ValueError when bandwidth >= central_wavelength
             """
             with pytest.raises(ValueError):
                 WavelengthBandpass(
@@ -190,25 +191,3 @@ class TestBandpassSchema:
                     np.isclose(wavelength_bandpass.max, max_wave),  # type:ignore
                 ]
             )
-
-        def test_should_throw_value_error_when_bandwidth_equals_central_wavelength(self) -> None:
-            """
-            Test that validates WavelengthBandpass raises ValueError when bandwidth == central_wavelength
-            """
-            with pytest.raises(ValueError):
-                WavelengthBandpass(
-                    central_wavelength=100.0,
-                    bandwidth=100.0,
-                    unit=enums.WavelengthUnit.ANGSTROM,
-                )
-
-        def test_should_throw_value_error_when_bandwidth_exceeds_central_wavelength(self) -> None:
-            """
-            Test that validates WavelengthBandpass raises ValueError when bandwidth >= central_wavelength
-            """
-            with pytest.raises(ValueError):
-                WavelengthBandpass(
-                    central_wavelength=100.0,
-                    bandwidth=150.0,
-                    unit=enums.WavelengthUnit.ANGSTROM,
-                )
