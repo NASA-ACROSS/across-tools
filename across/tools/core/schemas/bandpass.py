@@ -38,9 +38,9 @@ class WavelengthBandpass(BaseBandpass):
     type : Literal['WAVELENGTH']
         A constant string indicating the type of the bandpass filter.
     central_wavelength : float or None
-        The central wavelength of the filter.
+        The central wavelength of the filter. It is defined as the midpoint between the min and max.
     bandwidth : float or None
-        The bandwidth of the filter.
+        The bandwidth of the filter. It is defined as half the difference between the max and min.
     unit : WavelengthUnit
         The unit of measurement for the wavelength.
     """
