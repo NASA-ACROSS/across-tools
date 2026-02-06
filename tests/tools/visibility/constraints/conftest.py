@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Literal
 from unittest.mock import patch
 
@@ -17,13 +17,18 @@ from astropy.time import Time  # type: ignore[import-untyped]
 from shapely import Polygon
 
 from across.tools.core.enums.constraint_type import ConstraintType
+from across.tools.core.schemas.coordinate import Coordinate
+from across.tools.core.schemas.polygon import Polygon as ACROSSPolygon
 from across.tools.core.schemas.tle import TLE
 from across.tools.ephemeris import Ephemeris
 from across.tools.ephemeris.ground_ephem import GroundEphemeris
 from across.tools.ephemeris.tle_ephem import TLEEphemeris, compute_tle_ephemeris
+from across.tools.footprint import Footprint
+from across.tools.footprint.schemas import Pointing
 from across.tools.visibility.constraints.base import ConstraintABC
 from across.tools.visibility.constraints.earth_limb import EarthLimbConstraint
 from across.tools.visibility.constraints.moon_angle import MoonAngleConstraint
+from across.tools.visibility.constraints.pointing import PointingConstraint
 from across.tools.visibility.constraints.saa import SAAPolygonConstraint
 from across.tools.visibility.constraints.solar_system import SolarSystemConstraint
 from across.tools.visibility.constraints.sun_angle import SunAngleConstraint
@@ -87,9 +92,7 @@ class TrueConstraint(DummyConstraint):
     short_name: Literal["True"] = "True"
     name: Literal[ConstraintType.UNKNOWN] = ConstraintType.UNKNOWN
 
-    def __call__(
-        self, time: Time, ephemeris: Ephemeris | None, coordinate: SkyCoord | None
-    ) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
         """Always return True (constraint always violated)."""
         return np.ones(len(time), dtype=bool)
 
@@ -507,3 +510,37 @@ def mock_get_bright_stars(
     with patch("across.tools.visibility.constraints.bright_star.get_bright_stars") as mock:
         mock.return_value = mock_bright_stars
         yield mock
+
+
+@pytest.fixture
+def mock_pointing(ephemeris_begin: datetime) -> Pointing:
+    """Fixture to instantiate a mock Pointing for testing."""
+    return Pointing(
+        footprint=Footprint(
+            detectors=[
+                ACROSSPolygon(
+                    coordinates=[
+                        Coordinate(ra=-20.0, dec=-20.0),
+                        Coordinate(ra=-20.0, dec=0.0),
+                        Coordinate(ra=0.0, dec=0.0),
+                        Coordinate(ra=0.0, dec=-20.0),
+                        Coordinate(ra=-20.0, dec=-20.0),
+                    ]
+                )
+            ]
+        ),
+        start_time=ephemeris_begin,
+        end_time=ephemeris_begin + timedelta(hours=1),
+    )
+
+
+@pytest.fixture
+def pointing_constraint(mock_pointing: Pointing) -> PointingConstraint:
+    """Fixture to provide an instance of EarthLimbConstraint for testing."""
+    return PointingConstraint(pointings=[mock_pointing])
+
+
+@pytest.fixture
+def origin_sky_coord() -> SkyCoord:
+    """Create a basic SkyCoord instance at the origin."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
