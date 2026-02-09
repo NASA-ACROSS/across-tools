@@ -251,6 +251,90 @@ The ``query_pixels()`` method returns the HEALPix pixel indices covered by the f
      - int
      - HEALPix order (1-12, default: 10)
 
+Footprint Containment
+^^^^^^^^^^^^^^^^^^^^^
+
+The ``contains()`` method checks if a coordinate lies inside a footprint.
+
+.. code-block:: python
+
+   from across.tools import Coordinate, Polygon
+   from across.tools.footprint import Footprint
+
+   footprint = Footprint(detectors=[
+       Polygon(coordinates=[
+           Coordinate(ra=-0.25, dec=-0.25),
+           Coordinate(ra=0.25, dec=-0.25),
+           Coordinate(ra=0.25, dec=0.25),
+           Coordinate(ra=-0.25, dec=0.25),
+       ])
+   ])
+
+   target = Coordinate(ra=180.0, dec=45.0)
+   projected = footprint.project(coordinate=target, roll_angle=0.0)
+
+   inside = projected.contains(Coordinate(ra=180.0, dec=45.0), order=10)
+   print(f"Target inside footprint: {inside}")
+
+.. list-table:: contains() Parameters
+   :widths: 20 15 65
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Description
+   * - ``coordinate``
+     - Coordinate
+     - Sky position to test for containment
+   * - ``order``
+     - int
+     - HEALPix order (1-12, default: 10)
+
+Footprint Plotting
+^^^^^^^^^^^^^^^^^^
+
+The ``plot()`` method renders footprint outlines on a Plotly sky projection.
+
+.. code-block:: python
+
+   from across.tools import Coordinate, Polygon
+   from across.tools.footprint import Footprint
+
+   footprint = Footprint(detectors=[
+       Polygon(coordinates=[
+           Coordinate(ra=-0.25, dec=-0.25),
+           Coordinate(ra=0.25, dec=-0.25),
+           Coordinate(ra=0.25, dec=0.25),
+           Coordinate(ra=-0.25, dec=0.25),
+       ])
+   ])
+
+   fig = footprint.plot(name="Detector A", color="red", lat_axis_tick=30, lon_axis_tick=60)
+   fig.show()
+
+.. list-table:: plot() Parameters
+   :widths: 20 15 65
+   :header-rows: 1
+
+   * - Parameter
+     - Type
+     - Description
+   * - ``fig``
+     - go.Figure | None
+     - Existing figure to add traces to
+   * - ``name``
+     - str | None
+     - Legend label for detector traces
+   * - ``color``
+     - str | None
+     - Line color for detector traces
+   * - ``lat_axis_tick``
+     - int
+     - Latitude axis tick interval
+   * - ``lon_axis_tick``
+     - int
+     - Longitude axis tick interval
+
 HEALPix Spatial Joins
 ---------------------
 
