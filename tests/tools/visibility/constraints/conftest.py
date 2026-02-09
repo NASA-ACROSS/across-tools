@@ -1,5 +1,7 @@
+from collections.abc import Generator
 from datetime import datetime
 from typing import Literal
+from unittest.mock import patch
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -393,3 +395,13 @@ def mauna_kea_ephemeris(
 def dummy_coord() -> SkyCoord:
     """Create a dummy SkyCoord instance for testing."""
     return SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
+
+
+@pytest.fixture
+def mock_get_bright_stars(
+    mock_bright_stars: list[tuple[SkyCoord, float]],
+) -> Generator[list[tuple[SkyCoord, float]], None, None]:
+    """Fixture that patches get_bright_stars to prevent internet access."""
+    with patch("across.tools.visibility.constraints.bright_star.get_bright_stars") as mock:
+        mock.return_value = mock_bright_stars
+        yield mock

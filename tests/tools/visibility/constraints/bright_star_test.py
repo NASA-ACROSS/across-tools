@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock
 
 import pytest
 from astropy import units as u  # type: ignore[import-untyped]
@@ -7,14 +7,6 @@ from astropy.time import Time  # type: ignore[import-untyped]
 
 from across.tools.ephemeris import Ephemeris
 from across.tools.visibility.constraints.bright_star import BrightStarConstraint
-
-
-@pytest.fixture
-def mock_get_bright_stars(mock_bright_stars):
-    """Fixture that patches get_bright_stars to prevent internet access."""
-    with patch("across.tools.visibility.constraints.bright_star.get_bright_stars") as mock:
-        mock.return_value = mock_bright_stars
-        yield mock
 
 
 class TestBrightStarConstraintAttributes:
@@ -59,7 +51,11 @@ class TestBrightStarConstraintCall:
     """Test suite for BrightStarConstraint __call__ method."""
 
     def test_constraint_returns_array_like(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord, mock_get_bright_stars
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        mock_get_bright_stars: MagicMock,
     ) -> None:
         """Test that constraint returns array-like result."""
         constraint = BrightStarConstraint(min_separation=5.0)
@@ -67,7 +63,11 @@ class TestBrightStarConstraintCall:
         assert hasattr(result, "dtype")
 
     def test_constraint_returns_bool_dtype(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord, mock_get_bright_stars
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        mock_get_bright_stars: MagicMock,
     ) -> None:
         """Test that constraint returns boolean dtype."""
         constraint = BrightStarConstraint(min_separation=5.0)
@@ -75,7 +75,7 @@ class TestBrightStarConstraintCall:
         assert result.dtype == bool
 
     def test_constraint_no_violation_when_far_from_stars(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars: MagicMock
     ) -> None:
         """Test constraint returns False when coordinate is far from bright stars."""
         # Create a coordinate far from bright stars (e.g., near celestial pole)
@@ -87,7 +87,7 @@ class TestBrightStarConstraintCall:
         assert not result
 
     def test_constraint_violation_when_close_to_sirius(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars: MagicMock
     ) -> None:
         """Test constraint returns True when coordinate is close to Sirius."""
         # Create a coordinate very close to Sirius
@@ -100,7 +100,7 @@ class TestBrightStarConstraintCall:
         assert result
 
     def test_constraint_at_sirius_position(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars: MagicMock
     ) -> None:
         """Test constraint with coordinate at Sirius position."""
         coord = SkyCoord(ra="06h45m08.9s", dec="-16d42m58.0s")  # Use correct Sirius coordinates from mock
@@ -110,7 +110,7 @@ class TestBrightStarConstraintCall:
         assert result
 
     def test_constraint_with_different_min_separation_values(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars
+        self, begin_time_array: Time, ground_ephemeris: Ephemeris, mock_get_bright_stars: MagicMock
     ) -> None:
         """Test constraint behavior with different min_separation thresholds."""
         coord = SkyCoord(
@@ -128,7 +128,7 @@ class TestBrightStarConstraintCall:
         assert result_large
 
     def test_constraint_with_multiple_coordinates(
-        self, ground_ephemeris: Ephemeris, mock_get_bright_stars
+        self, ground_ephemeris: Ephemeris, mock_get_bright_stars: MagicMock
     ) -> None:
         """Test constraint with multiple coordinates including some near bright stars."""
         # Create multiple coordinates

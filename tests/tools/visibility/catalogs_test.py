@@ -185,10 +185,11 @@ class TestFallbackBrightStars:
     def test_get_fallback_bright_stars_all_bright(self) -> None:
         """Test that all fallback stars are bright (mag < 2.0)."""
         stars = _get_fallback_bright_stars()
-        for coord, mag in stars:
+        for _, mag in stars:
             assert mag < 2.0  # All should be brighter than magnitude 2
 
 
+@pytest.mark.usefixtures("isolated_star_cache")
 class TestGetBrightStars:
     """Test suite for get_bright_stars main function."""
 
@@ -289,7 +290,7 @@ class TestGetBrightStars:
         magnitude_limit = 3.0
         stars = get_bright_stars(magnitude_limit=magnitude_limit)
 
-        for coord, mag in stars:
+        for _, mag in stars:
             # All stars should be brighter (lower magnitude) than limit
             assert mag < magnitude_limit
 
@@ -301,10 +302,11 @@ class TestGetBrightStars:
         assert len(stars) > 0
 
         # All should be within default magnitude limit (6.0)
-        for coord, mag in stars:
+        for _, mag in stars:
             assert mag < 6.0
 
 
+@pytest.mark.usefixtures("isolated_star_cache")
 class TestGetBrightStarsEdgeCases:
     """Test suite for edge cases in get_bright_stars."""
 
@@ -316,7 +318,7 @@ class TestGetBrightStarsEdgeCases:
         assert len(stars) < 20
 
         # All should be very bright
-        for coord, mag in stars:
+        for _, mag in stars:
             assert mag < 0.0
 
     def test_get_bright_stars_different_catalog_format(

@@ -2,11 +2,14 @@ import json
 import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import patch
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.table import Table  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 
 from across.tools.core.enums.constraint_type import ConstraintType
@@ -21,8 +24,20 @@ from across.tools.visibility import (
     constraints_from_json,
 )
 from across.tools.visibility.base import Visibility
+from across.tools.visibility.catalogs import get_bright_stars
 from across.tools.visibility.constraints import AllConstraint, EarthLimbConstraint, SunAngleConstraint
 from across.tools.visibility.constraints.base import ConstraintABC
+
+
+@pytest.fixture
+def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
+    """Fixture to isolate the star cache for testing."""
+    cache_dir = tmp_path / "star_catalogs"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
+        get_bright_stars.cache_clear()
+        yield
+        get_bright_stars.cache_clear()
 
 
 @pytest.fixture
@@ -550,9 +565,8 @@ def test_star_coord() -> SkyCoord:
 
 
 @pytest.fixture
-def mock_vizier_table() -> "Table":  # type: ignore[name-defined]
+def mock_vizier_table() -> Table:
     """Fixture for a mock Vizier table with test star data."""
-    from astropy.table import Table  # type: ignore[import-untyped]
 
     mock_table = Table()
     mock_table["_RA.icrs"] = [101.28]
@@ -562,10 +576,8 @@ def mock_vizier_table() -> "Table":  # type: ignore[name-defined]
 
 
 @pytest.fixture
-def mock_vizier_table_alternate_columns() -> "Table":  # type: ignore[name-defined]
+def mock_vizier_table_alternate_columns() -> Table:
     """Fixture for a mock Vizier table with alternate column names."""
-    from astropy.table import Table  # type: ignore[import-untyped]
-
     mock_table = Table()
     mock_table["RAJ2000"] = [101.28]
     mock_table["DEJ2000"] = [-16.72]
