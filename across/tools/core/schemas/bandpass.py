@@ -38,9 +38,9 @@ class WavelengthBandpass(BaseBandpass):
     type : Literal['WAVELENGTH']
         A constant string indicating the type of the bandpass filter.
     central_wavelength : float or None
-        The central wavelength of the filter.
+        The central wavelength of the filter. It is defined as the midpoint between the min and max.
     bandwidth : float or None
-        The bandwidth of the filter.
+        The bandwidth of the filter. It is defined as half the difference between the max and min.
     unit : WavelengthUnit
         The unit of measurement for the wavelength.
     """
@@ -81,6 +81,9 @@ class WavelengthBandpass(BaseBandpass):
 
         if not all([self.central_wavelength > 0, self.bandwidth > 0]):
             raise BandwidthValueError("Central wavelength and bandwidth must be positive.")
+
+        if self.bandwidth >= self.central_wavelength:
+            raise BandwidthValueError("Bandwidth must be less than the central wavelength.")
 
         self.bandwidth = float(
             (self.bandwidth * u.Unit(self.unit.value)).to(u.Unit(WavelengthUnit.ANGSTROM.value)).value
