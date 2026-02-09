@@ -35,7 +35,7 @@ class GalacticBulgeConstraint(ConstraintABC):
     name: Literal[ConstraintType.GALACTIC_BULGE] = ConstraintType.GALACTIC_BULGE
     short_name: Literal["Galactic Bulge"] = "Galactic Bulge"
     min_separation: float = Field(
-        default=10.0, gt=0, description="Minimum angular separation (degrees) from Galactic Bulge"
+        default=10.0, gt=0, le=180, description="Minimum angular separation (degrees) from Galactic Bulge"
     )
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:

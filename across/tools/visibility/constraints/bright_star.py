@@ -8,6 +8,7 @@ from pydantic import Field
 
 from ...core.enums import ConstraintType
 from ...ephemeris import Ephemeris
+from ..catalogs import get_bright_stars
 from .base import ConstraintABC
 
 
@@ -62,29 +63,16 @@ class BrightStarConstraint(ConstraintABC):
             Boolean array where True indicates the coordinate violates the constraint
             (is too close to a bright star).
         """
-        # For now, implement a simplified version with major bright stars
-        # In a real implementation, this would use a star catalog
-        # Here we include some of the brightest stars as examples
-
-        bright_stars = [
-            SkyCoord(ra="05h16m41.4s", dec="-08d12m05.9s"),  # Sirius
-            SkyCoord(ra="06h45m08.9s", dec="-16d42m58.0s"),  # Canopus
-            SkyCoord(ra="07h39m18.1s", dec="05d13m30.0s"),  # Arcturus
-            SkyCoord(ra="14h39m36.5s", dec="-60d50m02.3s"),  # Alpha Centauri
-            SkyCoord(ra="18h36m56.3s", dec="38d47m01.3s"),  # Vega
-            SkyCoord(ra="20h41m25.9s", dec="45d16m49.3s"),  # Capella
-            SkyCoord(ra="22h57m39.0s", dec="-29d37m20.0s"),  # Rigel
-            SkyCoord(ra="05h14m32.3s", dec="-08d12m05.9s"),  # Procyon
-            SkyCoord(ra="01h09m43.9s", dec="35d37m14.0s"),  # Betelgeuse
-            SkyCoord(ra="17h45m40.0s", dec="-29d00m28.0s"),  # Achernar
-        ]
+        # Get bright stars from catalog filtered by magnitude limit
+        bright_stars = get_bright_stars(magnitude_limit=self.magnitude_limit)
 
         # Check separation from each bright star
         min_separation_rad = self.min_separation * u.deg
         in_constraint = np.zeros(len(time), dtype=bool)
 
-        for star in bright_stars:
+        for star, _ in bright_stars:
             separation = coordinate.separation(star)
+            # Note: magnitude is already filtered by get_bright_stars()
             in_constraint |= separation < min_separation_rad
 
         return in_constraint

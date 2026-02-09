@@ -28,7 +28,7 @@ class SolarSystemConstraint(ConstraintABC):
         Observations closer than this will be constrained.
     bodies : list[str]
         List of Solar System bodies to avoid. Defaults to major planets.
-        Options include: 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto'.
+        Options include: 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'.
 
     Methods
     -------
@@ -213,6 +213,9 @@ class SolarSystemConstraint(ConstraintABC):
             )
 
             # Check if too close
-            in_constraint |= self.computed_values.body_separation[body_name] < (self.min_separation * u.deg)
+            in_constraint |= (
+                self.computed_values.body_separation[body_name] < (self.min_separation * u.deg)
+                and self.computed_values.body_magnitude[body_name] < self.max_magnitude
+            )
 
         return in_constraint
