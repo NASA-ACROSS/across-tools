@@ -39,14 +39,38 @@ class Visibility(ABC, BaseSchema):
         Start time of visibility period.
     end
         End time of visibility period.
+    step_size
+        Time step size for visibility calculations. Default is 60 seconds.
     min_vis
-        Minimum visibility percentage for the target.
-    hires
-        Whether to use high resolution for visibility calculations.
+        Minimum visibility duration in seconds for a window to be included.
+        Default is 0.
     observatory_id
         Unique Observatory ID for which this visibility is calculated.
-    observatory_name:
+    observatory_name
         Name of the observatory for which this visibility is calculated.
+
+    Attributes
+    ----------
+    timestamp
+        Array of time values used in the visibility calculation.
+    inconstraint
+        Boolean array indicating whether the target is not constrained at each time step.
+    calculated_constraints
+        Ordered dictionary mapping constraint types to boolean arrays.
+    visibility_windows
+        List of visibility windows computed from the constraints.
+    computed_values
+        Container (VisibilityComputedValues) providing access to geometric quantities
+        calculated during visibility analysis. After running a visibility calculation,
+        you can inspect these values for further analysis or visualization. Fields include:
+
+        - sun_angle: Angular separation between target and Sun (Quantity array)
+        - moon_angle: Angular separation between target and Moon (Quantity array)
+        - earth_angle: Angular separation between target and Earth limb (Quantity array)
+        - alt_az: Altitude-azimuth coordinates of target from observatory (SkyCoord)
+
+        Not all fields are populated for every calculation; values are only computed
+        and stored by constraints that need them.
 
     Methods
     -------
@@ -87,6 +111,16 @@ class Visibility(ABC, BaseSchema):
         computed from the other. In addition, it validates the step size and
         ensures it is a positive value. The begin and end times are rounded to
         the nearest step size, to ensure consistency.
+
+        Parameters
+        ----------
+        values
+            Dictionary containing the input values to validate, including coordinate,
+            ra, dec, step_size, begin, and end.
+
+        Returns
+        -------
+            Validated and synchronized dictionary of values.
 
         """
         if not isinstance(values, dict):
@@ -188,6 +222,16 @@ class Visibility(ABC, BaseSchema):
     def _constraint(self, i: int) -> ConstraintType:
         """
         For a given index, return the constraint at that time.
+
+        Parameters
+        ----------
+        i
+            Index in the timestamp array.
+
+        Returns
+        -------
+            The constraint type at the given index.
+
         """
         raise NotImplementedError("Subclasses must implement this method.")  # pragma: no cover
 
@@ -207,13 +251,33 @@ class Visibility(ABC, BaseSchema):
 
     def _get_id(self, i: int) -> UUID:
         """
-        For a given index, get the ID of the observatory or instrument
+        For a given index, get the ID of the observatory or instrument.
+
+        Parameters
+        ----------
+        i
+            Index in the timestamp array.
+
+        Returns
+        -------
+            The observatory or instrument ID.
+
         """
         return self.observatory_id  # pragma: no cover
 
     def _get_name(self, i: int) -> str:
         """
-        For a given index, get the name of the observatory or instrument
+        For a given index, get the name of the observatory or instrument.
+
+        Parameters
+        ----------
+        i
+            Index in the timestamp array.
+
+        Returns
+        -------
+            The observatory or instrument name.
+
         """
         return self.observatory_name  # pragma: no cover
 
@@ -221,15 +285,10 @@ class Visibility(ABC, BaseSchema):
         """
         Create visibility windows from the inconstraint array.
 
-        Parameters
-        ----------
-        inconstraint : list
-            list of booleans indicating if the spacecraft is in the SAA
-
         Returns
         -------
-        list
-            list of SAAEntry objects
+            List of VisibilityWindow objects representing periods when the target is visible.
+
         """
         # Check that timestamp is set and constraints
         if self.timestamp is None:
