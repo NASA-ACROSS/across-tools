@@ -123,6 +123,9 @@ class VisibilityComputedValues(BaseSchema):
     body_magnitude: dict[str, npt.NDArray[np.float64]] | None = Field(
         default=None, description="Apparent magnitude of specified Solar System bodies"
     )
+    galactic_bulge_separation: u.Quantity | None = Field(
+        default=None, description="Angular separation from the Galactic Bulge"
+    )
 
     def merge(self, other: "VisibilityComputedValues") -> None:
         """

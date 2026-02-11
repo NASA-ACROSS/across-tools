@@ -63,6 +63,9 @@ class GalacticBulgeConstraint(ConstraintABC):
         # Calculate angular separation
         separation = coordinate.separation(galactic_bulge)
 
+        # Record the separation in computed values
+        self.computed_values.galactic_bulge_separation = separation
+
         # Constrain observations closer than the minimum separation
         in_constraint: npt.NDArray[np.bool_] = separation < (self.min_separation * u.deg)
 
