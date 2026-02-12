@@ -138,6 +138,7 @@ def get_bright_stars(
     # Ensure RA/Dec have units (some catalogs may not include them)
     if not (hasattr(ra_data, "unit") and ra_data.unit is not None):
         ra_data = ra_data * u.deg
+    if not (hasattr(dec_data, "unit") and dec_data.unit is not None):
         dec_data = dec_data * u.deg
 
     # Extract magnitudes
@@ -145,9 +146,7 @@ def get_bright_stars(
 
     # Create star data
     stars = SkyCoord(ra=ra_data, dec=dec_data, frame="icrs")
-    star_data = [
-        (SkyCoord(ra=star.ra, dec=star.dec, frame="icrs"), float(mag)) for star, mag in zip(stars, magnitudes)
-    ]
+    star_data = [(star, float(mag)) for star, mag in zip(stars, magnitudes)]
 
     # Cache result (if it fails, then no caching)
     with contextlib.suppress(Exception):
