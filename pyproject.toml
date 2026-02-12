@@ -47,7 +47,7 @@ dependencies = [
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
 dev = [
-    "diskcache-stubs>=5.6.3.6.20240818",
+    "diskcache-stubs>=5.6.0",
     "jupyter>=1.1.1",
     "mypy>=1.19.1",
     "nbsphinx>=0.9.8",
@@ -59,7 +59,7 @@ dev = [
     "sphinx-autoapi>=3.6.1",
     "sphinx-copybutton>=0.5.2",
     "sphinx-rtd-theme>=3.1.0",
-    "types-shapely>=2.1.0.20250917",
+    "types-shapely>=2.0.4",
 ]
 
 [build-system]
