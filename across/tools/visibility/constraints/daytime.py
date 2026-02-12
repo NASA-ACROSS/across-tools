@@ -1,6 +1,7 @@
 from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -44,7 +45,7 @@ class DaytimeConstraint(ConstraintABC):
         default=TwilightType.ASTRONOMICAL, description="Type of twilight defining daytime boundaries"
     )
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Check if the observation time is during daytime.
 
@@ -59,7 +60,7 @@ class DaytimeConstraint(ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates daytime (constraint violated).
         """
         # Auto-detect telescope type based on ephemeris type
@@ -69,7 +70,7 @@ class DaytimeConstraint(ConstraintABC):
             # Assume space-based for all other ephemeris types
             return self._check_space_daytime(time, ephemeris)
 
-    def _check_ground_daytime(self, time: Time, ephemeris: Ephemeris) -> np.typing.NDArray[np.bool_]:
+    def _check_ground_daytime(self, time: Time, ephemeris: Ephemeris) -> npt.NDArray[np.bool_]:
         """
         Check daytime for ground-based telescopes using Sun altitude.
         """
@@ -97,7 +98,7 @@ class DaytimeConstraint(ConstraintABC):
 
         return np.asarray(in_constraint, dtype=bool)
 
-    def _check_space_daytime(self, time: Time, ephemeris: Ephemeris) -> np.typing.NDArray[np.bool_]:
+    def _check_space_daytime(self, time: Time, ephemeris: Ephemeris) -> npt.NDArray[np.bool_]:
         """
         Check daytime for space-based telescopes using proper eclipse calculations.
 

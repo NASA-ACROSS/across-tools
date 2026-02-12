@@ -2,6 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -40,7 +41,7 @@ class EarthLimbConstraint(ConstraintABC):
         default=None, ge=0, le=180, description="Maximum angle from the Earth limb"
     )
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the Earth limb constraint. This is done by checking if the

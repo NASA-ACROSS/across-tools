@@ -1,6 +1,7 @@
 from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import Galactic, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -36,7 +37,7 @@ class GalacticPlaneConstraint(ConstraintABC):
         default=10.0, ge=0, le=90, description="Minimum galactic latitude (degrees) for valid observations"
     )
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Check if the coordinate is too close to the galactic plane.
 
@@ -51,7 +52,7 @@ class GalacticPlaneConstraint(ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates the coordinate violates the constraint
             (is too close to the galactic plane).
         """
@@ -60,5 +61,5 @@ class GalacticPlaneConstraint(ConstraintABC):
 
         # Check if the absolute galactic latitude is less than the minimum
         # This creates a "zone of avoidance" around the galactic plane
-        in_constraint: np.typing.NDArray[np.bool_] = np.abs(galactic_coord.b.deg) < self.min_latitude
+        in_constraint: npt.NDArray[np.bool_] = np.abs(galactic_coord.b.deg) < self.min_latitude
         return in_constraint

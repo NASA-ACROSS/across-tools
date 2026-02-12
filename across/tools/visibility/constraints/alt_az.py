@@ -2,6 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -39,7 +40,7 @@ class AltAzConstraint(PolygonConstraint):
     azimuth_min: float | None = Field(default=None, ge=0, lt=360)
     azimuth_max: float | None = Field(default=None, ge=0, lt=360)
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Calculate the Alt/Az constraint for a given time, ephemeris, and sky coordinates.
 

@@ -144,7 +144,7 @@ class SolarSystemConstraint(ConstraintABC):
             # Unknown body, this should unreachable
             raise ValueError(f"Unknown body for magnitude calculation: {body_name}")
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Check if the coordinate is too close to any Solar System object.
 
@@ -159,7 +159,7 @@ class SolarSystemConstraint(ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates the coordinate violates the constraint
             (is too close to a Solar System object).
         """
