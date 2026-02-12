@@ -9,10 +9,8 @@ from astropy.table import Table  # type: ignore[import-untyped]
 
 from across.tools.visibility.catalogs import (
     _get_cache_dir,
-    _get_cache_key,
     _get_fallback_bright_stars,
-    _load_from_disk_cache,
-    _save_to_disk_cache,
+    cache_clear,
     get_bright_stars,
 )
 
@@ -41,114 +39,6 @@ class TestCacheDir:
         cache_dir1 = _get_cache_dir()
         cache_dir2 = _get_cache_dir()
         assert cache_dir1 == cache_dir2
-
-
-class TestCacheKey:
-    """Test suite for cache key generation."""
-
-    def test_get_cache_key_returns_string(self) -> None:
-        """Test that get_cache_key returns a string."""
-        key = _get_cache_key(6.0, "I/239/hip_main", None)
-        assert isinstance(key, str)
-
-    def test_get_cache_key_has_fixed_length(self) -> None:
-        """Test that cache key has fixed length (16 characters)."""
-        key = _get_cache_key(6.0, "I/239/hip_main", None)
-        assert len(key) == 16
-
-    def test_get_cache_key_different_magnitudes_different_keys(self) -> None:
-        """Test that different magnitude limits produce different keys."""
-        key1 = _get_cache_key(3.0, "I/239/hip_main", None)
-        key2 = _get_cache_key(6.0, "I/239/hip_main", None)
-        assert key1 != key2
-
-    def test_get_cache_key_different_catalogs_different_keys(self) -> None:
-        """Test that different catalogs produce different keys."""
-        key1 = _get_cache_key(6.0, "I/239/hip_main", None)
-        key2 = _get_cache_key(6.0, "I/259/tyc2", None)
-        assert key1 != key2
-
-    def test_get_cache_key_different_max_stars_different_keys(self) -> None:
-        """Test that different max_stars produce different keys."""
-        key1 = _get_cache_key(6.0, "I/239/hip_main", None)
-        key2 = _get_cache_key(6.0, "I/239/hip_main", 100)
-        assert key1 != key2
-
-    def test_get_cache_key_same_params_same_key(self) -> None:
-        """Test that identical parameters produce identical keys."""
-        key1 = _get_cache_key(6.0, "I/239/hip_main", 100)
-        key2 = _get_cache_key(6.0, "I/239/hip_main", 100)
-        assert key1 == key2
-
-
-class TestDiskCache:
-    """Test suite for disk cache save/load functions."""
-
-    def test_save_and_load_disk_cache(self, tmp_path: Path, test_star_coord: SkyCoord) -> None:
-        """Test saving and loading data from disk cache."""
-        # Create test data
-        test_data = [(test_star_coord, -1.46)]
-
-        # Mock cache directory to use temp directory
-        with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=tmp_path):
-            cache_key = "test_key_12345"
-
-            # Save data
-            _save_to_disk_cache(cache_key, test_data)
-
-            # Verify file was created
-            cache_file = tmp_path / f"{cache_key}.pkl"
-            assert cache_file.exists()
-
-            # Load data
-            loaded_data = _load_from_disk_cache(cache_key)
-            assert loaded_data is not None
-            assert len(loaded_data) == 1
-
-            # Verify loaded data matches
-            loaded_coord, loaded_mag = loaded_data[0]
-            assert loaded_mag == -1.46
-            assert loaded_coord.ra.degree == pytest.approx(test_star_coord.ra.degree, abs=0.01)
-            assert loaded_coord.dec.degree == pytest.approx(test_star_coord.dec.degree, abs=0.01)
-
-    def test_load_nonexistent_cache_returns_none(self, tmp_path: Path) -> None:
-        """Test loading from non-existent cache returns None."""
-        with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=tmp_path):
-            result = _load_from_disk_cache("nonexistent_key")
-            assert result is None
-
-    def test_load_corrupted_cache_returns_none(self, tmp_path: Path) -> None:
-        """Test loading corrupted cache file returns None and removes the file."""
-        with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=tmp_path):
-            cache_key = "corrupted_key"
-            cache_file = tmp_path / f"{cache_key}.pkl"
-
-            # Create corrupted cache file
-            cache_file.write_text("corrupted data")
-
-            # Try to load - should return None and delete the file
-            result = _load_from_disk_cache(cache_key)
-            assert result is None
-            assert not cache_file.exists()
-
-    def test_save_disk_cache_handles_errors_gracefully(
-        self, tmp_path: Path, test_star_coord: SkyCoord
-    ) -> None:
-        """Test that save_disk_cache handles errors gracefully."""
-        test_data = [(test_star_coord, -1.46)]
-
-        # Create a read-only directory
-        readonly_dir = tmp_path / "readonly"
-        readonly_dir.mkdir()
-        readonly_dir.chmod(0o444)
-
-        try:
-            with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=readonly_dir):
-                # Should not raise exception
-                _save_to_disk_cache("test_key", test_data)
-        finally:
-            # Clean up
-            readonly_dir.chmod(0o755)
 
 
 class TestFallbackBrightStars:
@@ -247,15 +137,10 @@ class TestGetBrightStars:
                 stars1 = get_bright_stars(magnitude_limit=5.0)
                 assert len(stars1) > 0
 
-                # Verify disk cache was created
-                cache_key = _get_cache_key(5.0, "I/239/hip_main", None)
-                cache_file = tmp_path / f"{cache_key}.pkl"
-                assert cache_file.exists()
+                # Clear cache
+                cache_clear()
 
-                # Clear memory cache
-                get_bright_stars.cache_clear()
-
-                # Second call - should load from disk
+                # Second call - should load from cache
                 stars2 = get_bright_stars(magnitude_limit=5.0)
                 assert len(stars2) == len(stars1)
 

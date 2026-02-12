@@ -1,29 +1,25 @@
 """Star catalog utilities for visibility constraints."""
 
-import hashlib
-import pickle
-from functools import lru_cache
+import contextlib
 from pathlib import Path
 from typing import cast
 
 import astropy.units as u  # type: ignore[import-untyped]
+import diskcache
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astroquery.vizier import Vizier  # type: ignore[import-untyped]
 
+# Column name options for different catalogs
+_RA_COLUMNS = ["_RA.icrs", "RA_ICRS", "RAJ2000", "RA(ICRS)", "_RAJ2000", "ra", "RAICRS"]
+_DEC_COLUMNS = ["_DE.icrs", "DE_ICRS", "DEJ2000", "DE(ICRS)", "_DEJ2000", "dec", "DEICRS"]
+_MAG_COLUMNS = ["Vmag", "Bmag", "mag", "V"]
+
+# Initialize diskcache lazily
+_cache: diskcache.Cache | None = None
+
 
 def _get_cache_dir() -> Path:
-    """
-    Get the cache directory for star catalog data.
-
-    Creates the directory if it doesn't exist. Uses platform-appropriate
-    cache location.
-
-    Returns
-    -------
-    Path
-        Path to the cache directory.
-    """
-    # Use XDG cache directory on Linux/macOS, or user's home on Windows
+    """Get the cache directory for star catalog data."""
     cache_home = Path.home() / ".cache"
     if not cache_home.exists():
         cache_home = Path.home()
@@ -33,77 +29,24 @@ def _get_cache_dir() -> Path:
     return cache_dir
 
 
-def _get_cache_key(magnitude_limit: float, catalog: str, max_stars: int | None) -> str:
-    """
-    Generate a unique cache key based on function arguments.
-
-    Parameters
-    ----------
-    magnitude_limit : float
-        Magnitude limit for stars.
-    catalog : str
-        Catalog identifier.
-    max_stars : int or None
-        Maximum number of stars.
-
-    Returns
-    -------
-    str
-        Cache key (hash of arguments).
-    """
-    # Create a string representation of the arguments
-    key_str = f"{magnitude_limit}_{catalog}_{max_stars}"
-    # Hash it to create a valid filename
-    hash_obj = hashlib.sha256(key_str.encode())
-    return hash_obj.hexdigest()[:16]  # Use first 16 characters
+def _get_cache_instance() -> diskcache.Cache:
+    """Get or initialize the diskcache instance."""
+    global _cache
+    if _cache is None:
+        _cache = diskcache.Cache(str(_get_cache_dir()), size_limit=5e8)
+    return _cache
 
 
-def _load_from_disk_cache(cache_key: str) -> list[tuple[SkyCoord, float]] | None:
-    """
-    Load star data from disk cache.
-
-    Parameters
-    ----------
-    cache_key : str
-        Cache key identifying the cached data.
-
-    Returns
-    -------
-    list[tuple[SkyCoord, float]] or None
-        Cached star data if available, None otherwise.
-    """
-    cache_file = _get_cache_dir() / f"{cache_key}.pkl"
-    if cache_file.exists():
-        try:
-            with open(cache_file, "rb") as f:
-                return cast(list[tuple[SkyCoord, float]], pickle.load(f))
-        except Exception:
-            # If cache is corrupted, remove it
-            cache_file.unlink(missing_ok=True)
-    return None
-
-
-def _save_to_disk_cache(cache_key: str, data: list[tuple[SkyCoord, float]]) -> None:
-    """
-    Save star data to disk cache.
-
-    Parameters
-    ----------
-    cache_key : str
-        Cache key identifying the data.
-    data : list[tuple[SkyCoord, float]]
-        Star data to cache.
-    """
-    cache_file = _get_cache_dir() / f"{cache_key}.pkl"
+def cache_clear() -> None:
+    """Clear the diskcache cache."""
+    global _cache
     try:
-        with open(cache_file, "wb") as f:
-            pickle.dump(data, f)
+        _get_cache_instance().clear()
+        _cache = None
     except Exception:
-        # If we can't save to cache, continue without caching
         pass
 
 
-@lru_cache(maxsize=10)
 def get_bright_stars(
     magnitude_limit: float = 6.0,
     catalog: str = "I/239/hip_main",
@@ -114,8 +57,8 @@ def get_bright_stars(
 
     This function queries the Hipparcos catalog via Vizier and returns
     stars brighter than the specified magnitude limit along with their
-    magnitudes. Results are cached both in memory (LRU cache) and on disk
-    to minimize network calls to astroquery.
+    magnitudes. Results are cached persistently on disk to minimize
+    network calls to astroquery.
 
     Parameters
     ----------
@@ -147,9 +90,7 @@ def get_bright_stars(
 
     Notes
     -----
-    Results are cached using a two-level cache:
-    1. In-memory LRU cache (up to 10 different parameter combinations)
-    2. On-disk pickle cache (persistent across sessions)
+    Results are cached using diskcache for persistent caching across sessions.
 
     Disk cache location: ~/.cache/across-tools/star_catalogs/
     (or ~/across-tools/star_catalogs/ on systems without ~/.cache)
@@ -160,99 +101,64 @@ def get_bright_stars(
     - mag < 6: ~5,000 stars
     - mag < 8: ~25,000 stars
     """
-    # Generate cache key for disk caching
-    cache_key = _get_cache_key(magnitude_limit, catalog, max_stars)
+    # Create a cache key from function parameters
+    cache_key = f"stars_{magnitude_limit}_{catalog}_{max_stars}"
 
-    # Try to load from disk cache first
-    cached_data = _load_from_disk_cache(cache_key)
-    if cached_data is not None:
-        return cached_data
-
-    # Not in disk cache, query from Vizier
-    # Configure Vizier query
-    v = Vizier(
-        row_limit=max_stars if max_stars is not None else -1,
-    )
-
-    # Query the catalog
-    # For Hipparcos, filter by Vmag (V magnitude in Johnson system)
+    # Try to get from cache
     try:
-        result = v.query_constraints(
-            catalog=catalog,
-            Vmag=f"<{magnitude_limit}",
-        )
+        cached_data = _get_cache_instance().get(cache_key)
+        if cached_data is not None:
+            return cast(list[tuple[SkyCoord, float]], cached_data)
     except Exception:
-        # If catalog query fails, use fallback
-        result = None
+        pass
 
-    if not result or len(result) == 0:
-        # Fallback to hardcoded bright stars if catalog query fails
-        fallback_data = _get_fallback_bright_stars()
-        # Don't cache fallback data to disk
-        return fallback_data
+    # Query Vizier
+    try:
+        vizier = Vizier(row_limit=max_stars if max_stars is not None else -1)
+        result = vizier.query_constraints(catalog=catalog, Vmag=f"<{magnitude_limit}")
+        star_table = result[0] if result else None
+    except Exception:
+        star_table = None
 
-    # Extract coordinates from the catalog
-    star_table = result[0]
-
-    # Try to find RA/Dec columns (different catalogs use different names)
-    ra_col = None
-    dec_col = None
-
-    # Common RA column names
-    for col_name in ["_RA.icrs", "RA_ICRS", "RAJ2000", "RA(ICRS)", "_RAJ2000", "ra", "RAICRS"]:
-        if col_name in star_table.colnames:
-            ra_col = col_name
-            break
-
-    # Common Dec column names
-    for col_name in ["_DE.icrs", "DE_ICRS", "DEJ2000", "DE(ICRS)", "_DEJ2000", "dec", "DEICRS"]:
-        if col_name in star_table.colnames:
-            dec_col = col_name
-            break
-
-    if ra_col is None or dec_col is None:
-        # If we can't find RA/Dec columns, use fallback
+    # Fallback if query fails (not cached to allow retries)
+    if star_table is None:
         return _get_fallback_bright_stars()
 
-    # Create SkyCoord objects from RA and Dec
-    # Check if columns already have units
+    # Find RA column
+    ra_col = next((col for col in _RA_COLUMNS if col in star_table.colnames), None)
+    if ra_col is None:
+        return _get_fallback_bright_stars()
+
+    # Find Dec column
+    dec_col = next((col for col in _DEC_COLUMNS if col in star_table.colnames), None)
+    if dec_col is None:
+        return _get_fallback_bright_stars()
+
+    # Get RA/Dec with proper units
     ra_data = star_table[ra_col]
     dec_data = star_table[dec_col]
 
-    # If data has units, use directly; otherwise assume degrees
-    if hasattr(ra_data, "unit") and ra_data.unit is not None:
-        ra_values = ra_data
-        dec_values = dec_data
-    else:
-        ra_values = ra_data * u.deg
-        dec_values = dec_data * u.deg
-
-    stars = SkyCoord(
-        ra=ra_values,
-        dec=dec_values,
-        frame="icrs",
-    )
+    if not (hasattr(ra_data, "unit") and ra_data.unit is not None):
+        ra_data = ra_data * u.deg
+        dec_data = dec_data * u.deg
 
     # Find magnitude column
-    mag_col = None
-    for col_name in ["Vmag", "Bmag", "mag", "V"]:
-        if col_name in star_table.colnames:
-            mag_col = col_name
-            break
-
+    mag_col = next((col for col in _MAG_COLUMNS if col in star_table.colnames), None)
     if mag_col is None:
-        # If we can't find magnitude column, use fallback
         return _get_fallback_bright_stars()
 
+    # Extract magnitudes
     magnitudes = star_table[mag_col]
 
-    # Convert to list of tuples (SkyCoord, magnitude)
+    # Create star data
+    stars = SkyCoord(ra=ra_data, dec=dec_data, frame="icrs")
     star_data = [
         (SkyCoord(ra=star.ra, dec=star.dec, frame="icrs"), float(mag)) for star, mag in zip(stars, magnitudes)
     ]
 
-    # Save to disk cache for future use
-    _save_to_disk_cache(cache_key, star_data)
+    # Cache result (if it fails, then no caching)
+    with contextlib.suppress(Exception):
+        _get_cache_instance()[cache_key] = star_data
 
     return star_data
 

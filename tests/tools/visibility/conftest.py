@@ -24,7 +24,7 @@ from across.tools.visibility import (
     constraints_from_json,
 )
 from across.tools.visibility.base import Visibility
-from across.tools.visibility.catalogs import get_bright_stars
+from across.tools.visibility.catalogs import cache_clear
 from across.tools.visibility.constraints import AllConstraint, EarthLimbConstraint, SunAngleConstraint
 from across.tools.visibility.constraints.base import ConstraintABC
 
@@ -35,9 +35,9 @@ def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
     cache_dir = tmp_path / "star_catalogs"
     cache_dir.mkdir(parents=True, exist_ok=True)
     with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
-        get_bright_stars.cache_clear()
+        cache_clear()
         yield
-        get_bright_stars.cache_clear()
+        cache_clear()
 
 
 @pytest.fixture
@@ -551,11 +551,11 @@ def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
 @pytest.fixture(autouse=True)
 def clear_catalog_cache() -> Generator[None, None, None]:
     """Automatically clear catalog cache before each test."""
-    from across.tools.visibility.catalogs import get_bright_stars
+    from across.tools.visibility.catalogs import cache_clear
 
-    get_bright_stars.cache_clear()
+    cache_clear()
     yield
-    get_bright_stars.cache_clear()
+    cache_clear()
 
 
 @pytest.fixture
