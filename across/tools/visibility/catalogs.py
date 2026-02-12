@@ -124,28 +124,21 @@ def get_bright_stars(
     if star_table is None:
         return _get_fallback_bright_stars()
 
-    # Find RA column
+    # Find RA, dec and magnitude column
     ra_col = next((col for col in _RA_COLUMNS if col in star_table.colnames), None)
-    if ra_col is None:
-        return _get_fallback_bright_stars()
-
-    # Find Dec column
     dec_col = next((col for col in _DEC_COLUMNS if col in star_table.colnames), None)
-    if dec_col is None:
+    mag_col = next((col for col in _MAG_COLUMNS if col in star_table.colnames), None)
+    if ra_col is None or dec_col is None or mag_col is None:
         return _get_fallback_bright_stars()
 
     # Get RA/Dec with proper units
     ra_data = star_table[ra_col]
     dec_data = star_table[dec_col]
 
+    # Ensure RA/Dec have units (some catalogs may not include them)
     if not (hasattr(ra_data, "unit") and ra_data.unit is not None):
         ra_data = ra_data * u.deg
         dec_data = dec_data * u.deg
-
-    # Find magnitude column
-    mag_col = next((col for col in _MAG_COLUMNS if col in star_table.colnames), None)
-    if mag_col is None:
-        return _get_fallback_bright_stars()
 
     # Extract magnitudes
     magnitudes = star_table[mag_col]
