@@ -1,6 +1,8 @@
 from uuid import UUID
 
 import astropy.units as u  # type: ignore[import-untyped]
+import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from pydantic import Field
 
@@ -110,6 +112,20 @@ class VisibilityComputedValues(BaseSchema):
         default=None, description="Angular distance between the Earth and the coordinate"
     )
     alt_az: SkyCoord | None = Field(default=None, description="AltAz coordinates of the coordinate")
+    air_mass: u.Quantity | None = Field(default=None, description="Airmass value for the coordinate")
+    sun_altitude: u.Quantity | None = Field(default=None, description="Altitude of the Sun at the given time")
+    body_separation: dict[str, u.Quantity] | None = Field(
+        default=None, description="Angular separation from specified Solar System bodies"
+    )
+    body_coordinates: dict[str, SkyCoord] | None = Field(
+        default=None, description="Sky coordinates of specified Solar System bodies"
+    )
+    body_magnitude: dict[str, npt.NDArray[np.float64]] | None = Field(
+        default=None, description="Apparent magnitude of specified Solar System bodies"
+    )
+    galactic_bulge_separation: u.Quantity | None = Field(
+        default=None, description="Angular separation from the Galactic Bulge"
+    )
 
     def merge(self, other: "VisibilityComputedValues") -> None:
         """

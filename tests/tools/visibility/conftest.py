@@ -2,11 +2,14 @@ import json
 import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import patch
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.table import Table  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 
 from across.tools.core.enums.constraint_type import ConstraintType
@@ -21,8 +24,20 @@ from across.tools.visibility import (
     constraints_from_json,
 )
 from across.tools.visibility.base import Visibility
+from across.tools.visibility.catalogs import cache_clear
 from across.tools.visibility.constraints import AllConstraint, EarthLimbConstraint, SunAngleConstraint
 from across.tools.visibility.constraints.base import ConstraintABC
+
+
+@pytest.fixture
+def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
+    """Fixture to isolate the star cache for testing."""
+    cache_dir = tmp_path / "star_catalogs"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
+        cache_clear()
+        yield
+        cache_clear()
 
 
 @pytest.fixture
@@ -528,3 +543,65 @@ def not_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
 def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
     """Fixture for an AND constraint of two OR(SUN, EARTH) constraints."""
     return or_sun_earth & or_sun_earth
+
+
+# Catalog test fixtures
+
+
+@pytest.fixture(autouse=True)
+def clear_catalog_cache() -> Generator[None, None, None]:
+    """Automatically clear catalog cache before each test."""
+    from across.tools.visibility.catalogs import cache_clear
+
+    cache_clear()
+    yield
+    cache_clear()
+
+
+@pytest.fixture
+def test_star_coord() -> SkyCoord:
+    """Fixture for a test star coordinate (Sirius position)."""
+    return SkyCoord(ra="06h45m08.9s", dec="-16d42m58.0s", frame="icrs")
+
+
+@pytest.fixture
+def mock_vizier_table() -> Table:
+    """Fixture for a mock Vizier table with test star data."""
+
+    mock_table = Table()
+    mock_table["_RA.icrs"] = [101.28]
+    mock_table["_DE.icrs"] = [-16.72]
+    mock_table["Vmag"] = [-1.46]
+    return mock_table
+
+
+@pytest.fixture
+def mock_vizier_table_alternate_columns() -> Table:
+    """Fixture for a mock Vizier table with alternate column names."""
+    mock_table = Table()
+    mock_table["RAJ2000"] = [101.28]
+    mock_table["DEJ2000"] = [-16.72]
+    mock_table["Vmag"] = [-1.46]
+    return mock_table
+
+
+@pytest.fixture
+def mock_bright_stars() -> list[tuple[SkyCoord, float]]:
+    """Fixture providing a small set of mock bright stars for testing.
+
+    Returns a list of (SkyCoord, magnitude) tuples representing
+    common bright stars used in tests. Prevents internet access
+    during constraint testing.
+    """
+    return [
+        # Sirius (brightest star, used in many tests)
+        (SkyCoord(ra="06h45m08.9s", dec="-16d42m58.0s", frame="icrs"), -1.46),
+        # Canopus
+        (SkyCoord(ra="06h23m57.1s", dec="-52d41m44.4s", frame="icrs"), -0.74),
+        # Arcturus
+        (SkyCoord(ra="14h15m39.7s", dec="+19d10m56.7s", frame="icrs"), -0.05),
+        # Vega
+        (SkyCoord(ra="18h36m56.3s", dec="+38d47m01.3s", frame="icrs"), 0.03),
+        # Capella
+        (SkyCoord(ra="05h16m41.4s", dec="+45d59m52.8s", frame="icrs"), 0.08),
+    ]

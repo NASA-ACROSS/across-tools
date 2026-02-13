@@ -1,5 +1,7 @@
+from collections.abc import Generator
 from datetime import datetime
 from typing import Literal
+from unittest.mock import patch
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -28,12 +30,6 @@ from across.tools.visibility.constraints.sun_angle import SunAngleConstraint
 @pytest.fixture
 def sky_coord() -> SkyCoord:
     """Create a basic SkyCoord instance."""
-    return SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
-
-
-@pytest.fixture
-def coordinate() -> SkyCoord:
-    """Create a SkyCoord instance for constraint testing."""
     return SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
 
 
@@ -209,20 +205,8 @@ def moon_angle_constraint() -> MoonAngleConstraint:
 
 
 @pytest.fixture
-def moon_constraint() -> MoonAngleConstraint:
-    """Alias for moon_angle_constraint for convenience."""
-    return MoonAngleConstraint(min_angle=21.0, max_angle=170.0)
-
-
-@pytest.fixture
 def sun_angle_constraint() -> SunAngleConstraint:
     """Fixture to provide an instance of SunAngleConstraint for testing."""
-    return SunAngleConstraint(min_angle=45.0, max_angle=170.0)
-
-
-@pytest.fixture
-def sun_constraint() -> SunAngleConstraint:
-    """Alias for sun_angle_constraint for convenience."""
     return SunAngleConstraint(min_angle=45.0, max_angle=170.0)
 
 
@@ -241,7 +225,7 @@ def ground_ephemeris(ephemeris_begin: Time, ephemeris_end: Time, ephemeris_step_
     ephemeris = GroundEphemeris(
         ephemeris_begin, ephemeris_end, ephemeris_step_size, latitude, longitude, height
     )
-    ephemeris.prepare_data()
+    ephemeris.compute()
     return ephemeris
 
 
@@ -292,3 +276,132 @@ def az_eight_alt_five_sky_coord(ground_ephemeris: Ephemeris, ephemeris_begin: da
     return SkyCoord(
         AltAz(alt=8 * u.deg, az=5 * u.deg, location=ground_ephemeris.earth_location, obstime=ephemeris_begin)
     )
+
+
+class MockEphemerisWithSun(Ephemeris):
+    """Mock ephemeris class for solar system magnitude testing."""
+
+    def __init__(self, sun: SkyCoord) -> None:
+        """Initialize MockEphemerisWithSun.
+
+        Args:
+            sun: SkyCoord object representing sun position
+        """
+        self.sun = sun
+
+    def prepare_data(self) -> None:
+        """Mock method to prepare data."""
+        pass
+
+
+@pytest.fixture
+def mock_ephemeris_with_sun(sun_coord: SkyCoord) -> MockEphemerisWithSun:
+    """Fixture for a mock ephemeris with sun coordinates.
+
+    Args:
+        sun_coord: SkyCoord fixture for sun position
+
+    Returns:
+        MockEphemerisWithSun instance
+    """
+    sun_array = SkyCoord([sun_coord.ra], [sun_coord.dec], distance=[sun_coord.distance])
+    return MockEphemerisWithSun(sun_array)
+
+
+@pytest.fixture
+def sun_coord() -> SkyCoord:
+    """Create a SkyCoord instance for sun position testing."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
+
+
+@pytest.fixture
+def body_coord_1au() -> SkyCoord:
+    """Create a SkyCoord instance for body at 1 AU."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
+
+
+@pytest.fixture
+def body_coord_1_5au() -> SkyCoord:
+    """Create a SkyCoord instance for body at 1.5 AU."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=1.5 * u.AU)
+
+
+@pytest.fixture
+def body_coord_5au() -> SkyCoord:
+    """Create a SkyCoord instance for body at 5 AU."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=5 * u.AU)
+
+
+@pytest.fixture
+def body_coord_9au() -> SkyCoord:
+    """Create a SkyCoord instance for body at 9 AU."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=9 * u.AU)
+
+
+@pytest.fixture
+def body_coord_19au() -> SkyCoord:
+    """Create a SkyCoord instance for body at 19 AU."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=19 * u.AU)
+
+
+@pytest.fixture
+def body_coord_30au() -> SkyCoord:
+    """Create a SkyCoord instance for body at 30 AU."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=30 * u.AU)
+
+
+@pytest.fixture
+def mauna_kea_latitude() -> Latitude:
+    """Mauna Kea Observatory latitude."""
+    return Latitude(19.8207 * u.deg)
+
+
+@pytest.fixture
+def mauna_kea_longitude() -> Longitude:
+    """Mauna Kea Observatory longitude."""
+    return Longitude(-155.4681 * u.deg)
+
+
+@pytest.fixture
+def mauna_kea_height() -> u.Quantity:
+    """Mauna Kea Observatory height."""
+    return 4205 * u.m
+
+
+@pytest.fixture
+def mauna_kea_ephemeris(
+    mauna_kea_latitude: Latitude,
+    mauna_kea_longitude: Longitude,
+    mauna_kea_height: u.Quantity,
+) -> GroundEphemeris:
+    """Ground ephemeris for Mauna Kea Observatory over 24 hours."""
+    start_time = Time("2024-06-15T00:00:00")  # Summer solstice for longer days
+    end_time = Time("2024-06-16T00:00:00")
+    step_size = 300  # 5 minutes
+
+    ephem = GroundEphemeris(
+        begin=start_time.datetime,
+        end=end_time.datetime,
+        step_size=step_size,
+        latitude=mauna_kea_latitude,
+        longitude=mauna_kea_longitude,
+        height=mauna_kea_height,
+    )
+    ephem.compute()
+    return ephem
+
+
+@pytest.fixture
+def dummy_coord() -> SkyCoord:
+    """Create a dummy SkyCoord instance for testing."""
+    return SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
+
+
+@pytest.fixture
+def mock_get_bright_stars(
+    mock_bright_stars: list[tuple[SkyCoord, float]],
+) -> Generator[list[tuple[SkyCoord, float]], None, None]:
+    """Fixture that patches get_bright_stars to prevent internet access."""
+    with patch("across.tools.visibility.constraints.bright_star.get_bright_stars") as mock:
+        mock.return_value = mock_bright_stars
+        yield mock
