@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from unittest.mock import patch
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -408,6 +408,26 @@ def mauna_kea_ephemeris(
     )
     ephem.compute()
     return ephem
+
+
+@pytest.fixture
+def mock_get_slice(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mock get_slice to return slice(0, 5) for testing."""
+    import across.tools.visibility.constraints.solar_system as ss
+
+    monkeypatch.setattr(ss, "get_slice", lambda time, ephem: slice(0, 5))
+    monkeypatch.setattr("across.tools.visibility.constraints.base.get_slice", lambda time, ephem: slice(0, 5))
+
+
+@pytest.fixture
+def mock_get_body(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mock get_body to return dummy SkyCoord for testing."""
+
+    def mock_body(body: Any, time: Time, location: Any) -> SkyCoord:
+        num = len(time) if hasattr(time, "__len__") else 1
+        return SkyCoord(ra=[150] * num * u.deg, dec=[20] * num * u.deg, distance=[1.5] * num * u.AU)
+
+    monkeypatch.setattr("astropy.coordinates.get_body", mock_body)
 
 
 @pytest.fixture

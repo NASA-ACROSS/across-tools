@@ -1,5 +1,3 @@
-from typing import Any
-
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
@@ -191,7 +189,7 @@ class TestSolarSystemConstraintCall:
             SolarSystemConstraint(bodies=["sun", "moon", "venus"])
 
     def test_constraint_combined_magnitude_and_separation_checks_returns_ndarray(
-        self, monkeypatch: pytest.MonkeyPatch, mock_ephemeris: Ephemeris
+        self, mock_get_slice: None, mock_get_body: None, mock_ephemeris: Ephemeris
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns ndarray.
 
@@ -209,31 +207,17 @@ class TestSolarSystemConstraintCall:
         # Create a coordinate
         coord = SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
 
-        # Mock get_body to return dummy SkyCoord
-        def mock_get_body(body: Any, time: Time, location: Any) -> SkyCoord:
-            num = len(time) if hasattr(time, "__len__") else 1
-            return SkyCoord(ra=[150] * num * u.deg, dec=[20] * num * u.deg, distance=[1.5] * num * u.AU)
-
-        # Mock get_slice
-        import across.tools.visibility.constraints.solar_system as ss
-
-        monkeypatch.setattr(ss, "get_slice", lambda time, ephem: slice(0, 5))
-        monkeypatch.setattr(
-            "across.tools.visibility.constraints.base.get_slice", lambda time, ephem: slice(0, 5)
-        )
-
         # Create constraint
         constraint = SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
 
         # This should work and return a boolean array, but instead crashes!
-        monkeypatch.setattr("astropy.coordinates.get_body", mock_get_body)
         result = constraint(time_array, mock_ephemeris, coord)
 
         # This result should be a boolean array of length 5
         assert isinstance(result, np.ndarray)
 
     def test_constraint_combined_magnitude_and_separation_checks_returns_bool_dtype(
-        self, monkeypatch: pytest.MonkeyPatch, mock_ephemeris: Ephemeris
+        self, mock_get_slice: None, mock_get_body: None, mock_ephemeris: Ephemeris
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns bool dtype.
 
@@ -251,30 +235,16 @@ class TestSolarSystemConstraintCall:
         # Create a coordinate
         coord = SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
 
-        # Mock get_body to return dummy SkyCoord
-        def mock_get_body(body: Any, time: Time, location: Any) -> SkyCoord:
-            num = len(time) if hasattr(time, "__len__") else 1
-            return SkyCoord(ra=[150] * num * u.deg, dec=[20] * num * u.deg, distance=[1.5] * num * u.AU)
-
-        # Mock get_slice
-        import across.tools.visibility.constraints.solar_system as ss
-
-        monkeypatch.setattr(ss, "get_slice", lambda time, ephem: slice(0, 5))
-        monkeypatch.setattr(
-            "across.tools.visibility.constraints.base.get_slice", lambda time, ephem: slice(0, 5)
-        )
-
         # Create constraint
         constraint = SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
 
         # This should work and return a boolean array, but instead crashes!
-        monkeypatch.setattr("astropy.coordinates.get_body", mock_get_body)
         result = constraint(time_array, mock_ephemeris, coord)
 
         assert result.dtype == np.bool_
 
     def test_constraint_combined_magnitude_and_separation_checks_length_five(
-        self, monkeypatch: pytest.MonkeyPatch, mock_ephemeris: Ephemeris
+        self, mock_get_slice: None, mock_get_body: None, mock_ephemeris: Ephemeris
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns array of length 5.
 
@@ -292,50 +262,26 @@ class TestSolarSystemConstraintCall:
         # Create a coordinate
         coord = SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
 
-        # Mock get_body to return dummy SkyCoord
-        def mock_get_body(body: Any, time: Time, location: Any) -> SkyCoord:
-            num = len(time) if hasattr(time, "__len__") else 1
-            return SkyCoord(ra=[150] * num * u.deg, dec=[20] * num * u.deg, distance=[1.5] * num * u.AU)
-
-        # Mock get_slice
-        import across.tools.visibility.constraints.solar_system as ss
-
-        monkeypatch.setattr(ss, "get_slice", lambda time, ephem: slice(0, 5))
-        monkeypatch.setattr(
-            "across.tools.visibility.constraints.base.get_slice", lambda time, ephem: slice(0, 5)
-        )
-
         # Create constraint
         constraint = SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
 
         # This should work and return a boolean array, but instead crashes!
-        monkeypatch.setattr("astropy.coordinates.get_body", mock_get_body)
         result = constraint(time_array, mock_ephemeris, coord)
 
         assert len(result) == 5
 
     def test_constraint_get_body_failure_logs_warning(
-        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, mock_ephemeris: Ephemeris
+        self,
+        mock_get_slice: None,
+        caplog: pytest.LogCaptureFixture,
+        mock_ephemeris: Ephemeris,
+        mock_get_body: None,
     ) -> None:
         """Test that constraint logs warning when get_body fails and continues."""
-
-        # Mock get_body to raise KeyError
-        def mock_get_body(body: Any, time: Time, location: Any) -> SkyCoord:
-            raise KeyError("Body not found")
-
-        monkeypatch.setattr("astropy.coordinates.get_body", mock_get_body)
 
         # Create time array
         time = Time(["2025-01-01"])
         coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
-
-        # Mock get_slice
-        import across.tools.visibility.constraints.solar_system as ss
-
-        monkeypatch.setattr(ss, "get_slice", lambda time, ephem: slice(0, 5))
-        monkeypatch.setattr(
-            "across.tools.visibility.constraints.base.get_slice", lambda time, ephem: slice(0, 5)
-        )
 
         # Create constraint with one body
         constraint = SolarSystemConstraint(bodies=["mars"])
