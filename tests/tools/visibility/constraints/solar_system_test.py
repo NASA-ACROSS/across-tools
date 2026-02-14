@@ -197,11 +197,8 @@ class TestSolarSystemConstraintCall:
         test_coord: SkyCoord,
         test_constraint: SolarSystemConstraint,
     ) -> None:
-        """Test that constraint works correctly with multiple time steps and returns ndarray.
-
-        Previous tests all used single-element time arrays (via begin_time_array fixture),
-        so they never caught that the logic breaks with multiple timesteps.
-        This test uses a realistic multi-step time array to expose the bug.
+        """
+        Test that constraint works correctly with multiple time steps and returns ndarray.
         """
 
         # This should work and return a boolean array, but instead crashes!
@@ -219,12 +216,7 @@ class TestSolarSystemConstraintCall:
         test_coord: SkyCoord,
         test_constraint: SolarSystemConstraint,
     ) -> None:
-        """Test that constraint works correctly with multiple time steps and returns bool dtype.
-
-        Previous tests all used single-element time arrays (via begin_time_array fixture),
-        so they never caught that the logic breaks with multiple timesteps.
-        This test uses a realistic multi-step time array to expose the bug.
-        """
+        """Test that constraint works correctly with multiple time steps and returns bool dtype."""
 
         # This should work and return a boolean array, but instead crashes!
         result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
@@ -240,12 +232,7 @@ class TestSolarSystemConstraintCall:
         test_coord: SkyCoord,
         test_constraint: SolarSystemConstraint,
     ) -> None:
-        """Test that constraint works correctly with multiple time steps and returns array of length 5.
-
-        Previous tests all used single-element time arrays (via begin_time_array fixture),
-        so they never caught that the logic breaks with multiple timesteps.
-        This test uses a realistic multi-step time array to expose the bug.
-        """
+        """Test that constraint works correctly with multiple time steps and returns array of length 5."""
 
         # This should work and return a boolean array, but instead crashes!
         result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
