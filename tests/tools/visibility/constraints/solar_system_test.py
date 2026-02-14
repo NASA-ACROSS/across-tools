@@ -189,7 +189,13 @@ class TestSolarSystemConstraintCall:
             SolarSystemConstraint(bodies=["sun", "moon", "venus"])
 
     def test_constraint_combined_magnitude_and_separation_checks_returns_ndarray(
-        self, mock_get_slice: None, mock_get_body: None, mock_ephemeris: Ephemeris
+        self,
+        mock_get_slice: None,
+        mock_get_body: None,
+        mock_ephemeris: Ephemeris,
+        multi_time_array: Time,
+        test_coord: SkyCoord,
+        test_constraint: SolarSystemConstraint,
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns ndarray.
 
@@ -197,27 +203,21 @@ class TestSolarSystemConstraintCall:
         so they never caught that the logic breaks with multiple timesteps.
         This test uses a realistic multi-step time array to expose the bug.
         """
-        from datetime import datetime, timedelta
-
-        # Create time array with multiple steps
-        begin = datetime(2025, 2, 12, 0, 0, 0)
-        times = [begin + timedelta(minutes=i * 5) for i in range(5)]  # 5 time steps
-        time_array = Time(times, scale="utc")
-
-        # Create a coordinate
-        coord = SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
-
-        # Create constraint
-        constraint = SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
 
         # This should work and return a boolean array, but instead crashes!
-        result = constraint(time_array, mock_ephemeris, coord)
+        result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
 
         # This result should be a boolean array of length 5
         assert isinstance(result, np.ndarray)
 
     def test_constraint_combined_magnitude_and_separation_checks_returns_bool_dtype(
-        self, mock_get_slice: None, mock_get_body: None, mock_ephemeris: Ephemeris
+        self,
+        mock_get_slice: None,
+        mock_get_body: None,
+        mock_ephemeris: Ephemeris,
+        multi_time_array: Time,
+        test_coord: SkyCoord,
+        test_constraint: SolarSystemConstraint,
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns bool dtype.
 
@@ -225,26 +225,20 @@ class TestSolarSystemConstraintCall:
         so they never caught that the logic breaks with multiple timesteps.
         This test uses a realistic multi-step time array to expose the bug.
         """
-        from datetime import datetime, timedelta
-
-        # Create time array with multiple steps
-        begin = datetime(2025, 2, 12, 0, 0, 0)
-        times = [begin + timedelta(minutes=i * 5) for i in range(5)]  # 5 time steps
-        time_array = Time(times, scale="utc")
-
-        # Create a coordinate
-        coord = SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
-
-        # Create constraint
-        constraint = SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
 
         # This should work and return a boolean array, but instead crashes!
-        result = constraint(time_array, mock_ephemeris, coord)
+        result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
 
         assert result.dtype == np.bool_
 
     def test_constraint_combined_magnitude_and_separation_checks_length_five(
-        self, mock_get_slice: None, mock_get_body: None, mock_ephemeris: Ephemeris
+        self,
+        mock_get_slice: None,
+        mock_get_body: None,
+        mock_ephemeris: Ephemeris,
+        multi_time_array: Time,
+        test_coord: SkyCoord,
+        test_constraint: SolarSystemConstraint,
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns array of length 5.
 
@@ -252,21 +246,9 @@ class TestSolarSystemConstraintCall:
         so they never caught that the logic breaks with multiple timesteps.
         This test uses a realistic multi-step time array to expose the bug.
         """
-        from datetime import datetime, timedelta
-
-        # Create time array with multiple steps
-        begin = datetime(2025, 2, 12, 0, 0, 0)
-        times = [begin + timedelta(minutes=i * 5) for i in range(5)]  # 5 time steps
-        time_array = Time(times, scale="utc")
-
-        # Create a coordinate
-        coord = SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
-
-        # Create constraint
-        constraint = SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
 
         # This should work and return a boolean array, but instead crashes!
-        result = constraint(time_array, mock_ephemeris, coord)
+        result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
 
         assert len(result) == 5
 
@@ -296,7 +278,9 @@ class TestCalculateBodyMagnitude:
     """Test suite for SolarSystemConstraint._calculate_body_magnitude method."""
 
     def test_calculate_magnitude_mercury(
-        self, body_coord_1au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+        self,
+        body_coord_1au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
     ) -> None:
         """Test magnitude calculation for Mercury."""
         constraint = SolarSystemConstraint()
@@ -304,43 +288,34 @@ class TestCalculateBodyMagnitude:
         # Update ephemeris sun to 180 deg separation (phase_angle=180)
         sun_coord = SkyCoord(ra=180 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
         sun_array = SkyCoord([sun_coord.ra], [sun_coord.dec], distance=[sun_coord.distance])
+        mock_ephemeris_with_sun.sun = sun_array
 
-        # Create a new ephemeris instance with the phase angle we want
-        class PhaseEphemeris(Ephemeris):
-            def __init__(self, sun: SkyCoord) -> None:
-                self.sun = sun
-
-            def prepare_data(self) -> None:
-                pass
-
-        ephemeris = PhaseEphemeris(sun_array)
         i = slice(0, 1)
 
-        result = constraint._calculate_body_magnitude(SolarSystemObject.MERCURY, body_coord_1au, ephemeris, i)
+        result = constraint._calculate_body_magnitude(
+            SolarSystemObject.MERCURY, body_coord_1au, mock_ephemeris_with_sun, i
+        )
         phase_angle = 180.0
         expected = -1.9 + 0.02 * phase_angle + 3.5e-7 * phase_angle**3
         assert np.allclose(result, [expected])
 
-    def test_calculate_magnitude_venus(self, body_coord_1au: SkyCoord) -> None:
+    def test_calculate_magnitude_venus(
+        self, body_coord_1au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+    ) -> None:
         """Test magnitude calculation for Venus."""
         constraint = SolarSystemConstraint()
 
         # Mock body_coord at 1 AU, sun at 90 deg separation (phase_angle=90)
         sun_coord = SkyCoord(ra=90 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
 
-        class PhaseEphemeris(Ephemeris):
-            def __init__(self, sun: SkyCoord) -> None:
-                self.sun = sun
-
-            def prepare_data(self) -> None:
-                pass
-
         # Create SkyCoord array from single coordinate
         sun_array = SkyCoord([sun_coord.ra], [sun_coord.dec], distance=[sun_coord.distance])
-        ephemeris = PhaseEphemeris(sun_array)
+        mock_ephemeris_with_sun.sun = sun_array
         i = slice(0, 1)
 
-        result = constraint._calculate_body_magnitude(SolarSystemObject.VENUS, body_coord_1au, ephemeris, i)
+        result = constraint._calculate_body_magnitude(
+            SolarSystemObject.VENUS, body_coord_1au, mock_ephemeris_with_sun, i
+        )
         phase_angle = 90.0
         expected = -4.7 + 0.013 * phase_angle + 4.3e-7 * phase_angle**3
         assert np.allclose(result, [expected])

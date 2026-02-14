@@ -25,6 +25,7 @@ from across.tools.visibility.constraints.base import ConstraintABC
 from across.tools.visibility.constraints.earth_limb import EarthLimbConstraint
 from across.tools.visibility.constraints.moon_angle import MoonAngleConstraint
 from across.tools.visibility.constraints.saa import SAAPolygonConstraint
+from across.tools.visibility.constraints.solar_system import SolarSystemConstraint
 from across.tools.visibility.constraints.sun_angle import SunAngleConstraint
 
 
@@ -110,22 +111,6 @@ class MockEphemeris(Ephemeris):
     def prepare_data(self) -> None:
         """Mock method to prepare data."""
         pass
-
-        # class MockEphem:
-        #     earth_location = EarthLocation.from_geodetic(-118.2 * u.deg, 34.2 * u.deg, 100 * u.m)
-
-        #     def __init__(self, num_times: int) -> None:
-        #         # For multiple times, sun should be array
-        #         self.sun = SkyCoord(
-        #             ra=[0] * num_times * u.deg, dec=[0] * num_times * u.deg, distance=[1] * num_times * u.AU
-        #         )
-
-        #     def index(self, t: Time) -> int | slice:
-        #         if not t.isscalar:
-        #             return slice(0, len(t))
-        #         return 0
-
-        # ephemeris = MockEphem(5)
 
 
 @pytest.fixture
@@ -431,9 +416,31 @@ def mock_get_body(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
+def multi_time_array() -> Time:
+    """Fixture for a multi-step time array used in combined tests."""
+    from datetime import datetime, timedelta
+
+    begin = datetime(2025, 2, 12, 0, 0, 0)
+    times = [begin + timedelta(minutes=i * 5) for i in range(5)]
+    return Time(times, scale="utc")
+
+
+@pytest.fixture
 def dummy_coord() -> SkyCoord:
     """Create a dummy SkyCoord instance for testing."""
     return SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
+
+
+@pytest.fixture
+def test_coord() -> SkyCoord:
+    """Fixture for test coordinate used in combined tests."""
+    return SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
+
+
+@pytest.fixture
+def test_constraint() -> SolarSystemConstraint:
+    """Fixture for test constraint used in combined tests."""
+    return SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
 
 
 @pytest.fixture

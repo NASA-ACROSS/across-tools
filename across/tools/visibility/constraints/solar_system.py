@@ -212,7 +212,7 @@ class SolarSystemConstraint(ConstraintABC):
                 body_name, self.computed_values.body_coordinates[body_name], ephemeris, i
             )
 
-            # Check if too close
+            # Check if too close and bright enough to violate the constraint
             in_constraint |= np.logical_and(
                 self.computed_values.body_separation[body_name] < self.min_separation * u.deg,
                 self.computed_values.body_magnitude[body_name] < self.max_magnitude,
