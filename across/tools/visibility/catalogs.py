@@ -40,13 +40,13 @@ def _get_cache_instance() -> diskcache.Cache:
 def cache_clear() -> None:
     """Clear the diskcache cache."""
     global _cache
-    cache_instance = _get_cache_instance()  # Get reference first
-    try:
-        cache_instance.clear()
-    except Exception:
-        pass
-    finally:
-        _cache = None
+    if _cache is not None:
+        try:
+            _cache.close()
+        except Exception:
+            pass
+        finally:
+            _cache = None
 
 
 def get_bright_stars(
