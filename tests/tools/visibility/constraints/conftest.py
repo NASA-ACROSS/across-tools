@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from datetime import datetime
 from typing import Any, Literal
 from unittest.mock import patch
@@ -505,3 +505,71 @@ def mock_get_bright_stars(
     with patch("across.tools.visibility.constraints.bright_star.get_bright_stars") as mock:
         mock.return_value = mock_bright_stars
         yield mock
+
+
+# Solar System Constraint Fixtures
+
+
+@pytest.fixture
+def default_solar_system_constraint() -> SolarSystemConstraint:
+    """Fixture for a default SolarSystemConstraint instance."""
+    return SolarSystemConstraint()
+
+
+@pytest.fixture
+def custom_solar_system_constraint() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with custom parameters."""
+    return SolarSystemConstraint(min_separation=15.0, max_magnitude=3.0)
+
+
+@pytest.fixture
+def constraint_call_params(
+    begin_time_array: Time, ground_ephemeris: GroundEphemeris, sky_coord: SkyCoord
+) -> tuple[Time, GroundEphemeris, SkyCoord]:
+    """Fixture providing common parameters for constraint __call__ testing."""
+    return begin_time_array, ground_ephemeris, sky_coord
+
+
+class MockPhaseEphemeris(Ephemeris):
+    """Mock ephemeris class for solar system magnitude testing with phase information."""
+
+    def __init__(self, sun: SkyCoord, earth_location: Any = None) -> None:
+        """Initialize MockPhaseEphemeris.
+
+        Args:
+            sun: SkyCoord object representing sun position
+            earth_location: Earth location for the ephemeris
+        """
+        # Convert scalar SkyCoord to array-like for indexing
+        self.sun = SkyCoord([sun.ra], [sun.dec], distance=[sun.distance])
+        self.earth_location = earth_location
+
+    def prepare_data(self) -> None:
+        """Mock method to prepare data."""
+        pass
+
+
+@pytest.fixture
+def mock_phase_ephemeris(sun_coord: SkyCoord) -> MockPhaseEphemeris:
+    """Fixture for a mock ephemeris with sun coordinates for magnitude testing."""
+    return MockPhaseEphemeris(sun_coord)
+
+
+@pytest.fixture
+def constraint_with_get_body_exception() -> (
+    Generator[
+        Callable[[SolarSystemConstraint, Time, Ephemeris, SkyCoord], np.typing.NDArray[np.bool_]], None, None
+    ]
+):
+    """Fixture that provides a function to call constraint with get_body mocked to raise exception."""
+
+    def call_with_exception(
+        constraint: SolarSystemConstraint, time: Time, ephemeris: Ephemeris, coord: SkyCoord
+    ) -> np.typing.NDArray[np.bool_]:
+        with patch(
+            "across.tools.visibility.constraints.solar_system.get_body",
+            side_effect=ValueError("Body not found"),
+        ):
+            return constraint(time, ephemeris, coord)
+
+    yield call_with_exception
