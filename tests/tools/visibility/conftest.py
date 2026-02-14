@@ -13,6 +13,7 @@ import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.table import Table  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
+from astropy.utils.data import clear_download_cache  # type: ignore[import-untyped]
 
 import across.tools.visibility.catalogs as catalogs_module
 from across.tools.core.enums.constraint_type import ConstraintType
@@ -39,8 +40,14 @@ def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
     cache_dir.mkdir(parents=True, exist_ok=True)
     with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
         cache_clear()
+        # Clear astropy download cache
+        with contextlib.suppress(Exception):
+            clear_download_cache()
         yield
         cache_clear()
+        # Clear astropy download cache after test
+        with contextlib.suppress(Exception):
+            clear_download_cache()
         # Explicitly close any open cache connections
         if catalogs_module._cache is not None:
             with contextlib.suppress(Exception):
@@ -648,12 +655,30 @@ def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
 
 @pytest.fixture(autouse=True)
 def clear_catalog_cache() -> Generator[None, None, None]:
-    """Automatically clear catalog cache before each test."""
+    """Automatically clear catalog and astropy download caches before each test."""
     from across.tools.visibility.catalogs import cache_clear
 
+    # Clear diskcache (our star catalogs)
     cache_clear()
+
+    # Clear astropy download cache to prevent sqlite3 connection warnings
+    try:
+        from astropy.utils.data import clear_download_cache
+
+        clear_download_cache()
+    except Exception:
+        pass  # Ignore if astropy cache clearing fails
+
     yield
+
+    # Clear caches after test as well
     cache_clear()
+    try:
+        from astropy.utils.data import clear_download_cache
+
+        clear_download_cache()
+    except Exception:
+        pass
 
 
 @pytest.fixture
