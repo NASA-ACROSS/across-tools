@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from astropy.coordinates import (  # type: ignore[import-untyped]
     AltAz,
+    EarthLocation,
     Latitude,
     Longitude,
     SkyCoord,
@@ -104,9 +105,27 @@ class FalseConstraint(DummyConstraint):
 class MockEphemeris(Ephemeris):
     """Mock class for testing the Ephemeris class."""
 
+    earth_location = EarthLocation.from_geodetic(-118.2 * u.deg, 34.2 * u.deg, 100 * u.m)
+
     def prepare_data(self) -> None:
         """Mock method to prepare data."""
         pass
+
+        # class MockEphem:
+        #     earth_location = EarthLocation.from_geodetic(-118.2 * u.deg, 34.2 * u.deg, 100 * u.m)
+
+        #     def __init__(self, num_times: int) -> None:
+        #         # For multiple times, sun should be array
+        #         self.sun = SkyCoord(
+        #             ra=[0] * num_times * u.deg, dec=[0] * num_times * u.deg, distance=[1] * num_times * u.AU
+        #         )
+
+        #     def index(self, t: Time) -> int | slice:
+        #         if not t.isscalar:
+        #             return slice(0, len(t))
+        #         return 0
+
+        # ephemeris = MockEphem(5)
 
 
 @pytest.fixture

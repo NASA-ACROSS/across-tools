@@ -213,9 +213,9 @@ class SolarSystemConstraint(ConstraintABC):
             )
 
             # Check if too close
-            in_constraint |= (
-                self.computed_values.body_separation[body_name] < (self.min_separation * u.deg)
-                and self.computed_values.body_magnitude[body_name] < self.max_magnitude
+            in_constraint |= np.logical_and(
+                self.computed_values.body_separation[body_name] < self.min_separation * u.deg,
+                self.computed_values.body_magnitude[body_name] < self.max_magnitude,
             )
 
         return in_constraint
