@@ -444,6 +444,24 @@ def test_constraint() -> SolarSystemConstraint:
 
 
 @pytest.fixture
+def solar_system_constraint() -> SolarSystemConstraint:
+    """Fixture for a basic SolarSystemConstraint instance."""
+    return SolarSystemConstraint()
+
+
+@pytest.fixture
+def solar_system_constraint_with_separation() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with min_separation=10.0."""
+    return SolarSystemConstraint(min_separation=10.0)
+
+
+@pytest.fixture
+def slice_index() -> slice:
+    """Fixture for the common slice(0, 1) used in magnitude tests."""
+    return slice(0, 1)
+
+
+@pytest.fixture
 def mock_get_bright_stars(
     mock_bright_stars: list[tuple[SkyCoord, float]],
 ) -> Generator[list[tuple[SkyCoord, float]], None, None]:

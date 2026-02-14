@@ -73,20 +73,26 @@ class TestSolarSystemConstraintCall:
     """Test suite for SolarSystemConstraint __call__ method."""
 
     def test_constraint_returns_array_like(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_with_separation: SolarSystemConstraint,
     ) -> None:
         """Test that constraint returns array-like result."""
-        constraint = SolarSystemConstraint(min_separation=10.0)
-        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
+        result = solar_system_constraint_with_separation(begin_time_array, ground_ephemeris, sky_coord)
         # Result should be array-like (even if single element)
         assert hasattr(result, "dtype")
 
     def test_constraint_returns_bool_dtype(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_with_separation: SolarSystemConstraint,
     ) -> None:
         """Test that constraint returns boolean dtype."""
-        constraint = SolarSystemConstraint(min_separation=10.0)
-        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
+        result = solar_system_constraint_with_separation(begin_time_array, ground_ephemeris, sky_coord)
         assert result.dtype == bool
 
     def test_constraint_earth_location_required(
@@ -268,127 +274,126 @@ class TestCalculateBodyMagnitude:
         self,
         body_coord_1au: SkyCoord,
         mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
     ) -> None:
         """Test magnitude calculation for Mercury."""
-        constraint = SolarSystemConstraint()
-
         # Update ephemeris sun to 180 deg separation (phase_angle=180)
         sun_coord = SkyCoord(ra=180 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
         sun_array = SkyCoord([sun_coord.ra], [sun_coord.dec], distance=[sun_coord.distance])
         mock_ephemeris_with_sun.sun = sun_array
 
-        i = slice(0, 1)
-
-        result = constraint._calculate_body_magnitude(
-            SolarSystemObject.MERCURY, body_coord_1au, mock_ephemeris_with_sun, i
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.MERCURY, body_coord_1au, mock_ephemeris_with_sun, slice_index
         )
         phase_angle = 180.0
         expected = -1.9 + 0.02 * phase_angle + 3.5e-7 * phase_angle**3
         assert np.allclose(result, [expected])
 
     def test_calculate_magnitude_venus(
-        self, body_coord_1au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+        self,
+        body_coord_1au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
     ) -> None:
         """Test magnitude calculation for Venus."""
-        constraint = SolarSystemConstraint()
-
         # Mock body_coord at 1 AU, sun at 90 deg separation (phase_angle=90)
         sun_coord = SkyCoord(ra=90 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
 
         # Create SkyCoord array from single coordinate
         sun_array = SkyCoord([sun_coord.ra], [sun_coord.dec], distance=[sun_coord.distance])
         mock_ephemeris_with_sun.sun = sun_array
-        i = slice(0, 1)
 
-        result = constraint._calculate_body_magnitude(
-            SolarSystemObject.VENUS, body_coord_1au, mock_ephemeris_with_sun, i
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.VENUS, body_coord_1au, mock_ephemeris_with_sun, slice_index
         )
         phase_angle = 90.0
         expected = -4.7 + 0.013 * phase_angle + 4.3e-7 * phase_angle**3
         assert np.allclose(result, [expected])
 
     def test_calculate_magnitude_mars(
-        self, body_coord_1_5au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+        self,
+        body_coord_1_5au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
     ) -> None:
         """Test magnitude calculation for Mars."""
-        constraint = SolarSystemConstraint()
-
-        i = slice(0, 1)
-
-        result = constraint._calculate_body_magnitude(
-            SolarSystemObject.MARS, body_coord_1_5au, mock_ephemeris_with_sun, i
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.MARS, body_coord_1_5au, mock_ephemeris_with_sun, slice_index
         )
         distance_au = 1.5
         expected = -1.52 + 5 * np.log10(distance_au)
         assert np.allclose(result, [expected])
 
     def test_calculate_magnitude_jupiter(
-        self, body_coord_5au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+        self,
+        body_coord_5au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
     ) -> None:
         """Test magnitude calculation for Jupiter."""
-        constraint = SolarSystemConstraint()
-
-        i = slice(0, 1)
-
-        result = constraint._calculate_body_magnitude(
-            SolarSystemObject.JUPITER, body_coord_5au, mock_ephemeris_with_sun, i
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.JUPITER, body_coord_5au, mock_ephemeris_with_sun, slice_index
         )
         distance_au = 5
         expected = -9.4 + 5 * np.log10(distance_au)
         assert np.allclose(result, [expected])
 
     def test_calculate_magnitude_saturn(
-        self, body_coord_9au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+        self,
+        body_coord_9au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
     ) -> None:
         """Test magnitude calculation for Saturn."""
-        constraint = SolarSystemConstraint()
-
-        i = slice(0, 1)
-
-        result = constraint._calculate_body_magnitude(
-            SolarSystemObject.SATURN, body_coord_9au, mock_ephemeris_with_sun, i
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.SATURN, body_coord_9au, mock_ephemeris_with_sun, slice_index
         )
         distance_au = 9
         expected = -8.9 + 5 * np.log10(distance_au)
         assert np.allclose(result, [expected])
 
     def test_calculate_magnitude_uranus(
-        self, body_coord_19au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+        self,
+        body_coord_19au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
     ) -> None:
         """Test magnitude calculation for Uranus."""
-        constraint = SolarSystemConstraint()
-
-        i = slice(0, 1)
-
-        result = constraint._calculate_body_magnitude(
-            SolarSystemObject.URANUS, body_coord_19au, mock_ephemeris_with_sun, i
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.URANUS, body_coord_19au, mock_ephemeris_with_sun, slice_index
         )
         distance_au = 19
         expected = 5.5 + 5 * np.log10(distance_au)
         assert np.allclose(result, [expected])
 
     def test_calculate_magnitude_neptune(
-        self, body_coord_30au: SkyCoord, mock_ephemeris_with_sun: Ephemeris
+        self,
+        body_coord_30au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
     ) -> None:
         """Test magnitude calculation for Neptune."""
-        constraint = SolarSystemConstraint()
-
-        i = slice(0, 1)
-
-        result = constraint._calculate_body_magnitude(
-            SolarSystemObject.NEPTUNE, body_coord_30au, mock_ephemeris_with_sun, i
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.NEPTUNE, body_coord_30au, mock_ephemeris_with_sun, slice_index
         )
         distance_au = 30
         expected = 7.8 + 5 * np.log10(distance_au)
         assert np.allclose(result, [expected])
 
-    def test_calculate_magnitude_unknown_body(self, mock_ephemeris: Ephemeris) -> None:
+    def test_calculate_magnitude_unknown_body(
+        self, mock_ephemeris: Ephemeris, solar_system_constraint: SolarSystemConstraint, slice_index: slice
+    ) -> None:
         """Test magnitude calculation raises error for unknown body."""
-        constraint = SolarSystemConstraint()
-
         body_coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg, distance=1 * u.AU)
 
-        i = slice(0, 1)
-
         with pytest.raises(ValueError, match="Unknown body for magnitude calculation"):
-            constraint._calculate_body_magnitude("pluto", body_coord, mock_ephemeris, i)
+            solar_system_constraint._calculate_body_magnitude(
+                "pluto", body_coord, mock_ephemeris, slice_index
+            )
