@@ -75,6 +75,11 @@ write_to = "across/tools/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    # Ignore ResourceWarnings from third-party libraries (astropy, diskcache)
+    # These are known issues with unclosed SQLite connections in astropy and diskcache
+    "ignore:unclosed database.*:ResourceWarning",
+]
 
 [tool.black]
 line-length = 110

@@ -9,7 +9,6 @@ from astropy.table import Table  # type: ignore[import-untyped]
 
 from across.tools.visibility.catalogs import (
     _get_cache_dir,
-    _get_fallback_bright_stars,
     cache_clear,
     get_bright_stars,
 )
@@ -48,10 +47,11 @@ class TestCacheDir:
 class TestFallbackBrightStars:
     """Test suite for fallback bright stars function."""
 
-    def test_get_fallback_bright_stars_returns_list(self) -> None:
+    def test_get_fallback_bright_stars_returns_list(
+        self, fallback_bright_stars: list[tuple[SkyCoord, float]]
+    ) -> None:
         """Test that fallback function returns a list."""
-        stars = _get_fallback_bright_stars()
-        assert isinstance(stars, list)
+        assert isinstance(fallback_bright_stars, list)
 
     def test_get_fallback_bright_stars_not_empty(self) -> None:
         """Test that fallback function returns at least one star."""
@@ -78,19 +78,23 @@ class TestFallbackBrightStars:
         stars = _get_fallback_bright_stars()
         assert all(isinstance(mag, float) for _, mag in stars)
 
-    def test_get_fallback_bright_stars_count(self) -> None:
+    def test_get_fallback_bright_stars_count(
+        self, fallback_bright_stars: list[tuple[SkyCoord, float]]
+    ) -> None:
         """Test that fallback function returns expected number of stars."""
-        stars = _get_fallback_bright_stars()
-        assert len(stars) == 20
+        assert len(fallback_bright_stars) == 20
 
-    def test_get_fallback_bright_stars_includes_sirius(self) -> None:
+    def test_get_fallback_bright_stars_includes_sirius(
+        self, fallback_bright_stars: list[tuple[SkyCoord, float]]
+    ) -> None:
         """Test that fallback stars include Sirius (brightest star)."""
-        stars = _get_fallback_bright_stars()
         # Sirius should be first and brightest (mag -1.46)
-        coord, mag = stars[0]
+        coord, mag = fallback_bright_stars[0]
         assert mag == pytest.approx(-1.46, abs=0.01)
 
-    def test_get_fallback_bright_stars_all_bright(self) -> None:
+    def test_get_fallback_bright_stars_all_bright(
+        self, fallback_bright_stars: list[tuple[SkyCoord, float]]
+    ) -> None:
         """Test that all fallback stars are bright (mag < 2.0)."""
         stars = _get_fallback_bright_stars()
         assert all(mag < 2.0 for _, mag in stars)  # All should be brighter than magnitude 2
@@ -100,7 +104,7 @@ class TestFallbackBrightStars:
 class TestGetBrightStars:
     """Test suite for get_bright_stars main function."""
 
-    def test_get_bright_stars_returns_list(self) -> None:
+    def test_get_bright_stars_returns_list(self, mock_vizier_patch: MagicMock) -> None:
         """Test that get_bright_stars returns a list."""
         stars = get_bright_stars(magnitude_limit=3.0)
         assert isinstance(stars, list)
@@ -130,22 +134,26 @@ class TestGetBrightStars:
         stars = get_bright_stars(magnitude_limit=3.0)
         assert all(isinstance(mag, (float, int)) for _, mag in stars)
 
-    def test_get_bright_stars_magnitude_filtering(self) -> None:
+    def test_get_bright_stars_magnitude_filtering(self, mock_vizier_magnitude_filtering: MagicMock) -> None:
         """Test that magnitude filtering works correctly."""
         stars_3 = get_bright_stars(magnitude_limit=3.0)
+
+        # Clear cache to ensure second call queries again
+        cache_clear()
+
         stars_6 = get_bright_stars(magnitude_limit=6.0)
 
         # More stars with higher magnitude limit
         assert len(stars_6) > len(stars_3)
 
-    def test_get_bright_stars_max_stars_limit(self) -> None:
+    def test_get_bright_stars_max_stars_limit(self, mock_vizier_patch: MagicMock) -> None:
         """Test that max_stars parameter limits results."""
         stars = get_bright_stars(magnitude_limit=10.0, max_stars=50)
 
         # Should have at most 50 stars
         assert len(stars) <= 50
 
-    def test_get_bright_stars_caching(self) -> None:
+    def test_get_bright_stars_caching(self, mock_vizier_patch: MagicMock) -> None:
         """Test that results are cached in memory."""
         # First call
         stars1 = get_bright_stars(magnitude_limit=4.0)
@@ -219,7 +227,7 @@ class TestGetBrightStars:
         stars = get_bright_stars(magnitude_limit=6.0)
         assert len(stars) == 20  # Fallback has 20 stars
 
-    def test_get_bright_stars_all_magnitudes_within_limit(self) -> None:
+    def test_get_bright_stars_all_magnitudes_within_limit(self, mock_vizier_patch: MagicMock) -> None:
         """Test that all returned stars are within magnitude limit."""
         magnitude_limit = 3.0
         stars = get_bright_stars(magnitude_limit=magnitude_limit)
