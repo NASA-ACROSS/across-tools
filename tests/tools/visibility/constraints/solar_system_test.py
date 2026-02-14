@@ -13,29 +13,29 @@ from across.tools.visibility.constraints.solar_system import SolarSystemConstrai
 class TestSolarSystemConstraintAttributes:
     """Test suite for SolarSystemConstraint attributes."""
 
-    def test_constraint_short_name(self) -> None:
+    def test_constraint_short_name(self, solar_system_constraint: SolarSystemConstraint) -> None:
         """Test constraint short_name attribute."""
-        constraint = SolarSystemConstraint()
-        assert constraint.short_name == "Solar System"
+        assert solar_system_constraint.short_name == "Solar System"
 
-    def test_constraint_name_value(self) -> None:
+    def test_constraint_name_value(self, solar_system_constraint: SolarSystemConstraint) -> None:
         """Test constraint name.value attribute."""
-        constraint = SolarSystemConstraint()
-        assert constraint.name.value == "Solar System Object Avoidance"
+        assert solar_system_constraint.name.value == "Solar System Object Avoidance"
 
 
 class TestSolarSystemConstraintInitialization:
     """Test suite for SolarSystemConstraint initialization."""
 
-    def test_constraint_initialization_default_min_separation(self) -> None:
+    def test_constraint_initialization_default_min_separation(
+        self, solar_system_constraint: SolarSystemConstraint
+    ) -> None:
         """Test constraint initialization with default min_separation."""
-        constraint = SolarSystemConstraint()
-        assert constraint.min_separation == 10.0
+        assert solar_system_constraint.min_separation == 10.0
 
-    def test_constraint_initialization_default_bodies(self) -> None:
+    def test_constraint_initialization_default_bodies(
+        self, solar_system_constraint: SolarSystemConstraint
+    ) -> None:
         """Test constraint initialization with default bodies."""
-        constraint = SolarSystemConstraint()
-        assert constraint.bodies == [
+        assert solar_system_constraint.bodies == [
             SolarSystemObject.MERCURY,
             SolarSystemObject.VENUS,
             SolarSystemObject.MARS,
@@ -43,15 +43,17 @@ class TestSolarSystemConstraintInitialization:
             SolarSystemObject.SATURN,
         ]
 
-    def test_constraint_initialization_custom_min_separation(self) -> None:
+    def test_constraint_initialization_custom_min_separation(
+        self, solar_system_constraint_custom: SolarSystemConstraint
+    ) -> None:
         """Test constraint initialization with custom min_separation."""
-        constraint = SolarSystemConstraint(min_separation=20.0, bodies=["mars", "jupiter"])
-        assert constraint.min_separation == 20.0
+        assert solar_system_constraint_custom.min_separation == 20.0
 
-    def test_constraint_initialization_custom_bodies(self) -> None:
+    def test_constraint_initialization_custom_bodies(
+        self, solar_system_constraint_custom: SolarSystemConstraint
+    ) -> None:
         """Test constraint initialization with custom bodies."""
-        constraint = SolarSystemConstraint(min_separation=20.0, bodies=["mars", "jupiter"])
-        assert constraint.bodies == [SolarSystemObject.MARS, SolarSystemObject.JUPITER]
+        assert solar_system_constraint_custom.bodies == [SolarSystemObject.MARS, SolarSystemObject.JUPITER]
 
     def test_constraint_initialization_invalid_min_separation_zero(self) -> None:
         """Test constraint initialization with invalid min_separation (zero) raises error."""
@@ -105,78 +107,105 @@ class TestSolarSystemConstraintCall:
             constraint(begin_time_array, mock_ephemeris, sky_coord)
 
     def test_constraint_with_empty_bodies_list(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_empty_bodies: SolarSystemConstraint,
     ) -> None:
         """Test constraint with empty bodies list returns False."""
-        constraint = SolarSystemConstraint(bodies=[])
-        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
+        result = solar_system_constraint_empty_bodies(begin_time_array, ground_ephemeris, sky_coord)
         # Should not be constrained (no bodies to check)
         assert not result
 
     def test_constraint_with_single_body_returns_array_like(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_single_body: SolarSystemConstraint,
     ) -> None:
         """Test constraint with single body returns array-like result."""
-        constraint = SolarSystemConstraint(bodies=["mars"], min_separation=10.0)
-        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
+        result = solar_system_constraint_single_body(begin_time_array, ground_ephemeris, sky_coord)
         # Should return boolean array
         assert hasattr(result, "dtype")
 
     def test_constraint_with_single_body_returns_bool_dtype(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_single_body: SolarSystemConstraint,
     ) -> None:
         """Test constraint with single body returns boolean dtype."""
-        constraint = SolarSystemConstraint(bodies=["mars"], min_separation=10.0)
-        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
+        result = solar_system_constraint_single_body(begin_time_array, ground_ephemeris, sky_coord)
         assert result.dtype == bool
 
     def test_constraint_with_multiple_bodies_returns_array_like(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_multiple_bodies: SolarSystemConstraint,
     ) -> None:
         """Test constraint with multiple bodies returns array-like result."""
-        constraint = SolarSystemConstraint(bodies=["venus", "mars", "jupiter"], min_separation=10.0)
-        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
+        result = solar_system_constraint_multiple_bodies(begin_time_array, ground_ephemeris, sky_coord)
         # Should return boolean array
         assert hasattr(result, "dtype")
 
     def test_constraint_with_multiple_bodies_returns_bool_dtype(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_multiple_bodies: SolarSystemConstraint,
     ) -> None:
         """Test constraint with multiple bodies returns boolean dtype."""
-        constraint = SolarSystemConstraint(bodies=["venus", "mars", "jupiter"], min_separation=10.0)
-        result = constraint(begin_time_array, ground_ephemeris, sky_coord)
+        result = solar_system_constraint_multiple_bodies(begin_time_array, ground_ephemeris, sky_coord)
         assert result.dtype == bool
 
     def test_constraint_small_separation_returns_array_like(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_small_separation: SolarSystemConstraint,
     ) -> None:
         """Test constraint with small separation returns array-like result."""
-        constraint_small = SolarSystemConstraint(min_separation=1.0)
-        result_small = constraint_small(begin_time_array, ground_ephemeris, sky_coord)
+        result_small = solar_system_constraint_small_separation(begin_time_array, ground_ephemeris, sky_coord)
         assert hasattr(result_small, "dtype")
 
     def test_constraint_small_separation_returns_bool_dtype(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_small_separation: SolarSystemConstraint,
     ) -> None:
         """Test constraint with small separation returns boolean dtype."""
-        constraint_small = SolarSystemConstraint(min_separation=1.0)
-        result_small = constraint_small(begin_time_array, ground_ephemeris, sky_coord)
+        result_small = solar_system_constraint_small_separation(begin_time_array, ground_ephemeris, sky_coord)
         assert result_small.dtype == bool
 
     def test_constraint_large_separation_returns_array_like(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_large_separation: SolarSystemConstraint,
     ) -> None:
         """Test constraint with large separation returns array-like result."""
-        constraint_large = SolarSystemConstraint(min_separation=100.0)
-        result_large = constraint_large(begin_time_array, ground_ephemeris, sky_coord)
+        result_large = solar_system_constraint_large_separation(begin_time_array, ground_ephemeris, sky_coord)
         assert hasattr(result_large, "dtype")
 
     def test_constraint_large_separation_returns_bool_dtype(
-        self, begin_time_array: Time, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        solar_system_constraint_large_separation: SolarSystemConstraint,
     ) -> None:
         """Test constraint with large separation returns boolean dtype."""
-        constraint_large = SolarSystemConstraint(min_separation=100.0)
-        result_large = constraint_large(begin_time_array, ground_ephemeris, sky_coord)
+        result_large = solar_system_constraint_large_separation(begin_time_array, ground_ephemeris, sky_coord)
         assert result_large.dtype == bool
 
     def test_constraint_rejects_sun_body(self) -> None:
@@ -251,6 +280,7 @@ class TestSolarSystemConstraintCall:
         caplog: pytest.LogCaptureFixture,
         mock_ephemeris: Ephemeris,
         mock_get_body: None,
+        solar_system_constraint_single_body: SolarSystemConstraint,
     ) -> None:
         """Test that constraint logs warning when get_body fails and continues."""
 
@@ -258,11 +288,8 @@ class TestSolarSystemConstraintCall:
         time = Time(["2025-01-01"])
         coord = SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
 
-        # Create constraint with one body
-        constraint = SolarSystemConstraint(bodies=["mars"])
-
         # Call, should not raise, log warning, and return False
-        result = constraint(time, mock_ephemeris, coord)
+        result = solar_system_constraint_single_body(time, mock_ephemeris, coord)
 
         assert not result  # Should be False since body position failed
 

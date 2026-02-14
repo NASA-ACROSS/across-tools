@@ -456,6 +456,42 @@ def solar_system_constraint_with_separation() -> SolarSystemConstraint:
 
 
 @pytest.fixture
+def solar_system_constraint_custom() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with custom min_separation and bodies."""
+    return SolarSystemConstraint(min_separation=20.0, bodies=["mars", "jupiter"])
+
+
+@pytest.fixture
+def solar_system_constraint_small_separation() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with small min_separation."""
+    return SolarSystemConstraint(min_separation=1.0)
+
+
+@pytest.fixture
+def solar_system_constraint_large_separation() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with large min_separation."""
+    return SolarSystemConstraint(min_separation=100.0)
+
+
+@pytest.fixture
+def solar_system_constraint_single_body() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with single body."""
+    return SolarSystemConstraint(bodies=["mars"], min_separation=10.0)
+
+
+@pytest.fixture
+def solar_system_constraint_multiple_bodies() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with multiple bodies."""
+    return SolarSystemConstraint(bodies=["venus", "mars", "jupiter"], min_separation=10.0)
+
+
+@pytest.fixture
+def solar_system_constraint_empty_bodies() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with empty bodies list."""
+    return SolarSystemConstraint(bodies=[])
+
+
+@pytest.fixture
 def slice_index() -> slice:
     """Fixture for the common slice(0, 1) used in magnitude tests."""
     return slice(0, 1)
