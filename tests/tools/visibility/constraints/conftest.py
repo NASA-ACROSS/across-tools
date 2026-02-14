@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, Literal, Protocol
+from typing import Literal, Protocol
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
