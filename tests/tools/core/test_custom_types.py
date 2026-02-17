@@ -14,8 +14,6 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from across.tools.core.schemas.base import BaseSchema
 from across.tools.core.schemas.custom_types import (
     AstropyAngles,
-    AstropyDateTime,
-    AstropySkyCoords,
     is_array_like,
 )
 
@@ -38,6 +36,7 @@ if TYPE_CHECKING:
         ModelWithTimestamp,
         ModelWithTimestamps,
         ModelWithValues,
+        MultiModel,
         OptionalModel,
         TimeModel,
     )
@@ -120,12 +119,14 @@ class TestAstropyDateTime:
         self, reference_datetime_string: str, model_with_timestamp: "type[ModelWithTimestamp]"
     ) -> None:
         """Test deserialization from ISO datetime string."""
-        model_with_timestamp(timestamp=reference_datetime_string)
+        model = model_with_timestamp(timestamp=reference_datetime_string)
+        assert isinstance(model.timestamp, Time)
 
     def test_deserialize_python_datetime(self, model_with_timestamp: "type[ModelWithTimestamp]") -> None:
         """Test deserialization from Python datetime."""
         dt = datetime(2020, 1, 1, 12, 0, 0)
-        model_with_timestamp(timestamp=dt)
+        model = model_with_timestamp(timestamp=dt)
+        assert isinstance(model.timestamp, Time)
 
 
 class TestAstropyTimeDelta:
@@ -669,24 +670,17 @@ class TestErrorHandling:
             error_msg = str(e)
             assert "Invalid angle" in error_msg or "could not convert" in error_msg
 
-    def test_multiple_validators_error_independently(self) -> None:
-        """Each validator should handle its own errors independently."""
-        from across.tools.core.schemas.custom_types import AstropyAltAz
-
-        class MultiModel(BaseSchema):
-            angle: AstropyAngles
-            time: AstropyDateTime
-            coord: AstropySkyCoords
-            altaz: AstropyAltAz | None = None
-
-        # Test angle validator error
+    def test_multiple_validators_angle_error_independently(self, multi_model: "type[MultiModel]") -> None:
+        """Angle validator error is handled independently in composite model."""
         with pytest.raises(ValueError, match="Invalid angle"):
-            MultiModel(angle="bad", time="2020-01-01T00:00:00", coord=[1.0, 2.0])
+            multi_model(angle="bad", time="2020-01-01T00:00:00", coord=[1.0, 2.0])
 
-        # Test time validator error
+    def test_multiple_validators_time_error_independently(self, multi_model: "type[MultiModel]") -> None:
+        """Time validator error is handled independently in composite model."""
         with pytest.raises(ValueError, match="Invalid time"):
-            MultiModel(angle=45.0, time="bad_time", coord=[1.0, 2.0])
+            multi_model(angle=45.0, time="bad_time", coord=[1.0, 2.0])
 
-        # Test coordinate validator error
+    def test_multiple_validators_coord_error_independently(self, multi_model: "type[MultiModel]") -> None:
+        """Coordinate validator error is handled independently in composite model."""
         with pytest.raises(ValueError, match="Invalid SkyCoord"):
-            MultiModel(angle=45.0, time="2020-01-01T00:00:00", coord="bad_coord")
+            multi_model(angle=45.0, time="2020-01-01T00:00:00", coord="bad_coord")

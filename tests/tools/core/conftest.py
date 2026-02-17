@@ -158,6 +158,15 @@ class AltAzModel(BaseSchema):
     coord: AstropyAltAz
 
 
+class MultiModel(BaseSchema):
+    """Model with multiple custom type validators for independent error testing."""
+
+    angle: AstropyAngles
+    time: AstropyDateTime
+    coord: AstropySkyCoords
+    altaz: AstropyAltAz | None = None
+
+
 @pytest.fixture
 def test_model_class() -> type[DummyModel]:
     """Return a DummyModel class."""
@@ -294,6 +303,12 @@ def coord_model() -> type[CoordModel]:
 def altaz_model() -> type[AltAzModel]:
     """Return AltAzModel class."""
     return AltAzModel
+
+
+@pytest.fixture
+def multi_model() -> type[MultiModel]:
+    """Return MultiModel class."""
+    return MultiModel
 
 
 @pytest.fixture
