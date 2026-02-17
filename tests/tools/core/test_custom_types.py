@@ -16,22 +16,30 @@ from across.tools.core.schemas.custom_types import (
     AstropyAngles,
     AstropyDateTime,
     AstropySkyCoords,
-    NumpyArray,
     is_array_like,
 )
 
 if TYPE_CHECKING:
     from .conftest import (
+        AltAzModel,
+        AngleModel,
+        ComprehensiveModel,
+        CoordModel,
         ModelWithAltAz,
         ModelWithAltAzs,
         ModelWithAltitude,
         ModelWithAltitudes,
         ModelWithCoordinate,
         ModelWithCoordinates,
+        ModelWithData,
         ModelWithDuration,
+        ModelWithMatrix,
+        ModelWithOptionalValues,
         ModelWithTimestamp,
         ModelWithTimestamps,
         ModelWithValues,
+        OptionalModel,
+        TimeModel,
     )
 
 
@@ -80,25 +88,42 @@ class TestIsArrayLike:
 class TestAstropyDateTime:
     """Test AstropyDateTime custom type."""
 
-    def test_serialize_single_time(
+    def test_serialize_single_time_is_string(
         self, standard_time: Time, model_with_timestamp: "type[ModelWithTimestamp]"
     ) -> None:
-        """Test serialization of a single Time object."""
+        """Test serialization of a single Time object returns string."""
         model = model_with_timestamp(timestamp=standard_time)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["timestamp"], str)
+
+    def test_serialize_single_time_contains_date(
+        self, standard_time: Time, model_with_timestamp: "type[ModelWithTimestamp]"
+    ) -> None:
+        """Test serialization of a single Time object contains expected date."""
+        model = model_with_timestamp(timestamp=standard_time)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert "2020-01-01" in data["timestamp"]
 
-    def test_serialize_array_times(
+    def test_serialize_array_times_is_list(
         self, standard_time: Time, model_with_timestamps: "type[ModelWithTimestamps]"
     ) -> None:
-        """Test serialization of an array of Time objects."""
+        """Test serialization of an array of Time objects returns list."""
         times = Time(["2020-01-01 12:00:00", "2020-01-02 12:00:00"])
         model = model_with_timestamps(timestamps=times)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["timestamps"], list)
+
+    def test_serialize_array_times_length(
+        self, standard_time: Time, model_with_timestamps: "type[ModelWithTimestamps]"
+    ) -> None:
+        """Test serialization of an array of Time objects has correct length."""
+        times = Time(["2020-01-01 12:00:00", "2020-01-02 12:00:00"])
+        model = model_with_timestamps(timestamps=times)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert len(data["timestamps"]) == 2
 
     def test_deserialize_datetime_string(
@@ -142,90 +167,209 @@ class TestAstropyTimeDelta:
 class TestAstropyAngles:
     """Test AstropyAngles custom type."""
 
-    def test_serialize_single_angle(
+    def test_serialize_single_angle_is_float(
         self, single_angle: Any, model_with_altitude: "type[ModelWithAltitude]"
     ) -> None:
-        """Test serialization of a single angle."""
+        """Test serialization of a single angle returns float."""
         model = model_with_altitude(altitude=single_angle)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         # Single angles should serialize as scalar floats, not arrays
         assert isinstance(data["altitude"], float)
+
+    def test_serialize_single_angle_value(
+        self, single_angle: Any, model_with_altitude: "type[ModelWithAltitude]"
+    ) -> None:
+        """Test serialization of a single angle has correct value."""
+        model = model_with_altitude(altitude=single_angle)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["altitude"] == pytest.approx(45.0)
 
-    def test_serialize_angle_array(
+    def test_serialize_angle_array_is_list(
         self, angle_array: Any, model_with_altitudes: "type[ModelWithAltitudes]"
     ) -> None:
-        """Test serialization of an array of angles."""
+        """Test serialization of an array of angles returns list."""
         model = model_with_altitudes(altitudes=angle_array)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["altitudes"], list)
+
+    def test_serialize_angle_array_length(
+        self, angle_array: Any, model_with_altitudes: "type[ModelWithAltitudes]"
+    ) -> None:
+        """Test serialization of an array of angles has correct length."""
+        model = model_with_altitudes(altitudes=angle_array)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert len(data["altitudes"]) == 3
+
+    def test_serialize_angle_array_first_value(
+        self, angle_array: Any, model_with_altitudes: "type[ModelWithAltitudes]"
+    ) -> None:
+        """Test serialization of an array of angles has correct first value."""
+        model = model_with_altitudes(altitudes=angle_array)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["altitudes"][0] == pytest.approx(30.0)
+
+    def test_serialize_angle_array_second_value(
+        self, angle_array: Any, model_with_altitudes: "type[ModelWithAltitudes]"
+    ) -> None:
+        """Test serialization of an array of angles has correct second value."""
+        model = model_with_altitudes(altitudes=angle_array)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["altitudes"][1] == pytest.approx(45.0)
+
+    def test_serialize_angle_array_third_value(
+        self, angle_array: Any, model_with_altitudes: "type[ModelWithAltitudes]"
+    ) -> None:
+        """Test serialization of an array of angles has correct third value."""
+        model = model_with_altitudes(altitudes=angle_array)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["altitudes"][2] == pytest.approx(60.0)
 
-    def test_deserialize_float_list(self, model_with_altitudes: "type[ModelWithAltitudes]") -> None:
-        """Test deserialization from list of floats."""
+    def test_deserialize_float_list_is_quantity(
+        self, model_with_altitudes: "type[ModelWithAltitudes]"
+    ) -> None:
+        """Test deserialization from list of floats creates Quantity."""
         model = model_with_altitudes(altitudes=[30.0, 45.0, 60.0])
         assert isinstance(model.altitudes, u.Quantity)
+
+    def test_deserialize_float_list_unit(self, model_with_altitudes: "type[ModelWithAltitudes]") -> None:
+        """Test deserialization from list of floats has correct unit."""
+        model = model_with_altitudes(altitudes=[30.0, 45.0, 60.0])
         assert model.altitudes.unit == u.deg
 
-    def test_deserialize_single_float(self, model_with_altitude: "type[ModelWithAltitude]") -> None:
-        """Test deserialization from single float."""
+    def test_deserialize_single_float_is_quantity(
+        self, model_with_altitude: "type[ModelWithAltitude]"
+    ) -> None:
+        """Test deserialization from single float creates Quantity."""
         model = model_with_altitude(altitude=45.0)
         assert isinstance(model.altitude, u.Quantity)
+
+    def test_deserialize_single_float_unit(self, model_with_altitude: "type[ModelWithAltitude]") -> None:
+        """Test deserialization from single float has correct unit."""
+        model = model_with_altitude(altitude=45.0)
         assert model.altitude.unit == u.deg
 
-    def test_convert_radians_to_degrees(
+    def test_convert_radians_to_degrees_is_float(
         self, single_angle: Any, model_with_altitude: "type[ModelWithAltitude]"
     ) -> None:
-        """Test that radians are converted to degrees."""
+        """Test that radians are converted to degrees and return float."""
         angle = np.pi / 4 * u.rad  # 45 degrees in radians
         model = model_with_altitude(altitude=angle)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         # Single angle should serialize as a scalar float
         assert isinstance(data["altitude"], float)
+
+    def test_convert_radians_to_degrees_value(
+        self, single_angle: Any, model_with_altitude: "type[ModelWithAltitude]"
+    ) -> None:
+        """Test that radians are converted to degrees with correct value."""
+        angle = np.pi / 4 * u.rad  # 45 degrees in radians
+        model = model_with_altitude(altitude=angle)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["altitude"] == pytest.approx(45.0, abs=1e-6)
 
 
 class TestAstropySkyCoords:
     """Test AstropySkyCoords custom type."""
 
-    def test_serialize_single_skycoord(self, model_with_coordinate: "type[ModelWithCoordinate]") -> None:
-        """Test serialization of a single SkyCoord."""
-        coord = SkyCoord(ra=10 * u.deg, dec=20 * u.deg)
-        model = model_with_coordinate(coordinate=coord)
+    def test_serialize_single_skycoord_is_list(
+        self, model_with_coordinate: "type[ModelWithCoordinate]", skycoord_single: SkyCoord
+    ) -> None:
+        """Test serialization of a single SkyCoord returns list."""
+        model = model_with_coordinate(coordinate=skycoord_single)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["coordinate"], list)
+
+    def test_serialize_single_skycoord_length(
+        self, model_with_coordinate: "type[ModelWithCoordinate]", skycoord_single: SkyCoord
+    ) -> None:
+        """Test serialization of a single SkyCoord has length 1."""
+        model = model_with_coordinate(coordinate=skycoord_single)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert len(data["coordinate"]) == 1
+
+    def test_serialize_single_skycoord_keys(
+        self, model_with_coordinate: "type[ModelWithCoordinate]", skycoord_single: SkyCoord
+    ) -> None:
+        """Test serialization of a single SkyCoord has correct keys."""
+        model = model_with_coordinate(coordinate=skycoord_single)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert set(data["coordinate"][0].keys()) == {"ra", "dec"}
+
+    def test_serialize_single_skycoord_ra_value(
+        self, model_with_coordinate: "type[ModelWithCoordinate]", skycoord_single: SkyCoord
+    ) -> None:
+        """Test serialization of a single SkyCoord has correct RA value."""
+        model = model_with_coordinate(coordinate=skycoord_single)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinate"][0]["ra"] == pytest.approx(10.0)
+
+    def test_serialize_single_skycoord_dec_value(
+        self, model_with_coordinate: "type[ModelWithCoordinate]", skycoord_single: SkyCoord
+    ) -> None:
+        """Test serialization of a single SkyCoord has correct Dec value."""
+        model = model_with_coordinate(coordinate=skycoord_single)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinate"][0]["dec"] == pytest.approx(20.0)
 
-    def test_serialize_multiple_skycoords(self, model_with_coordinates: "type[ModelWithCoordinates]") -> None:
-        """Test serialization of multiple SkyCoords."""
-        coords = SkyCoord(ra=[10, 20, 30] * u.deg, dec=[20, 30, 40] * u.deg)
-        model = model_with_coordinates(coordinates=coords)
+    def test_serialize_multiple_skycoords_is_list(
+        self, model_with_coordinates: "type[ModelWithCoordinates]", skycoord_multiple: SkyCoord
+    ) -> None:
+        """Test serialization of multiple SkyCoords returns list."""
+        model = model_with_coordinates(coordinates=skycoord_multiple)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["coordinates"], list)
+
+    def test_serialize_multiple_skycoords_length(
+        self, model_with_coordinates: "type[ModelWithCoordinates]", skycoord_multiple: SkyCoord
+    ) -> None:
+        """Test serialization of multiple SkyCoords has correct length."""
+        model = model_with_coordinates(coordinates=skycoord_multiple)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert len(data["coordinates"]) == 3
+
+    def test_serialize_multiple_skycoords_first_ra(
+        self, model_with_coordinates: "type[ModelWithCoordinates]", skycoord_multiple: SkyCoord
+    ) -> None:
+        """Test serialization of multiple SkyCoords has correct first RA."""
+        model = model_with_coordinates(coordinates=skycoord_multiple)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinates"][0]["ra"] == pytest.approx(10.0)
+
+    def test_serialize_multiple_skycoords_second_ra(
+        self, model_with_coordinates: "type[ModelWithCoordinates]", skycoord_multiple: SkyCoord
+    ) -> None:
+        """Test serialization of multiple SkyCoords has correct second RA."""
+        model = model_with_coordinates(coordinates=skycoord_multiple)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinates"][1]["ra"] == pytest.approx(20.0)
 
-    def test_create_skycoord_from_angles(self, model_with_coordinate: "type[ModelWithCoordinate]") -> None:
+    def test_create_skycoord_from_angles(
+        self, model_with_coordinate: "type[ModelWithCoordinate]", skycoord_single: SkyCoord
+    ) -> None:
         """Test creating SkyCoord from separate ra/dec quantities."""
-        # Create SkyCoord directly with quantities
-        coord = SkyCoord(ra=10.0, dec=20.0, unit=u.deg)
-        model = model_with_coordinate(coordinate=coord)
+        model = model_with_coordinate(coordinate=skycoord_single)
         assert isinstance(model.coordinate, SkyCoord)
 
-    def test_converts_to_icrs_frame(self, model_with_coordinate: "type[ModelWithCoordinate]") -> None:
-        """Test that coordinates are converted to ICRS for serialization."""
+    def test_converts_to_icrs_frame_has_ra(self, model_with_coordinate: "type[ModelWithCoordinate]") -> None:
+        """Test that coordinates are converted to ICRS and have RA."""
         # Create a SkyCoord in Galactic frame
         coord_galactic = SkyCoord(l=100 * u.deg, b=50 * u.deg, frame="galactic")
         model = model_with_coordinate(coordinate=coord_galactic)
@@ -233,38 +377,119 @@ class TestAstropySkyCoords:
         data = json.loads(json_str)
         # Should be converted to ICRS (RA/Dec)
         assert "ra" in data["coordinate"][0]
+
+    def test_converts_to_icrs_frame_has_dec(self, model_with_coordinate: "type[ModelWithCoordinate]") -> None:
+        """Test that coordinates are converted to ICRS and have Dec."""
+        # Create a SkyCoord in Galactic frame
+        coord_galactic = SkyCoord(l=100 * u.deg, b=50 * u.deg, frame="galactic")
+        model = model_with_coordinate(coordinate=coord_galactic)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
+        # Should be converted to ICRS (RA/Dec)
         assert "dec" in data["coordinate"][0]
 
 
 class TestAstropyAltAz:
     """Test AstropyAltAz custom type."""
 
-    def test_serialize_single_altaz_skycoord(
+    def test_serialize_single_altaz_skycoord_is_list(
         self, altaz_frame: AltAz, model_with_altaz: "type[ModelWithAltAz]"
     ) -> None:
-        """Test serialization of a single AltAz SkyCoord."""
+        """Test serialization of a single AltAz SkyCoord returns list."""
         coord = SkyCoord(alt=30 * u.deg, az=45 * u.deg, frame=altaz_frame)
         model = model_with_altaz(coordinate=coord)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["coordinate"], list)
+
+    def test_serialize_single_altaz_skycoord_length(
+        self, altaz_frame: AltAz, model_with_altaz: "type[ModelWithAltAz]"
+    ) -> None:
+        """Test serialization of a single AltAz SkyCoord has length 1."""
+        coord = SkyCoord(alt=30 * u.deg, az=45 * u.deg, frame=altaz_frame)
+        model = model_with_altaz(coordinate=coord)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert len(data["coordinate"]) == 1
+
+    def test_serialize_single_altaz_skycoord_keys(
+        self, altaz_frame: AltAz, model_with_altaz: "type[ModelWithAltAz]"
+    ) -> None:
+        """Test serialization of a single AltAz SkyCoord has correct keys."""
+        coord = SkyCoord(alt=30 * u.deg, az=45 * u.deg, frame=altaz_frame)
+        model = model_with_altaz(coordinate=coord)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert set(data["coordinate"][0].keys()) == {"alt", "az"}
+
+    def test_serialize_single_altaz_skycoord_alt_value(
+        self, altaz_frame: AltAz, model_with_altaz: "type[ModelWithAltAz]"
+    ) -> None:
+        """Test serialization of a single AltAz SkyCoord has correct alt value."""
+        coord = SkyCoord(alt=30 * u.deg, az=45 * u.deg, frame=altaz_frame)
+        model = model_with_altaz(coordinate=coord)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinate"][0]["alt"] == pytest.approx(30.0)
+
+    def test_serialize_single_altaz_skycoord_az_value(
+        self, altaz_frame: AltAz, model_with_altaz: "type[ModelWithAltAz]"
+    ) -> None:
+        """Test serialization of a single AltAz SkyCoord has correct az value."""
+        coord = SkyCoord(alt=30 * u.deg, az=45 * u.deg, frame=altaz_frame)
+        model = model_with_altaz(coordinate=coord)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinate"][0]["az"] == pytest.approx(45.0)
 
-    def test_serialize_multiple_altaz_skycoords(
+    def test_serialize_multiple_altaz_skycoords_is_list(
         self, altaz_frame: AltAz, model_with_altazs: "type[ModelWithAltAzs]"
     ) -> None:
-        """Test serialization of multiple AltAz SkyCoords."""
+        """Test serialization of multiple AltAz SkyCoords returns list."""
         coords = SkyCoord(alt=[30, 45, 60] * u.deg, az=[45, 90, 135] * u.deg, frame=altaz_frame)
         model = model_with_altazs(coordinates=coords)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["coordinates"], list)
+
+    def test_serialize_multiple_altaz_skycoords_length(
+        self, altaz_frame: AltAz, model_with_altazs: "type[ModelWithAltAzs]"
+    ) -> None:
+        """Test serialization of multiple AltAz SkyCoords has correct length."""
+        coords = SkyCoord(alt=[30, 45, 60] * u.deg, az=[45, 90, 135] * u.deg, frame=altaz_frame)
+        model = model_with_altazs(coordinates=coords)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert len(data["coordinates"]) == 3
+
+    def test_serialize_multiple_altaz_skycoords_first_alt(
+        self, altaz_frame: AltAz, model_with_altazs: "type[ModelWithAltAzs]"
+    ) -> None:
+        """Test serialization of multiple AltAz SkyCoords has correct first alt."""
+        coords = SkyCoord(alt=[30, 45, 60] * u.deg, az=[45, 90, 135] * u.deg, frame=altaz_frame)
+        model = model_with_altazs(coordinates=coords)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinates"][0]["alt"] == pytest.approx(30.0)
+
+    def test_serialize_multiple_altaz_skycoords_second_alt(
+        self, altaz_frame: AltAz, model_with_altazs: "type[ModelWithAltAzs]"
+    ) -> None:
+        """Test serialization of multiple AltAz SkyCoords has correct second alt."""
+        coords = SkyCoord(alt=[30, 45, 60] * u.deg, az=[45, 90, 135] * u.deg, frame=altaz_frame)
+        model = model_with_altazs(coordinates=coords)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinates"][1]["alt"] == pytest.approx(45.0)
+
+    def test_serialize_multiple_altaz_skycoords_third_alt(
+        self, altaz_frame: AltAz, model_with_altazs: "type[ModelWithAltAzs]"
+    ) -> None:
+        """Test serialization of multiple AltAz SkyCoords has correct third alt."""
+        coords = SkyCoord(alt=[30, 45, 60] * u.deg, az=[45, 90, 135] * u.deg, frame=altaz_frame)
+        model = model_with_altazs(coordinates=coords)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["coordinates"][2]["alt"] == pytest.approx(60.0)
 
     def test_json_format_consistency(
@@ -301,51 +526,81 @@ class TestAstropyAltAz:
 class TestNumpyArray:
     """Test NumpyArray custom type."""
 
-    def test_serialize_numpy_array(
+    def test_serialize_numpy_array_is_list(
         self, numpy_array_1d: npt.NDArray[np.float64], model_with_values: "type[ModelWithValues]"
     ) -> None:
-        """Test serialization of a numpy array."""
+        """Test serialization of a numpy array returns list."""
         model = model_with_values(values=numpy_array_1d)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["values"], list)
+
+    def test_serialize_numpy_array_values(
+        self, numpy_array_1d: npt.NDArray[np.float64], model_with_values: "type[ModelWithValues]"
+    ) -> None:
+        """Test serialization of a numpy array has correct values."""
+        model = model_with_values(values=numpy_array_1d)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["values"] == [1.0, 2.0, 3.0]
 
-    def test_serialize_2d_numpy_array(self, numpy_array_2d: npt.NDArray[np.float64]) -> None:
-        """Test serialization of 2D numpy array."""
-
-        class Model(BaseSchema):
-            matrix: NumpyArray
-
-        model = Model(matrix=numpy_array_2d)
+    def test_serialize_2d_numpy_array_is_list(
+        self, numpy_array_2d: npt.NDArray[np.float64], model_with_matrix: "type[ModelWithMatrix]"
+    ) -> None:
+        """Test serialization of 2D numpy array returns list."""
+        model = model_with_matrix(matrix=numpy_array_2d)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert isinstance(data["matrix"], list)
+
+    def test_serialize_2d_numpy_array_length(
+        self, numpy_array_2d: npt.NDArray[np.float64], model_with_matrix: "type[ModelWithMatrix]"
+    ) -> None:
+        """Test serialization of 2D numpy array has correct length."""
+        model = model_with_matrix(matrix=numpy_array_2d)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert len(data["matrix"]) == 2
+
+    def test_serialize_2d_numpy_array_first_row(
+        self, numpy_array_2d: npt.NDArray[np.float64], model_with_matrix: "type[ModelWithMatrix]"
+    ) -> None:
+        """Test serialization of 2D numpy array has correct first row."""
+        model = model_with_matrix(matrix=numpy_array_2d)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["matrix"][0] == [1.0, 2.0]
+
+    def test_serialize_2d_numpy_array_second_row(
+        self, numpy_array_2d: npt.NDArray[np.float64], model_with_matrix: "type[ModelWithMatrix]"
+    ) -> None:
+        """Test serialization of 2D numpy array has correct second row."""
+        model = model_with_matrix(matrix=numpy_array_2d)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["matrix"][1] == [3.0, 4.0]
 
-    def test_serialize_dict_with_numpy_arrays(
-        self, numpy_dict_arrays: dict[str, npt.NDArray[np.float64]]
+    def test_serialize_dict_with_numpy_arrays_mars_values(
+        self, numpy_dict_arrays: dict[str, npt.NDArray[np.float64]], model_with_data: "type[ModelWithData]"
     ) -> None:
-        """Test serialization of dict containing numpy arrays."""
-
-        class Model(BaseSchema):
-            data: dict[str, NumpyArray]
-
-        model = Model(data=numpy_dict_arrays)
+        """Test serialization of dict containing numpy arrays has correct mars values."""
+        model = model_with_data(data=numpy_dict_arrays)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert data["data"]["mars"] == [0.5, 0.6, 0.7]
+
+    def test_serialize_dict_with_numpy_arrays_venus_values(
+        self, numpy_dict_arrays: dict[str, npt.NDArray[np.float64]], model_with_data: "type[ModelWithData]"
+    ) -> None:
+        """Test serialization of dict containing numpy arrays has correct venus values."""
+        model = model_with_data(data=numpy_dict_arrays)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
         assert data["data"]["venus"] == [1.0, 1.1]
 
-    def test_serialize_none_value(self) -> None:
+    def test_serialize_none_value(self, model_with_optional_values: "type[ModelWithOptionalValues]") -> None:
         """Test that None values are handled correctly."""
-
-        class Model(BaseSchema):
-            values: NumpyArray | None = None
-
-        model = Model(values=None)
+        model = model_with_optional_values(values=None)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
         assert data["values"] is None
@@ -354,48 +609,51 @@ class TestNumpyArray:
 class TestIntegration:
     """Integration tests combining multiple custom types."""
 
-    def test_visibility_computed_values_serialization(self, altaz_frame: AltAz, angle_array: Any) -> None:
-        """Test serialization of a model containing multiple custom types."""
-        import numpy as np
-
-        from across.tools.core.schemas.visibility import VisibilityComputedValues
-
-        airmass_values = np.array([1.0, 1.2, 1.5])
-        computed_values = VisibilityComputedValues(
-            sun_angle=angle_array,
-            moon_angle=[60.0] * u.deg,  # Use array for consistency
-            alt_az=SkyCoord(alt=[30, 45] * u.deg, az=[45, 90] * u.deg, frame=altaz_frame),
-            air_mass=airmass_values,
-            body_magnitude={"mars": np.array([0.5, 0.6])},
-        )
-
-        # Should serialize without errors
-        json_str = computed_values.model_dump_json()
-        data = json.loads(json_str)
-
-        # Verify all fields are present
-        assert data["sun_angle"] == [30.0, 45.0, 60.0]
-        # moon_angle is an array with single element, so it serializes as a list
-        assert data["moon_angle"] == [60.0]
-        assert data["air_mass"] == [1.0, 1.2, 1.5]
-        assert data["body_magnitude"]["mars"] == [0.5, 0.6]
-        assert len(data["alt_az"]) == 2
-
-    def test_comprehensive_model_serialization(
-        self, standard_time: Time, angle_array: Any, numpy_array_1d: npt.NDArray[np.float64]
+    def test_visibility_computed_values_serialization_sun_angle(
+        self, visibility_computed_values_json: dict[str, Any]
     ) -> None:
-        """Test serialization of a comprehensive model with multiple custom types."""
+        """Test serialization of VisibilityComputedValues has correct sun_angle."""
+        # Verify all fields are present
+        assert visibility_computed_values_json["sun_angle"] == [30.0, 45.0, 60.0]
 
-        class ComprehensiveModel(BaseSchema):
-            timestamp: AstropyDateTime
-            angles: AstropyAngles
-            coordinates: AstropySkyCoords
-            values: NumpyArray
+    def test_visibility_computed_values_serialization_moon_angle(
+        self, visibility_computed_values_json: dict[str, Any]
+    ) -> None:
+        """Test serialization of VisibilityComputedValues has correct moon_angle."""
+        # moon_angle is an array with single element, so it serializes as a list
+        assert visibility_computed_values_json["moon_angle"] == [60.0]
 
-        model = ComprehensiveModel(
+    def test_visibility_computed_values_serialization_air_mass(
+        self, visibility_computed_values_json: dict[str, Any]
+    ) -> None:
+        """Test serialization of VisibilityComputedValues has correct air_mass."""
+        assert visibility_computed_values_json["air_mass"] == [1.0, 1.2, 1.5]
+
+    def test_visibility_computed_values_serialization_body_magnitude(
+        self, visibility_computed_values_json: dict[str, Any]
+    ) -> None:
+        """Test serialization of VisibilityComputedValues has correct body_magnitude."""
+        assert visibility_computed_values_json["body_magnitude"]["mars"] == [0.5, 0.6]
+
+    def test_visibility_computed_values_serialization_alt_az_length(
+        self, visibility_computed_values_json: dict[str, Any]
+    ) -> None:
+        """Test serialization of VisibilityComputedValues has correct alt_az length."""
+        assert len(visibility_computed_values_json["alt_az"]) == 2
+
+    def test_comprehensive_model_serialization_timestamp_type(
+        self,
+        standard_time: Time,
+        angle_array: Any,
+        numpy_array_1d: npt.NDArray[np.float64],
+        comprehensive_model: "type[ComprehensiveModel]",
+        skycoord_comprehensive: SkyCoord,
+    ) -> None:
+        """Test comprehensive model serialization has correct timestamp type."""
+        model = comprehensive_model(
             timestamp=standard_time,
             angles=angle_array,
-            coordinates=SkyCoord(ra=[10, 20] * u.deg, dec=[20, 30] * u.deg),
+            coordinates=skycoord_comprehensive,
             values=numpy_array_1d,
         )
 
@@ -407,101 +665,217 @@ class TestIntegration:
 
         # Verify all fields are present and have correct types
         assert isinstance(data["timestamp"], str)
+
+    def test_comprehensive_model_serialization_angles_type(
+        self,
+        standard_time: Time,
+        angle_array: Any,
+        numpy_array_1d: npt.NDArray[np.float64],
+        comprehensive_model: "type[ComprehensiveModel]",
+        skycoord_comprehensive: SkyCoord,
+    ) -> None:
+        """Test comprehensive model serialization has correct angles type."""
+        model = comprehensive_model(
+            timestamp=standard_time,
+            angles=angle_array,
+            coordinates=skycoord_comprehensive,
+            values=numpy_array_1d,
+        )
+
+        # Serialize to JSON
+        json_str = model.model_dump_json()
+
+        # Verify it's valid JSON
+        data = json.loads(json_str)
+
         assert isinstance(data["angles"], list)
+
+    def test_comprehensive_model_serialization_coordinates_type(
+        self,
+        standard_time: Time,
+        angle_array: Any,
+        numpy_array_1d: npt.NDArray[np.float64],
+        comprehensive_model: "type[ComprehensiveModel]",
+        skycoord_comprehensive: SkyCoord,
+    ) -> None:
+        """Test comprehensive model serialization has correct coordinates type."""
+        model = comprehensive_model(
+            timestamp=standard_time,
+            angles=angle_array,
+            coordinates=skycoord_comprehensive,
+            values=numpy_array_1d,
+        )
+
+        # Serialize to JSON
+        json_str = model.model_dump_json()
+
+        # Verify it's valid JSON
+        data = json.loads(json_str)
+
         assert isinstance(data["coordinates"], list)
+
+    def test_comprehensive_model_serialization_values_type(
+        self,
+        standard_time: Time,
+        angle_array: Any,
+        numpy_array_1d: npt.NDArray[np.float64],
+        comprehensive_model: "type[ComprehensiveModel]",
+        skycoord_comprehensive: SkyCoord,
+    ) -> None:
+        """Test comprehensive model serialization has correct values type."""
+        model = comprehensive_model(
+            timestamp=standard_time,
+            angles=angle_array,
+            coordinates=skycoord_comprehensive,
+            values=numpy_array_1d,
+        )
+
+        # Serialize to JSON
+        json_str = model.model_dump_json()
+
+        # Verify it's valid JSON
+        data = json.loads(json_str)
+
         assert isinstance(data["values"], list)
+
+    def test_comprehensive_model_serialization_angles_values(
+        self,
+        standard_time: Time,
+        angle_array: Any,
+        numpy_array_1d: npt.NDArray[np.float64],
+        comprehensive_model: "type[ComprehensiveModel]",
+        skycoord_comprehensive: SkyCoord,
+    ) -> None:
+        """Test comprehensive model serialization has correct angles values."""
+        model = comprehensive_model(
+            timestamp=standard_time,
+            angles=angle_array,
+            coordinates=skycoord_comprehensive,
+            values=numpy_array_1d,
+        )
+
+        # Serialize to JSON
+        json_str = model.model_dump_json()
+
+        # Verify it's valid JSON
+        data = json.loads(json_str)
 
         # Verify data values
         assert data["angles"] == [30.0, 45.0, 60.0]
+
+    def test_comprehensive_model_serialization_coordinates_length(
+        self,
+        standard_time: Time,
+        angle_array: Any,
+        numpy_array_1d: npt.NDArray[np.float64],
+        comprehensive_model: "type[ComprehensiveModel]",
+        skycoord_comprehensive: SkyCoord,
+    ) -> None:
+        """Test comprehensive model serialization has correct coordinates length."""
+        model = comprehensive_model(
+            timestamp=standard_time,
+            angles=angle_array,
+            coordinates=skycoord_comprehensive,
+            values=numpy_array_1d,
+        )
+
+        # Serialize to JSON
+        json_str = model.model_dump_json()
+
+        # Verify it's valid JSON
+        data = json.loads(json_str)
+
         assert len(data["coordinates"]) == 2
+
+    def test_comprehensive_model_serialization_values(
+        self,
+        standard_time: Time,
+        angle_array: Any,
+        numpy_array_1d: npt.NDArray[np.float64],
+        comprehensive_model: "type[ComprehensiveModel]",
+        skycoord_comprehensive: SkyCoord,
+    ) -> None:
+        """Test comprehensive model serialization has correct values."""
+        model = comprehensive_model(
+            timestamp=standard_time,
+            angles=angle_array,
+            coordinates=skycoord_comprehensive,
+            values=numpy_array_1d,
+        )
+
+        # Serialize to JSON
+        json_str = model.model_dump_json()
+
+        # Verify it's valid JSON
+        data = json.loads(json_str)
+
         assert data["values"] == [1.0, 2.0, 3.0]
 
-    def test_optional_fields_with_none(self) -> None:
-        """Test that optional fields with None are handled correctly."""
-
-        class OptionalModel(BaseSchema):
-            angle: AstropyAngles | None = None
-            coordinate: AstropySkyCoords | None = None
-            values: NumpyArray | None = None
-
-        model = OptionalModel(angle=None, coordinate=None, values=None)
+    def test_optional_fields_with_none_angle(self, optional_model: "type[OptionalModel]") -> None:
+        """Test that optional angle field with None is handled correctly."""
+        model = optional_model(angle=None, coordinate=None, values=None)
         json_str = model.model_dump_json()
         data = json.loads(json_str)
 
         assert data["angle"] is None
+
+    def test_optional_fields_with_none_coordinate(self, optional_model: "type[OptionalModel]") -> None:
+        """Test that optional coordinate field with None is handled correctly."""
+        model = optional_model(angle=None, coordinate=None, values=None)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
+
         assert data["coordinate"] is None
+
+    def test_optional_fields_with_none_values(self, optional_model: "type[OptionalModel]") -> None:
+        """Test that optional values field with None is handled correctly."""
+        model = optional_model(angle=None, coordinate=None, values=None)
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
+
         assert data["values"] is None
 
 
 class TestErrorHandling:
     """Test error handling and validation messages for custom types."""
 
-    def test_astropy_angles_invalid_string(self) -> None:
+    def test_astropy_angles_invalid_string(self, angle_model: "type[AngleModel]") -> None:
         """Angle validator should reject invalid string values."""
-
-        class AngleModel(BaseSchema):
-            angle: AstropyAngles
-
         with pytest.raises(ValueError, match="Invalid angle"):
-            AngleModel(angle="not_a_number")
+            angle_model(angle="not_a_number")
 
-    def test_astropy_angles_invalid_non_numeric_list(self) -> None:
+    def test_astropy_angles_invalid_non_numeric_list(self, angle_model: "type[AngleModel]") -> None:
         """Angle validator should reject non-numeric list values."""
-
-        class AngleModel(BaseSchema):
-            angle: AstropyAngles
-
         with pytest.raises(ValueError, match="Invalid angle"):
-            AngleModel(angle=["a", "b", "c"])
+            angle_model(angle=["a", "b", "c"])
 
-    def test_astropy_datetime_invalid_string(self) -> None:
+    def test_astropy_datetime_invalid_string(self, time_model: "type[TimeModel]") -> None:
         """DateTime validator should reject invalid time strings."""
-
-        class TimeModel(BaseSchema):
-            time: AstropyDateTime
-
         with pytest.raises(ValueError, match="Invalid time"):
-            TimeModel(time="not_a_valid_time")
+            time_model(time="not_a_valid_time")
 
-    def test_astropy_datetime_invalid_none(self) -> None:
+    def test_astropy_datetime_invalid_none(self, time_model: "type[TimeModel]") -> None:
         """DateTime validator should reject None values."""
-
-        class TimeModel(BaseSchema):
-            time: AstropyDateTime
-
         with pytest.raises((ValueError, TypeError)):
-            TimeModel(time=None)
+            time_model(time=None)
 
-    def test_astropy_skycoords_invalid_input(self) -> None:
+    def test_astropy_skycoords_invalid_input(self, coord_model: "type[CoordModel]") -> None:
         """SkyCoord validator should reject invalid coordinate inputs."""
-
-        class CoordModel(BaseSchema):
-            coord: AstropySkyCoords
-
         with pytest.raises(ValueError, match="Invalid SkyCoord"):
-            CoordModel(coord="not_valid_coordinates")
+            coord_model(coord="not_valid_coordinates")
 
-    def test_astropy_skycoords_missing_dec(self) -> None:
+    def test_astropy_skycoords_missing_dec(self, coord_model: "type[CoordModel]") -> None:
         """SkyCoord validator should reject incomplete coordinate input."""
-
-        class CoordModel(BaseSchema):
-            coord: AstropySkyCoords
-
         with pytest.raises(ValueError, match="Invalid SkyCoord"):
-            CoordModel(coord=[45.0])  # Only RA, no Dec
+            coord_model(coord=[45.0])  # Only RA, no Dec
 
-    def test_astropy_altaz_wrong_frame(self) -> None:
+    def test_astropy_altaz_wrong_frame(self, altaz_model: "type[AltAzModel]") -> None:
         """AltAz validator should reject SkyCoords in wrong frame."""
-        from across.tools.core.schemas.custom_types import AstropyAltAz
-
-        class AltAzModel(BaseSchema):
-            coord: AstropyAltAz
-
         # Create a SkyCoord in ICRS frame (not AltAz)
         icrs_coord = SkyCoord(ra=10.0 * u.deg, dec=20.0 * u.deg)
 
         with pytest.raises(ValueError, match="must be in AltAz frame"):
-            AltAzModel(coord=icrs_coord)
+            altaz_model(coord=icrs_coord)
 
     def test_astropy_altaz_invalid_input(self) -> None:
         """AltAz validator should reject completely invalid inputs."""
