@@ -71,7 +71,7 @@ class PointingConstraint(ConstraintABC):
                     pointing.footprint.contains(Coordinate(ra=coordinate.ra.deg, dec=coordinate.dec.deg))
                     * len(time)
                 ],
-                dtype=bool,
+                dtype=np.bool_,
             )
 
             # Are the times inside the start and end time of the pointing?
