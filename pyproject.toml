@@ -75,7 +75,6 @@ write_to = "across/tools/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Removed filterwarnings - ResourceWarnings are now properly fixed by cache cleanup
 
 [tool.black]
 line-length = 110
