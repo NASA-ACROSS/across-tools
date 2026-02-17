@@ -235,11 +235,7 @@ class TestSolarSystemConstraintCall:
         """
         Test that constraint works correctly with multiple time steps and returns ndarray.
         """
-
-        # This should work and return a boolean array, but instead crashes!
         result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
-
-        # This result should be a boolean array of length 5
         assert isinstance(result, np.ndarray)
 
     def test_constraint_combined_magnitude_and_separation_checks_returns_bool_dtype(
@@ -252,8 +248,6 @@ class TestSolarSystemConstraintCall:
         test_constraint: SolarSystemConstraint,
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns bool dtype."""
-
-        # This should work and return a boolean array, but instead crashes!
         result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
 
         assert result.dtype == np.bool_
@@ -268,10 +262,7 @@ class TestSolarSystemConstraintCall:
         test_constraint: SolarSystemConstraint,
     ) -> None:
         """Test that constraint works correctly with multiple time steps and returns array of length 5."""
-
-        # This should work and return a boolean array, but instead crashes!
         result = test_constraint(multi_time_array, mock_ephemeris, test_coord)
-
         assert len(result) == 5
 
     def test_constraint_get_body_failure_logs_warning(
@@ -290,7 +281,6 @@ class TestSolarSystemConstraintCall:
 
         # Call, should not raise, log warning, and return False
         result = solar_system_constraint_single_body(time, mock_ephemeris, coord)
-
         assert not result  # Should be False since body position failed
 
 
