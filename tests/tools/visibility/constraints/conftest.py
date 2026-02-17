@@ -550,9 +550,13 @@ class MockPhaseEphemeris(Ephemeris):
 
 
 @pytest.fixture
-def mock_phase_ephemeris(sun_coord: SkyCoord) -> MockPhaseEphemeris:
-    """Fixture for a mock ephemeris with sun coordinates for magnitude testing."""
-    return MockPhaseEphemeris(sun_coord)
+def mock_phase_ephemeris() -> Callable[[SkyCoord], MockPhaseEphemeris]:
+    """Fixture for a function that creates mock ephemeris with sun coordinates for magnitude testing."""
+
+    def create_ephemeris(sun: SkyCoord) -> MockPhaseEphemeris:
+        return MockPhaseEphemeris(sun)
+
+    return create_ephemeris
 
 
 @pytest.fixture
