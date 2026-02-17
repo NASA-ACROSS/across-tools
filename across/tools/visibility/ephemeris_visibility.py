@@ -142,12 +142,14 @@ class EphemerisVisibility(Visibility):
         if isinstance(constraint, (OrConstraint, AndConstraint, XorConstraint)):
             # For OR: any sub-constraint that is violated
             for sub_constraint in constraint.constraints:
+                # Evaluate on full timestamp array to avoid slicing issues with get_slice
                 sub_result = sub_constraint(
-                    time=self.timestamp[index : index + 1],
+                    time=self.timestamp,
                     ephemeris=self.ephemeris,
                     coordinate=self.coordinate,
                 )
-                if sub_result[0]:  # If this constraint is violated
+                # Check if this constraint is violated at the specific index
+                if sub_result[index]:
                     return self._find_violated_constraint(sub_constraint, index)
             return ConstraintType.UNKNOWN
 

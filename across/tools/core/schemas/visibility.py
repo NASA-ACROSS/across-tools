@@ -1,14 +1,10 @@
 from uuid import UUID
 
-import astropy.units as u  # type: ignore[import-untyped]
-import numpy as np
-import numpy.typing as npt
-from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from pydantic import Field
 
 from ..enums.constraint_type import ConstraintType
 from .base import BaseSchema
-from .custom_types import AstropyDateTime
+from .custom_types import AstropyAltAz, AstropyAngles, AstropyDateTime, AstropySkyCoords, NumpyArray
 
 
 class ConstrainedDate(BaseSchema):
@@ -102,28 +98,30 @@ class VisibilityComputedValues(BaseSchema):
 
     """
 
-    sun_angle: u.Quantity | None = Field(
+    sun_angle: AstropyAngles | None = Field(
         default=None, description="Angular distance between the Sun and the coordinate"
     )
-    moon_angle: u.Quantity | None = Field(
+    moon_angle: AstropyAngles | None = Field(
         default=None, description="Angular distance between the Moon and the coordinate"
     )
-    earth_angle: u.Quantity | None = Field(
+    earth_angle: AstropyAngles | None = Field(
         default=None, description="Angular distance between the Earth and the coordinate"
     )
-    alt_az: SkyCoord | None = Field(default=None, description="AltAz coordinates of the coordinate")
-    air_mass: u.Quantity | None = Field(default=None, description="Airmass value for the coordinate")
-    sun_altitude: u.Quantity | None = Field(default=None, description="Altitude of the Sun at the given time")
-    body_separation: dict[str, u.Quantity] | None = Field(
+    alt_az: AstropyAltAz | None = Field(default=None, description="AltAz coordinates of the coordinate")
+    air_mass: NumpyArray | None = Field(default=None, description="Airmass value for the coordinate")
+    sun_altitude: AstropyAngles | None = Field(
+        default=None, description="Altitude of the Sun at the given time"
+    )
+    body_separation: dict[str, AstropyAngles] | None = Field(
         default=None, description="Angular separation from specified Solar System bodies"
     )
-    body_coordinates: dict[str, SkyCoord] | None = Field(
+    body_coordinates: dict[str, AstropySkyCoords] | None = Field(
         default=None, description="Sky coordinates of specified Solar System bodies"
     )
-    body_magnitude: dict[str, npt.NDArray[np.float64]] | None = Field(
+    body_magnitude: dict[str, NumpyArray] | None = Field(
         default=None, description="Apparent magnitude of specified Solar System bodies"
     )
-    galactic_bulge_separation: u.Quantity | None = Field(
+    galactic_bulge_separation: AstropyAngles | None = Field(
         default=None, description="Angular separation from the Galactic Bulge"
     )
 
