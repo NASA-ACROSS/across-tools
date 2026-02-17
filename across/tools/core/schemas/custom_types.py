@@ -14,6 +14,16 @@ def is_array_like(obj: Any) -> bool:
 
     Returns True for sequences like lists, tuples, and numpy arrays,
     but False for strings, bytes, and non-sequence iterables.
+
+    Parameters
+    ----------
+    obj : Any
+        The object to check.
+
+    Returns
+    -------
+    bool
+        True if the object is array-like, False otherwise.
     """
     # Numpy arrays are array-like but don't inherit from Sequence
     if isinstance(obj, np.ndarray):
@@ -24,7 +34,23 @@ def is_array_like(obj: Any) -> bool:
 
 # Custom pydantic type to handle serialization of Astropy Time
 def validate_astropy_datetime(v: Any) -> Time:
-    """Convert input to an Astropy Time object."""
+    """Convert input to an Astropy Time object.
+
+    Parameters
+    ----------
+    v : Any
+        The input value to convert to a Time object.
+
+    Returns
+    -------
+    Time
+        The converted Astropy Time object.
+
+    Raises
+    ------
+    ValueError
+        If the input cannot be converted to a valid Time object.
+    """
     try:
         return Time(v)
     except (TypeError, ValueError) as e:
@@ -32,7 +58,23 @@ def validate_astropy_datetime(v: Any) -> Time:
 
 
 def serialize_astropy_datetime(v: Time) -> str | list[str]:
-    """Serialize Time object to ISO format string(s)."""
+    """Serialize Time object to ISO format string(s).
+
+    Parameters
+    ----------
+    v : Time
+        The Astropy Time object to serialize.
+
+    Returns
+    -------
+    str or list[str]
+        ISO format string for scalar Time, or list of strings for array Time.
+
+    Raises
+    ------
+    ValueError
+        If serialization fails.
+    """
     try:
         return v.utc.datetime.isoformat() if v.isscalar else [t.isoformat() for t in v.utc.to_datetime()]
     except Exception as e:
@@ -47,7 +89,23 @@ AstropyDateTime = Annotated[
 
 
 def validate_astropy_timedelta(v: Any) -> TimeDelta:
-    """Convert input to an Astropy TimeDelta object."""
+    """Convert input to an Astropy TimeDelta object.
+
+    Parameters
+    ----------
+    v : Any
+        The input value to convert to a TimeDelta object.
+
+    Returns
+    -------
+    TimeDelta
+        The converted Astropy TimeDelta object.
+
+    Raises
+    ------
+    ValueError
+        If the input cannot be converted to a valid TimeDelta object.
+    """
     try:
         return TimeDelta(v)
     except (TypeError, ValueError) as e:
@@ -55,7 +113,23 @@ def validate_astropy_timedelta(v: Any) -> TimeDelta:
 
 
 def serialize_astropy_timedelta(v: TimeDelta) -> str:
-    """Serialize TimeDelta to string."""
+    """Serialize TimeDelta to string.
+
+    Parameters
+    ----------
+    v : TimeDelta
+        The Astropy TimeDelta object to serialize.
+
+    Returns
+    -------
+    str
+        The serialized TimeDelta as a string.
+
+    Raises
+    ------
+    ValueError
+        If serialization fails.
+    """
     try:
         return v.to_value(u.s).__str__() if hasattr(v, "to_value") else str(v)
     except Exception as e:
@@ -70,7 +144,23 @@ AstropyTimeDelta = Annotated[
 
 
 def validate_astropy_angles(v: Any) -> u.Quantity:
-    """Convert input to Astropy Angle Quantity in degrees."""
+    """Convert input to Astropy Angle Quantity in degrees.
+
+    Parameters
+    ----------
+    v : Any
+        The input value to convert to an angle quantity.
+
+    Returns
+    -------
+    Quantity
+        The angle as an Astropy Quantity in degrees.
+
+    Raises
+    ------
+    ValueError
+        If the input cannot be converted to a valid angle.
+    """
     try:
         if isinstance(v, u.Quantity):
             return v.to(u.deg)
@@ -80,7 +170,18 @@ def validate_astropy_angles(v: Any) -> u.Quantity:
 
 
 def serialize_astropy_angles_to_list(v: u.Quantity) -> list[float] | float:
-    """Serialize Angle Quantity to float or list in degrees."""
+    """Serialize Angle Quantity to float or list in degrees.
+
+    Parameters
+    ----------
+    v : Quantity
+        The angle quantity to serialize.
+
+    Returns
+    -------
+    list[float] or float
+        The angle value(s) in degrees as a list or float.
+    """
     return v.to(u.deg).value.tolist()  # type: ignore[no-any-return]
 
 
@@ -100,10 +201,14 @@ AstropyAngles = Annotated[
 def serialize_numpy_array(v: Any) -> list[Any] | float | int | Any:
     """Serialize a numpy array or scalar to a Python list or scalar value.
 
-    Args:
-        v: A value that may be a numpy array, numpy scalar, or Python value.
+    Parameters
+    ----------
+    v : Any
+        A value that may be a numpy array, numpy scalar, or Python value.
 
-    Returns:
+    Returns
+    -------
+    list[Any] or float or int or Any
         A Python list (if input was ndarray), Python scalar (if numpy scalar),
         or the input value unchanged (if already a Python type).
     """
@@ -127,7 +232,23 @@ NumpyArray = Annotated[
 # Custom pydantic type to handle serialization of Astropy SkyCoord objects.
 # JSON serialization will convert these to lists of dicts with ICRS RA/Dec in degrees.
 def validate_astropy_skycoords(v: Any) -> SkyCoord:
-    """Convert input to Astropy SkyCoord object."""
+    """Convert input to Astropy SkyCoord object.
+
+    Parameters
+    ----------
+    v : Any
+        The input value to convert to a SkyCoord object.
+
+    Returns
+    -------
+    SkyCoord
+        The converted Astropy SkyCoord object.
+
+    Raises
+    ------
+    ValueError
+        If the input cannot be converted to a valid SkyCoord object.
+    """
     try:
         return v if isinstance(v, SkyCoord) else SkyCoord(v)
     except (TypeError, ValueError) as e:
@@ -135,7 +256,18 @@ def validate_astropy_skycoords(v: Any) -> SkyCoord:
 
 
 def serialize_astropy_skycoords_to_list(v: SkyCoord) -> list[dict[str, float]]:
-    """Serialize SkyCoord to list of dicts with ICRS RA/Dec in degrees."""
+    """Serialize SkyCoord to list of dicts with ICRS RA/Dec in degrees.
+
+    Parameters
+    ----------
+    v : SkyCoord
+        The SkyCoord object to serialize.
+
+    Returns
+    -------
+    list[dict[str, float]]
+        List of dictionaries with 'ra' and 'dec' keys in degrees.
+    """
     icrs = v.icrs
     if v.isscalar:
         return [{"ra": float(icrs.ra.deg), "dec": float(icrs.dec.deg)}]
@@ -155,7 +287,23 @@ AstropySkyCoords = Annotated[
 # with AltAz coordinates. JSON serialization will convert these to lists of
 # dicts with altitude/azimuth in degrees.
 def validate_astropy_altaz(v: Any) -> SkyCoord:
-    """Convert input to AltAz SkyCoord and validate frame."""
+    """Convert input to AltAz SkyCoord and validate frame.
+
+    Parameters
+    ----------
+    v : Any
+        The input value to convert to an AltAz SkyCoord.
+
+    Returns
+    -------
+    SkyCoord
+        The SkyCoord in AltAz frame.
+
+    Raises
+    ------
+    ValueError
+        If the SkyCoord is not in AltAz frame or cannot be converted.
+    """
     try:
         if isinstance(v, SkyCoord):
             _ = v.alt  # Verify AltAz frame by accessing alt/az
@@ -172,7 +320,23 @@ def validate_astropy_altaz(v: Any) -> SkyCoord:
 
 
 def serialize_astropy_altaz_to_list(v: SkyCoord) -> list[dict[str, float]]:
-    """Serialize SkyCoord to list of dicts with AltAz in degrees."""
+    """Serialize SkyCoord to list of dicts with AltAz in degrees.
+
+    Parameters
+    ----------
+    v : SkyCoord
+        The AltAz SkyCoord object to serialize.
+
+    Returns
+    -------
+    list[dict[str, float]]
+        List of dictionaries with 'alt' and 'az' keys in degrees.
+
+    Raises
+    ------
+    AttributeError
+        If the SkyCoord cannot be serialized as AltAz.
+    """
     try:
         if v.isscalar:
             return [{"alt": float(v.alt.deg), "az": float(v.az.deg)}]
