@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from unittest.mock import patch
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from astropy.coordinates import (  # type: ignore[import-untyped]
     AltAz,
+    EarthLocation,
     Latitude,
     Longitude,
     SkyCoord,
@@ -24,6 +25,7 @@ from across.tools.visibility.constraints.base import ConstraintABC
 from across.tools.visibility.constraints.earth_limb import EarthLimbConstraint
 from across.tools.visibility.constraints.moon_angle import MoonAngleConstraint
 from across.tools.visibility.constraints.saa import SAAPolygonConstraint
+from across.tools.visibility.constraints.solar_system import SolarSystemConstraint
 from across.tools.visibility.constraints.sun_angle import SunAngleConstraint
 
 
@@ -103,6 +105,8 @@ class FalseConstraint(DummyConstraint):
 
 class MockEphemeris(Ephemeris):
     """Mock class for testing the Ephemeris class."""
+
+    earth_location = EarthLocation.from_geodetic(-118.2 * u.deg, 34.2 * u.deg, 100 * u.m)
 
     def prepare_data(self) -> None:
         """Mock method to prepare data."""
@@ -392,9 +396,105 @@ def mauna_kea_ephemeris(
 
 
 @pytest.fixture
+def mock_get_slice(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mock get_slice to return slice(0, 5) for testing."""
+    import across.tools.visibility.constraints.solar_system as ss
+
+    monkeypatch.setattr(ss, "get_slice", lambda time, ephem: slice(0, 5))
+    monkeypatch.setattr("across.tools.visibility.constraints.base.get_slice", lambda time, ephem: slice(0, 5))
+
+
+@pytest.fixture
+def mock_get_body(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mock get_body to return dummy SkyCoord for testing."""
+
+    def mock_body(body: Any, time: Time, location: Any) -> SkyCoord:
+        num = len(time) if hasattr(time, "__len__") else 1
+        return SkyCoord(ra=[150] * num * u.deg, dec=[20] * num * u.deg, distance=[1.5] * num * u.AU)
+
+    monkeypatch.setattr("astropy.coordinates.get_body", mock_body)
+
+
+@pytest.fixture
+def multi_time_array() -> Time:
+    """Fixture for a multi-step time array used in combined tests."""
+    from datetime import datetime, timedelta
+
+    begin = datetime(2025, 2, 12, 0, 0, 0)
+    times = [begin + timedelta(minutes=i * 5) for i in range(5)]
+    return Time(times, scale="utc")
+
+
+@pytest.fixture
 def dummy_coord() -> SkyCoord:
     """Create a dummy SkyCoord instance for testing."""
     return SkyCoord(ra=0 * u.deg, dec=0 * u.deg)
+
+
+@pytest.fixture
+def test_coord() -> SkyCoord:
+    """Fixture for test coordinate used in combined tests."""
+    return SkyCoord(ra=150 * u.deg, dec=20 * u.deg)
+
+
+@pytest.fixture
+def test_constraint() -> SolarSystemConstraint:
+    """Fixture for test constraint used in combined tests."""
+    return SolarSystemConstraint(bodies=["mars", "jupiter"], min_separation=10.0)
+
+
+@pytest.fixture
+def solar_system_constraint() -> SolarSystemConstraint:
+    """Fixture for a basic SolarSystemConstraint instance."""
+    return SolarSystemConstraint()
+
+
+@pytest.fixture
+def solar_system_constraint_with_separation() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with min_separation=10.0."""
+    return SolarSystemConstraint(min_separation=10.0)
+
+
+@pytest.fixture
+def solar_system_constraint_custom() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with custom min_separation and bodies."""
+    return SolarSystemConstraint(min_separation=20.0, bodies=["mars", "jupiter"])
+
+
+@pytest.fixture
+def solar_system_constraint_small_separation() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with small min_separation."""
+    return SolarSystemConstraint(min_separation=1.0)
+
+
+@pytest.fixture
+def solar_system_constraint_large_separation() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with large min_separation."""
+    return SolarSystemConstraint(min_separation=100.0)
+
+
+@pytest.fixture
+def solar_system_constraint_single_body() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with single body."""
+    return SolarSystemConstraint(bodies=["mars"], min_separation=10.0)
+
+
+@pytest.fixture
+def solar_system_constraint_multiple_bodies() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with multiple bodies."""
+    return SolarSystemConstraint(bodies=["venus", "mars", "jupiter"], min_separation=10.0)
+
+
+@pytest.fixture
+def solar_system_constraint_empty_bodies() -> SolarSystemConstraint:
+    """Fixture for a SolarSystemConstraint with empty bodies list."""
+    return SolarSystemConstraint(bodies=[])
+
+
+@pytest.fixture
+def slice_index() -> slice:
+    """Fixture for the common slice(0, 1) used in magnitude tests."""
+    return slice(0, 1)
 
 
 @pytest.fixture
