@@ -536,7 +536,7 @@ def mock_pointing(ephemeris_begin: datetime) -> Pointing:
 
 @pytest.fixture
 def pointing_constraint(mock_pointing: Pointing) -> PointingConstraint:
-    """Fixture to provide an instance of EarthLimbConstraint for testing."""
+    """Fixture to provide an instance of PointingConstraint for testing."""
     return PointingConstraint(pointings=[mock_pointing])
 
 

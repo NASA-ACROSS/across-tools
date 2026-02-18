@@ -26,8 +26,14 @@ class TestPointingConstraintInstantiation:
         """Test that PointingConstraint pointings is not None."""
         assert pointing_constraint.pointings is not None
 
-    def test_pointing_constraint_pointing_coordinates(self, pointing_constraint: PointingConstraint) -> None:
+    def test_pointing_constraint_pointing_type(self, pointing_constraint: PointingConstraint) -> None:
         """Test that PointingConstraint pointing has correct type."""
+        assert isinstance(pointing_constraint.pointings[0], Pointing)
+
+    def test_pointing_constraint_pointing_footprint_type(
+        self, pointing_constraint: PointingConstraint
+    ) -> None:
+        """Test that PointingConstraint pointing footprint has correct type."""
         assert isinstance(pointing_constraint.pointings[0], Pointing)
         assert isinstance(pointing_constraint.pointings[0].footprint, Footprint)
 
@@ -37,7 +43,6 @@ class TestPointingConstraintInstantiation:
         """Test that PointingConstraint can be instantiated from JSON."""
         json_data = pointing_constraint.model_dump_json()
         new_pointing_constraint = PointingConstraint.model_validate_json(json_data)
-        assert new_pointing_constraint is not None
         assert isinstance(new_pointing_constraint, PointingConstraint)
 
     def test_pointing_constraint_instantiation_from_dict_bad_polygon_type(

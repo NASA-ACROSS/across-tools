@@ -1,6 +1,7 @@
 from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
@@ -8,7 +9,7 @@ from ...core.enums.constraint_type import ConstraintType
 from ...core.schemas import Coordinate
 from ...ephemeris import Ephemeris
 from ...footprint import Pointing
-from .base import ConstraintABC
+from .base import ConstraintABC, get_slice
 
 
 class PointingConstraint(ConstraintABC):
@@ -36,7 +37,7 @@ class PointingConstraint(ConstraintABC):
         time: Time,
         ephemeris: Ephemeris,
         coordinate: SkyCoord,
-    ) -> np.typing.NDArray[np.bool_]:
+    ) -> npt.NDArray[np.bool_]:
         """
         Evaluate the constraint at the given time(s) and coordinate.
 
@@ -61,25 +62,30 @@ class PointingConstraint(ConstraintABC):
         """
         # For each pointing, is the coordinate within the footprint
         # and time range?
-        # Return a boolean array of len(time)
-        in_constraint = np.ones(len(time), dtype=bool)
+        # Find a slice for the part of the ephemeris that we're using.
+        i = get_slice(time, ephemeris)
+        # Build a time window for the selected ephemeris interval.
+        time_window = ephemeris.timestamp[i]
+        in_constraint = np.ones(len(time_window), dtype=np.bool_)
 
         for pointing in self.pointings:
             # Is the target inside the footprint of the pointing?
             in_footprint = np.asarray(
                 [
                     pointing.footprint.contains(Coordinate(ra=coordinate.ra.deg, dec=coordinate.dec.deg))
-                    * len(time)
+                    * len(time_window)
                 ],
                 dtype=np.bool_,
             )
 
             # Are the times inside the start and end time of the pointing?
-            in_pointing_time = np.array([t >= pointing.start_time and t < pointing.end_time for t in time])
+            in_pointing_time = np.array(
+                [t >= pointing.start_time and t < pointing.end_time for t in time_window]
+            )
 
             # Return the result as True or False, or an array of True/False
             # "True" means the target is constrained, because it is either outside the
             # footprint or outside the pointing time range.
-            in_constraint &= np.logical_or(np.logical_not(in_footprint), np.logical_not(in_pointing_time))
+            in_constraint &= ~(in_footprint & in_pointing_time)
 
         return in_constraint
