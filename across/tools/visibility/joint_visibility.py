@@ -84,6 +84,10 @@ class JointVisibility(Visibility, Generic[T]):
         For a given index, return the constraint
         from the first visibility that is actually constrained.
         """
+        # Check if index is out of bounds
+        if self.timestamp is None or i < 0 or i >= len(self.timestamp):
+            return ConstraintType.WINDOW
+
         # Find the first visibility that is constrained at this index
         for vis in self.visibilities:
             if vis.inconstraint[i]:
@@ -95,6 +99,10 @@ class JointVisibility(Visibility, Generic[T]):
         """
         For a given index, find the ID of the first instrument that is constrained.
         """
+        # Check if index is out of bounds
+        if self.timestamp is None or i < 0 or i >= len(self.timestamp):
+            return self.instrument_ids[0] if self.instrument_ids else UUID(int=0)
+
         for vis, instrument_id in zip(self.visibilities, self.instrument_ids):
             if vis.inconstraint[i]:
                 return instrument_id
