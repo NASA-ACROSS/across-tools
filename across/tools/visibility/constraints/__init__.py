@@ -36,6 +36,8 @@ __all__ = [
     "OrConstraint",
     "NotConstraint",
     "XorConstraint",
+    "PointingConstraint",
+    "Constraint",
 ]
 
 # Define a type that covers all constraints
@@ -59,6 +61,7 @@ AllConstraint = Annotated[
     Field(discriminator="name"),
 ]
 
+Constraint = AllConstraint
 # Rebuild models to resolve forward references
 AndConstraint.model_rebuild()
 OrConstraint.model_rebuild()
