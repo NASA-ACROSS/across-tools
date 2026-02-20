@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.typing as npt
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
@@ -26,16 +27,20 @@ class TestMoonAngleConstraint:
         """Test that MoonAngleConstraint has correct max_angle."""
         assert moon_angle_constraint.max_angle == 170.0
 
-    def test_moon_angle_constraint_call_returns_ndarray(self, moon_constraint_result: np.ndarray) -> None:
+    def test_moon_angle_constraint_call_returns_ndarray(
+        self, moon_constraint_result: npt.NDArray[np.bool_]
+    ) -> None:
         """Test that __call__ method returns numpy ndarray."""
         assert isinstance(moon_constraint_result, np.ndarray)
 
-    def test_moon_angle_constraint_call_returns_bool_dtype(self, moon_constraint_result: np.ndarray) -> None:
+    def test_moon_angle_constraint_call_returns_bool_dtype(
+        self, moon_constraint_result: npt.NDArray[np.bool_]
+    ) -> None:
         """Test that __call__ method returns boolean dtype."""
         assert moon_constraint_result.dtype == np.bool_
 
     def test_moon_angle_constraint_call_returns_correct_length(
-        self, moon_constraint_result: np.ndarray, test_tle_ephemeris: Ephemeris
+        self, moon_constraint_result: npt.NDArray[np.bool_], test_tle_ephemeris: Ephemeris
     ) -> None:
         """Test that __call__ method returns array with correct length."""
         assert len(moon_constraint_result) == len(test_tle_ephemeris.timestamp)

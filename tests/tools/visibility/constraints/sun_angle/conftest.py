@@ -1,6 +1,7 @@
 from typing import Callable, Literal
 
 import numpy as np
+import numpy.typing as npt
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 
@@ -19,8 +20,10 @@ def sun_constraint_result(
     sun_angle_constraint: SunAngleConstraint,
     sky_coord: SkyCoord,
     test_tle_ephemeris: Ephemeris,
-    body_constraint_result_factory: Callable[[SunAngleConstraint, SkyCoord, Ephemeris], np.ndarray],
-) -> np.ndarray:
+    body_constraint_result_factory: Callable[
+        [SunAngleConstraint, SkyCoord, Ephemeris], npt.NDArray[np.bool_]
+    ],
+) -> npt.NDArray[np.bool_]:
     """Constraint result over the full ephemeris timestamp."""
     return body_constraint_result_factory(sun_angle_constraint, sky_coord, test_tle_ephemeris)
 
