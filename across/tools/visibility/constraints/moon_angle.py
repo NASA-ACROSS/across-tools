@@ -43,7 +43,7 @@ class MoonAngleConstraint(ConstraintABC):
 
         Parameters
         ----------
-        coordinate : SkyCoord:
+        coordinate : SkyCoord
             The coordinate to check.
         time : Time
             The time to check.
