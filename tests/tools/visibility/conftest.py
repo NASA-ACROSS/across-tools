@@ -1,9 +1,11 @@
+import contextlib
 import json
 import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from typing import Any
+from unittest.mock import MagicMock
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -11,7 +13,9 @@ import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.table import Table  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
+from astropy.utils.data import clear_download_cache  # type: ignore[import-untyped]
 
+import across.tools.visibility.catalogs as catalogs_module
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas.tle import TLE
 from across.tools.core.schemas.visibility import VisibilityComputedValues, VisibilityWindow
@@ -30,14 +34,25 @@ from across.tools.visibility.constraints.base import ConstraintABC
 
 
 @pytest.fixture
-def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
+def isolated_star_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Fixture to isolate the star cache for testing."""
     cache_dir = tmp_path / "star_catalogs"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
-        cache_clear()
-        yield
-        cache_clear()
+    monkeypatch.setattr("across.tools.visibility.catalogs._get_cache_dir", lambda: cache_dir)
+    cache_clear()
+    # Clear astropy download cache
+    with contextlib.suppress(Exception):
+        clear_download_cache()
+    yield
+    cache_clear()
+    # Clear astropy download cache after test
+    with contextlib.suppress(Exception):
+        clear_download_cache()
+    # Explicitly close any open cache connections
+    if catalogs_module._cache is not None:
+        with contextlib.suppress(Exception):
+            catalogs_module._cache.close()
+        catalogs_module._cache = None
 
 
 @pytest.fixture
@@ -596,12 +611,30 @@ def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
 
 @pytest.fixture(autouse=True)
 def clear_catalog_cache() -> Generator[None, None, None]:
-    """Automatically clear catalog cache before each test."""
+    """Automatically clear catalog and astropy download caches before each test."""
     from across.tools.visibility.catalogs import cache_clear
 
+    # Clear diskcache (our star catalogs)
     cache_clear()
+
+    # Clear astropy download cache to prevent sqlite3 connection warnings
+    try:
+        from astropy.utils.data import clear_download_cache
+
+        clear_download_cache()
+    except Exception:
+        pass  # Ignore if astropy cache clearing fails
+
     yield
+
+    # Clear caches after test as well
     cache_clear()
+    try:
+        from astropy.utils.data import clear_download_cache
+
+        clear_download_cache()
+    except Exception:
+        pass
 
 
 @pytest.fixture
@@ -651,3 +684,65 @@ def mock_bright_stars() -> list[tuple[SkyCoord, float]]:
         # Capella
         (SkyCoord(ra="05h16m41.4s", dec="+45d59m52.8s", frame="icrs"), 0.08),
     ]
+
+
+@pytest.fixture
+def mock_vizier_instance(mock_vizier_table: Table) -> MagicMock:
+    """Fixture providing a pre-configured mock Vizier instance."""
+    mock_instance = MagicMock()
+    mock_instance.query_constraints.return_value = [mock_vizier_table]
+    return mock_instance
+
+
+@pytest.fixture
+def mock_vizier_patch(
+    mock_vizier_instance: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> Generator[MagicMock, None, None]:
+    """Fixture providing a patched Vizier context manager."""
+    mock_vizier = MagicMock(return_value=mock_vizier_instance)
+    monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
+    yield mock_vizier
+
+
+@pytest.fixture
+def fallback_bright_stars() -> list[tuple[SkyCoord, float]]:
+    """Fixture providing the fallback bright stars list."""
+    from across.tools.visibility.catalogs import _get_fallback_bright_stars
+
+    return _get_fallback_bright_stars()
+
+
+@pytest.fixture
+def mock_cache_dir_patch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[Path, None, None]:
+    """Fixture providing a patched cache directory."""
+    monkeypatch.setattr("across.tools.visibility.catalogs._get_cache_dir", lambda: tmp_path)
+    yield tmp_path
+
+
+@pytest.fixture
+def mock_vizier_magnitude_filtering(monkeypatch: pytest.MonkeyPatch) -> Generator[MagicMock, None, None]:
+    """Fixture providing a Vizier mock that returns different results based on magnitude limit."""
+
+    def return_stars_by_mag(**kwargs: Any) -> list[Table]:
+        vmag = kwargs.get("Vmag")
+        # Parse magnitude limit
+        if vmag is not None and "<3" in vmag:
+            # Fewer stars for mag < 3
+            mock_table = Table()
+            mock_table["_RA.icrs"] = [101.28]
+            mock_table["_DE.icrs"] = [-16.72]
+            mock_table["Vmag"] = [-1.46]
+            return [mock_table]
+        else:
+            # More stars for mag < 6 (return multiple rows)
+            extended_table = Table()
+            extended_table["_RA.icrs"] = [101.28, 200.0, 250.0]
+            extended_table["_DE.icrs"] = [-16.72, 30.0, -40.0]
+            extended_table["Vmag"] = [-1.46, 3.5, 5.0]
+            return [extended_table]
+
+    mock_instance = MagicMock()
+    mock_instance.query_constraints.side_effect = return_stars_by_mag
+    mock_vizier = MagicMock(return_value=mock_instance)
+    monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
+    yield mock_vizier
