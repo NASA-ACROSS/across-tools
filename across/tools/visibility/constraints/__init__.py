@@ -36,7 +36,6 @@ __all__ = [
     "OrConstraint",
     "NotConstraint",
     "XorConstraint",
-    "PointingConstraint",
     "Constraint",
 ]
 
