@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from collections.abc import Sequence
 from uuid import UUID
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -57,11 +58,11 @@ class EphemerisVisibility(Visibility):
 
     @field_validator("constraints", mode="before")
     @classmethod
-    def normalize_constraints(cls, v: ConstraintABC | list[ConstraintABC]) -> list[ConstraintABC]:
+    def normalize_constraints(cls, v: ConstraintABC | Sequence[ConstraintABC]) -> list[ConstraintABC]:
         """Normalize single constraint to list."""
-        if isinstance(v, list):
-            return v
-        return [v]
+        if isinstance(v, ConstraintABC):
+            return [v]
+        return list(v)
 
     def prepare_data(self) -> None:
         """
@@ -201,7 +202,7 @@ def compute_ephemeris_visibility(
     begin: Time,
     end: Time,
     ephemeris: Ephemeris,
-    constraints: list[ConstraintABC],
+    constraints: Sequence[ConstraintABC],
     ra: float | None = None,
     dec: float | None = None,
     coordinate: SkyCoord | None = None,
@@ -223,7 +224,7 @@ def compute_ephemeris_visibility(
         SkyCoord object representing the position in the sky, if applicable.
     ephemeris : Ephemeris
         The ephemeris data to use for visibility calculations.
-    constraints : list[Constraint]
+    constraints : Sequence[ConstraintABC]
         List of constraints to apply for visibility calculations.
     begin : Time
         Start time for visibility calculation.
@@ -248,7 +249,7 @@ def compute_ephemeris_visibility(
         dec=dec,
         coordinate=coordinate,
         ephemeris=ephemeris,
-        constraints=constraints,
+        constraints=list(constraints),
         begin=begin,
         end=end,
         step_size=step_size,
