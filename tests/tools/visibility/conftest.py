@@ -472,6 +472,50 @@ def computed_joint_visibility(
 
 
 @pytest.fixture
+def boundary_visibilities(
+    mock_visibility_class: type[Visibility],
+    test_time_range: tuple[Time, Time],
+    test_coords: tuple[float, float],
+    test_step_size: TimeDelta,
+    test_observatory_id: uuid.UUID,
+    test_observatory_id_2: uuid.UUID,
+    test_observatory_name: str,
+    test_observatory_name_2: str,
+) -> tuple[Visibility, Visibility]:
+    """Fixture for prepared visibilities with a boundary-ending inconstraint pattern."""
+    vis_1 = mock_visibility_class(
+        ra=test_coords[0],
+        dec=test_coords[1],
+        begin=test_time_range[0],
+        end=test_time_range[1],
+        step_size=test_step_size,
+        observatory_id=test_observatory_id,
+        observatory_name=test_observatory_name,
+    )
+    vis_2 = mock_visibility_class(
+        ra=test_coords[0],
+        dec=test_coords[1],
+        begin=test_time_range[0],
+        end=test_time_range[1],
+        step_size=test_step_size,
+        observatory_id=test_observatory_id_2,
+        observatory_name=test_observatory_name_2,
+    )
+
+    vis_1.compute()
+    vis_2.compute()
+
+    n_samples = len(vis_1.inconstraint)
+    inconstraint = np.zeros(n_samples, dtype=bool)
+    inconstraint[0] = True
+
+    vis_1.inconstraint = inconstraint
+    vis_2.inconstraint = inconstraint.copy()
+
+    return vis_1, vis_2
+
+
+@pytest.fixture
 def expected_joint_visibility_windows(
     test_visibility_time_range: tuple[Time, Time],
     test_observatory_id: uuid.UUID,
