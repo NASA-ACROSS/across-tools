@@ -5,7 +5,7 @@ from collections.abc import Generator
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -34,25 +34,25 @@ from across.tools.visibility.constraints.base import ConstraintABC
 
 
 @pytest.fixture
-def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
+def isolated_star_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     """Fixture to isolate the star cache for testing."""
     cache_dir = tmp_path / "star_catalogs"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
-        cache_clear()
-        # Clear astropy download cache
+    monkeypatch.setattr("across.tools.visibility.catalogs._get_cache_dir", lambda: cache_dir)
+    cache_clear()
+    # Clear astropy download cache
+    with contextlib.suppress(Exception):
+        clear_download_cache()
+    yield
+    cache_clear()
+    # Clear astropy download cache after test
+    with contextlib.suppress(Exception):
+        clear_download_cache()
+    # Explicitly close any open cache connections
+    if catalogs_module._cache is not None:
         with contextlib.suppress(Exception):
-            clear_download_cache()
-        yield
-        cache_clear()
-        # Clear astropy download cache after test
-        with contextlib.suppress(Exception):
-            clear_download_cache()
-        # Explicitly close any open cache connections
-        if catalogs_module._cache is not None:
-            with contextlib.suppress(Exception):
-                catalogs_module._cache.close()
-            catalogs_module._cache = None
+            catalogs_module._cache.close()
+        catalogs_module._cache = None
 
 
 @pytest.fixture
@@ -739,11 +739,13 @@ def mock_vizier_instance(mock_vizier_table: Table) -> MagicMock:
 
 
 @pytest.fixture
-def mock_vizier_patch(mock_vizier_instance: MagicMock) -> Generator[MagicMock, None, None]:
+def mock_vizier_patch(
+    mock_vizier_instance: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> Generator[MagicMock, None, None]:
     """Fixture providing a patched Vizier context manager."""
-    with patch("across.tools.visibility.catalogs.Vizier") as mock_vizier:
-        mock_vizier.return_value = mock_vizier_instance
-        yield mock_vizier
+    mock_vizier = MagicMock(return_value=mock_vizier_instance)
+    monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
+    yield mock_vizier
 
 
 @pytest.fixture
@@ -755,14 +757,14 @@ def fallback_bright_stars() -> list[tuple[SkyCoord, float]]:
 
 
 @pytest.fixture
-def mock_cache_dir_patch(tmp_path: Path) -> Generator[Path, None, None]:
+def mock_cache_dir_patch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[Path, None, None]:
     """Fixture providing a patched cache directory."""
-    with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=tmp_path):
-        yield tmp_path
+    monkeypatch.setattr("across.tools.visibility.catalogs._get_cache_dir", lambda: tmp_path)
+    yield tmp_path
 
 
 @pytest.fixture
-def mock_vizier_magnitude_filtering() -> Generator[MagicMock, None, None]:
+def mock_vizier_magnitude_filtering(monkeypatch: pytest.MonkeyPatch) -> Generator[MagicMock, None, None]:
     """Fixture providing a Vizier mock that returns different results based on magnitude limit."""
 
     def return_stars_by_mag(**kwargs: Any) -> list[Table]:
@@ -783,8 +785,8 @@ def mock_vizier_magnitude_filtering() -> Generator[MagicMock, None, None]:
             extended_table["Vmag"] = [-1.46, 3.5, 5.0]
             return [extended_table]
 
-    with patch("across.tools.visibility.catalogs.Vizier") as mock_vizier:
-        mock_instance = MagicMock()
-        mock_instance.query_constraints.side_effect = return_stars_by_mag
-        mock_vizier.return_value = mock_instance
-        yield mock_vizier
+    mock_instance = MagicMock()
+    mock_instance.query_constraints.side_effect = return_stars_by_mag
+    mock_vizier = MagicMock(return_value=mock_instance)
+    monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
+    yield mock_vizier
