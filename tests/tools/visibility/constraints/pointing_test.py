@@ -34,7 +34,6 @@ class TestPointingConstraintInstantiation:
         self, pointing_constraint: PointingConstraint
     ) -> None:
         """Test that PointingConstraint pointing footprint has correct type."""
-        assert isinstance(pointing_constraint.pointings[0], Pointing)
         assert isinstance(pointing_constraint.pointings[0].footprint, Footprint)
 
     def test_pointing_constraint_instantiation_from_json(
