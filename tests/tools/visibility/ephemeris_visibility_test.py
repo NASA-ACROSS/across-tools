@@ -207,6 +207,14 @@ class TestComputeEphemerisVisibility:
         """Test that observatory_id is set correctly."""
         assert computed_visibility.observatory_id is not None
 
+    def test_compute_ephemeris_visibility_accepts_sequence_constraints(
+        self,
+        computed_visibility_with_sequence_constraints: EphemerisVisibility,
+        test_earth_limb_constraint: EarthLimbConstraint,
+    ) -> None:
+        """Test that compute_ephemeris_visibility accepts Sequence constraints."""
+        assert computed_visibility_with_sequence_constraints.constraints == [test_earth_limb_constraint]
+
 
 class TestEphemerisVisibilitySingleConstraint:
     """Test that EphemerisVisibility accepts a single constraint (not in a list)."""
@@ -261,6 +269,14 @@ class TestEphemerisVisibilitySingleConstraint:
         vis.compute()
         assert vis.visibility_windows is not None
         assert len(vis.visibility_windows) > 0
+
+    def test_sequence_constraint_initialization(
+        self,
+        visibility_with_sequence_constraints: EphemerisVisibility,
+        test_earth_limb_constraint: EarthLimbConstraint,
+    ) -> None:
+        """Test that EphemerisVisibility accepts sequence constraints and normalizes to list."""
+        assert visibility_with_sequence_constraints.constraints == [test_earth_limb_constraint]
 
     def test_single_vs_list_constraint_equivalence(
         self,
