@@ -3,6 +3,7 @@ from typing import Callable, Literal, Protocol
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 import pytest
 from astropy.coordinates import (  # type: ignore[import-untyped]
     EarthLocation,
@@ -38,7 +39,7 @@ class DummyConstraint(ConstraintABC):
     min_angle: float | None = None
     max_angle: float | None = None
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """Return all-false array for test purposes."""
         return np.zeros(len(time), dtype=bool)
 
@@ -143,10 +144,12 @@ def ground_ephemeris(
 
 
 @pytest.fixture
-def body_constraint_result_factory() -> Callable[[ConstraintABC, SkyCoord, Ephemeris], np.ndarray]:
+def body_constraint_result_factory() -> Callable[[ConstraintABC, SkyCoord, Ephemeris], npt.NDArray[np.bool_]]:
     """Create full-timestamp constraint results for a given body-angle constraint and coordinate."""
 
-    def _build(constraint: ConstraintABC, coordinate: SkyCoord, ephemeris: Ephemeris) -> np.ndarray:
+    def _build(
+        constraint: ConstraintABC, coordinate: SkyCoord, ephemeris: Ephemeris
+    ) -> npt.NDArray[np.bool_]:
         return constraint(
             time=ephemeris.timestamp,
             ephemeris=ephemeris,
