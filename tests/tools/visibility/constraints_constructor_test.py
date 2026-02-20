@@ -1,7 +1,8 @@
 import json
 
+import across.tools.visibility.constraints as visibility_constraints
 from across.tools.visibility import constraints_from_json, constraints_to_json
-from across.tools.visibility.constraints import AllConstraint
+from across.tools.visibility.constraints import AllConstraint, Constraint
 from across.tools.visibility.constraints.base import ConstraintABC
 from across.tools.visibility.constraints.moon_angle import MoonAngleConstraint
 from across.tools.visibility.constraints.sun_angle import SunAngleConstraint
@@ -77,3 +78,11 @@ class TestConstraintConstructor:
         parsed = json.loads(json_output)
         assert len(parsed) == 2
         assert parsed[0]["short_name"] == "Sun"
+
+    def test_constraint_alias_matches_allconstraint(self) -> None:
+        """Test that Constraint alias maps to AllConstraint."""
+        assert Constraint is AllConstraint
+
+    def test_constraint_alias_is_exported(self) -> None:
+        """Test that Constraint alias is publicly exported."""
+        assert "Constraint" in visibility_constraints.__all__

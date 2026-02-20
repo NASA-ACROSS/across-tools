@@ -354,6 +354,52 @@ def computed_visibility(
 
 
 @pytest.fixture
+def computed_visibility_with_sequence_constraints(
+    skycoord_near_limb: SkyCoord,
+    test_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_tle_ephemeris: Ephemeris,
+    test_earth_limb_constraint: EarthLimbConstraint,
+    test_observatory_id: uuid.UUID,
+    test_observatory_name: str,
+) -> EphemerisVisibility:
+    """Fixture that returns computed visibility using Sequence constraints (tuple)."""
+    return compute_ephemeris_visibility(
+        coordinate=skycoord_near_limb,
+        begin=test_visibility_time_range[0],
+        end=test_visibility_time_range[1],
+        step_size=test_step_size,
+        observatory_name=test_observatory_name,
+        ephemeris=test_tle_ephemeris,
+        constraints=(test_earth_limb_constraint,),
+        observatory_id=test_observatory_id,
+    )
+
+
+@pytest.fixture
+def visibility_with_sequence_constraints(
+    skycoord_near_limb: SkyCoord,
+    test_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_tle_ephemeris: Ephemeris,
+    test_earth_limb_constraint: EarthLimbConstraint,
+    test_observatory_id: uuid.UUID,
+    test_observatory_name: str,
+) -> EphemerisVisibility:
+    """Fixture that returns EphemerisVisibility initialized with Sequence constraints (tuple)."""
+    return EphemerisVisibility(
+        coordinate=skycoord_near_limb,
+        begin=test_visibility_time_range[0],
+        end=test_visibility_time_range[1],
+        step_size=test_step_size,
+        ephemeris=test_tle_ephemeris,
+        constraints=(test_earth_limb_constraint,),  # type: ignore[arg-type]
+        observatory_name=test_observatory_name,
+        observatory_id=test_observatory_id,
+    )
+
+
+@pytest.fixture
 def computed_visibility_with_overlap(
     skycoord_near_limb: SkyCoord,
     test_visibility_time_range: tuple[Time, Time],
