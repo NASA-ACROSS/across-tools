@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from unittest.mock import patch
+from unittest.mock import MagicMock
 
 import astropy.units as u  # type: ignore[import-untyped]
 import pytest
@@ -12,11 +12,12 @@ from across.tools.visibility.constraints.bright_star import BrightStarConstraint
 @pytest.fixture
 def mock_get_bright_stars(
     mock_bright_stars: list[tuple[SkyCoord, float]],
-) -> Generator[list[tuple[SkyCoord, float]], None, None]:
+    monkeypatch: pytest.MonkeyPatch,
+) -> Generator[MagicMock, None, None]:
     """Patch get_bright_stars to prevent internet access during tests."""
-    with patch("across.tools.visibility.constraints.bright_star.get_bright_stars") as mock:
-        mock.return_value = mock_bright_stars
-        yield mock
+    mock = MagicMock(return_value=mock_bright_stars)
+    monkeypatch.setattr("across.tools.visibility.constraints.bright_star.get_bright_stars", mock)
+    yield mock
 
 
 @pytest.fixture
