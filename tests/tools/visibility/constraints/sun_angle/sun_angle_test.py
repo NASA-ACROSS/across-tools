@@ -1,5 +1,5 @@
-import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
@@ -28,31 +28,22 @@ class TestSunAngleConstraint:
         assert sun_angle_constraint.max_angle == 170.0
 
     def test_sun_angle_constraint_call_returns_ndarray(
-        self, sun_angle_constraint: SunAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
+        self, sun_constraint_result: npt.NDArray[np.bool_]
     ) -> None:
         """Test that __call__ method returns numpy ndarray."""
-        result = sun_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
-        )
-        assert isinstance(result, np.ndarray)
+        assert isinstance(sun_constraint_result, np.ndarray)
 
     def test_sun_angle_constraint_call_returns_bool_dtype(
-        self, sun_angle_constraint: SunAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
+        self, sun_constraint_result: npt.NDArray[np.bool_]
     ) -> None:
         """Test that __call__ method returns boolean dtype."""
-        result = sun_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
-        )
-        assert result.dtype == np.bool_
+        assert sun_constraint_result.dtype == np.bool_
 
     def test_sun_angle_constraint_call_returns_correct_length(
-        self, sun_angle_constraint: SunAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
+        self, sun_constraint_result: npt.NDArray[np.bool_], test_tle_ephemeris: Ephemeris
     ) -> None:
         """Test that __call__ method returns array of correct length."""
-        result = sun_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
-        )
-        assert len(result) == len(test_tle_ephemeris.timestamp)
+        assert len(sun_constraint_result) == len(test_tle_ephemeris.timestamp)
 
     def test_sun_angle_constraint_call_time_subset_length(
         self, sun_angle_constraint: SunAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
@@ -75,43 +66,44 @@ class TestSunAngleConstraint:
             )
 
     def test_sun_angle_constraint_not_in_constraint(
-        self, sun_angle_constraint: SunAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
+        self,
+        sun_angle_constraint: SunAngleConstraint,
+        sun_outside_constraint_coord: SkyCoord,
+        test_tle_ephemeris: Ephemeris,
     ) -> None:
         """Test that the constraint correctly identifies coordinates not in the constraint."""
-        sun_coord = test_tle_ephemeris.sun[0]
-        opposite_sun = sun_coord.directional_offset_by(0 * u.deg, 160 * u.deg)
-
-        sky_coord = SkyCoord(ra=opposite_sun.ra, dec=opposite_sun.dec)
-
         result = sun_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
+            time=test_tle_ephemeris.timestamp,
+            ephemeris=test_tle_ephemeris,
+            coordinate=sun_outside_constraint_coord,
         )
         assert np.all(result == np.False_)
 
     def test_sun_angle_constraint_in_constraint(
-        self, sun_angle_constraint: SunAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
+        self,
+        sun_angle_constraint: SunAngleConstraint,
+        sun_inside_constraint_coord: SkyCoord,
+        test_tle_ephemeris: Ephemeris,
     ) -> None:
         """Test that the constraint correctly identifies coordinates in the constraint."""
-        inside_coord = test_tle_ephemeris.sun[0]
-        sky_coord = SkyCoord(ra=inside_coord.ra, dec=inside_coord.dec)
-
         result = sun_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
+            time=test_tle_ephemeris.timestamp,
+            ephemeris=test_tle_ephemeris,
+            coordinate=sun_inside_constraint_coord,
         )
         assert np.all(result == np.True_)
 
     def test_sun_angle_constraint_edge_of_constraint(
-        self, sun_angle_constraint: SunAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
+        self,
+        sun_angle_constraint: SunAngleConstraint,
+        sun_edge_constraint_coord: SkyCoord,
+        test_tle_ephemeris: Ephemeris,
     ) -> None:
         """Test that the constraint correctly identifies coordinates at the edge of the constraint."""
-
-        # Create a SkyCoord that is at the edge of the Sun angle constraint
-        sky_coord = SkyCoord(
-            test_tle_ephemeris.sun[2].ra, test_tle_ephemeris.sun[2].dec, unit="deg", frame="icrs"
-        ).directional_offset_by(180 * u.deg, sun_angle_constraint.min_angle * u.deg)
-
         result = sun_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
+            time=test_tle_ephemeris.timestamp,
+            ephemeris=test_tle_ephemeris,
+            coordinate=sun_edge_constraint_coord,
         )
 
         # Assert that as we're on the edge of a constraint, the 5 computed
