@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.2.0...v1.2.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* **visibility:** allow `computed_values` from `Visibility` to be serialized to JSON ([#115](https://github.com/NASA-ACROSS/across-tools/issues/115)) ([9ea2aeb](https://github.com/NASA-ACROSS/across-tools/commit/9ea2aeb43bccc8f71ad3fdea13cbe2d44e91eb5b))
+* **visibility:** fix crash in `SolarSystemConstraint` ([#117](https://github.com/NASA-ACROSS/across-tools/issues/117)) ([044a340](https://github.com/NASA-ACROSS/across-tools/commit/044a34068b4073b37ecb264082c0a8c763f745e6))
+
 ## [1.2.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.1.0...v1.2.0) (2026-02-17)
 
 
