@@ -1,4 +1,3 @@
-import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
@@ -27,32 +26,19 @@ class TestMoonAngleConstraint:
         """Test that MoonAngleConstraint has correct max_angle."""
         assert moon_angle_constraint.max_angle == 170.0
 
-    def test_moon_angle_constraint_call_returns_ndarray(
-        self, moon_angle_constraint: MoonAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
-    ) -> None:
+    def test_moon_angle_constraint_call_returns_ndarray(self, moon_constraint_result: np.ndarray) -> None:
         """Test that __call__ method returns numpy ndarray."""
-        result = moon_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
-        )
-        assert isinstance(result, np.ndarray)
+        assert isinstance(moon_constraint_result, np.ndarray)
 
-    def test_moon_angle_constraint_call_returns_bool_dtype(
-        self, moon_angle_constraint: MoonAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
-    ) -> None:
+    def test_moon_angle_constraint_call_returns_bool_dtype(self, moon_constraint_result: np.ndarray) -> None:
         """Test that __call__ method returns boolean dtype."""
-        result = moon_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
-        )
-        assert result.dtype == np.bool_
+        assert moon_constraint_result.dtype == np.bool_
 
     def test_moon_angle_constraint_call_returns_correct_length(
-        self, moon_angle_constraint: MoonAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
+        self, moon_constraint_result: np.ndarray, test_tle_ephemeris: Ephemeris
     ) -> None:
         """Test that __call__ method returns array with correct length."""
-        result = moon_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
-        )
-        assert len(result) == len(test_tle_ephemeris.timestamp)
+        assert len(moon_constraint_result) == len(test_tle_ephemeris.timestamp)
 
     def test_moon_angle_constraint_call_time_subset_length(
         self, moon_angle_constraint: MoonAngleConstraint, sky_coord: SkyCoord, test_tle_ephemeris: Ephemeris
@@ -75,40 +61,44 @@ class TestMoonAngleConstraint:
             )
 
     def test_moon_angle_constraint_not_in_constraint_all_false(
-        self, moon_angle_constraint: MoonAngleConstraint, test_tle_ephemeris: Ephemeris
+        self,
+        moon_angle_constraint: MoonAngleConstraint,
+        moon_outside_constraint_coord: SkyCoord,
+        test_tle_ephemeris: Ephemeris,
     ) -> None:
         """Test that coordinates outside constraint return all False."""
-        moon_coord = test_tle_ephemeris.moon[0]
-        opposite_moon = moon_coord.directional_offset_by(0 * u.deg, 160 * u.deg)
-
-        sky_coord = SkyCoord(ra=opposite_moon.ra, dec=opposite_moon.dec)
-
         result = moon_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
+            time=test_tle_ephemeris.timestamp,
+            ephemeris=test_tle_ephemeris,
+            coordinate=moon_outside_constraint_coord,
         )
         assert np.all(result == np.False_)
 
     def test_moon_angle_constraint_in_constraint_all_true(
-        self, moon_angle_constraint: MoonAngleConstraint, test_tle_ephemeris: Ephemeris
+        self,
+        moon_angle_constraint: MoonAngleConstraint,
+        moon_inside_constraint_coord: SkyCoord,
+        test_tle_ephemeris: Ephemeris,
     ) -> None:
         """Test that coordinates inside constraint return all True."""
-        sky_coord = SkyCoord(ra=test_tle_ephemeris.moon[0].ra, dec=test_tle_ephemeris.moon[0].dec)
-
         result = moon_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
+            time=test_tle_ephemeris.timestamp,
+            ephemeris=test_tle_ephemeris,
+            coordinate=moon_inside_constraint_coord,
         )
         assert np.all(result == np.True_)
 
     def test_moon_angle_constraint_edge_of_constraint_expected_values(
-        self, moon_angle_constraint: MoonAngleConstraint, test_tle_ephemeris: Ephemeris
+        self,
+        moon_angle_constraint: MoonAngleConstraint,
+        moon_edge_constraint_coord: SkyCoord,
+        test_tle_ephemeris: Ephemeris,
     ) -> None:
         """Test that coordinates at edge of constraint return expected boolean array."""
-        sky_coord = SkyCoord(
-            test_tle_ephemeris.moon[3].ra, test_tle_ephemeris.moon[3].dec, unit="deg", frame="icrs"
-        ).directional_offset_by(180 * u.deg, moon_angle_constraint.min_angle * u.deg)
-
         result = moon_angle_constraint(
-            time=test_tle_ephemeris.timestamp, ephemeris=test_tle_ephemeris, coordinate=sky_coord
+            time=test_tle_ephemeris.timestamp,
+            ephemeris=test_tle_ephemeris,
+            coordinate=moon_edge_constraint_coord,
         )
         # Assert that as we're on the edge of a constraint, the 5 computed
         # values should contain True and False
