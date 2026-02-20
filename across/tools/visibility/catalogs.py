@@ -1,7 +1,6 @@
 """Star catalog utilities for visibility constraints."""
 
 import contextlib
-import warnings
 from pathlib import Path
 from typing import cast
 
@@ -42,12 +41,8 @@ def cache_clear() -> None:
     """Clear the diskcache cache."""
     global _cache
     if _cache is not None:
-        try:
-            _cache.close()
-        except Exception as exc:
-            warnings.warn(f"Failed to close star catalog cache: {exc}", RuntimeWarning, stacklevel=2)
-        finally:
-            _cache = None
+        _cache.close()
+        _cache = None
 
 
 def get_bright_stars(
