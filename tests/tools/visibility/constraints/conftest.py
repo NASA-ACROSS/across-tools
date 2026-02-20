@@ -412,7 +412,7 @@ def mock_get_body(monkeypatch: pytest.MonkeyPatch) -> None:
         num = len(time) if hasattr(time, "__len__") else 1
         return SkyCoord(ra=[150] * num * u.deg, dec=[20] * num * u.deg, distance=[1.5] * num * u.AU)
 
-    monkeypatch.setattr("astropy.coordinates.get_body", mock_body)
+    monkeypatch.setattr("across.tools.visibility.constraints.solar_system.get_body", mock_body)
 
 
 @pytest.fixture

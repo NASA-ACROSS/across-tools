@@ -1,7 +1,7 @@
 """Tests for star catalog utilities."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
@@ -148,29 +148,41 @@ class TestGetBrightStars:
         stars2 = get_bright_stars(magnitude_limit=5.0)
         assert len(stars2) == len(stars1)
 
-    def test_get_bright_stars_uses_fallback_on_failure(self, mock_cache_dir_patch: Path) -> None:
+    def test_get_bright_stars_uses_fallback_on_failure(
+        self,
+        mock_cache_dir_patch: Path,
+        mock_vizier_instance: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that fallback is used when Vizier query fails."""
-        with patch("across.tools.visibility.catalogs.Vizier") as mock_vizier:
-            # Make Vizier raise an exception
-            mock_instance = MagicMock()
-            mock_instance.query_constraints.side_effect = Exception("Network error")
-            mock_vizier.return_value = mock_instance
+        # Make Vizier raise an exception
+        mock_vizier_instance.query_constraints.side_effect = Exception("Network error")
+        monkeypatch.setattr(
+            "across.tools.visibility.catalogs.Vizier",
+            MagicMock(return_value=mock_vizier_instance),
+        )
 
-            # Should return fallback stars without raising
-            stars = get_bright_stars(magnitude_limit=6.0)
-            assert len(stars) == 20  # Fallback has 20 stars
+        # Should return fallback stars without raising
+        stars = get_bright_stars(magnitude_limit=6.0)
+        assert len(stars) == 20  # Fallback has 20 stars
 
-    def test_get_bright_stars_uses_fallback_on_empty_result(self, mock_cache_dir_patch: Path) -> None:
+    def test_get_bright_stars_uses_fallback_on_empty_result(
+        self,
+        mock_cache_dir_patch: Path,
+        mock_vizier_instance: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that fallback is used when Vizier returns no results."""
-        with patch("across.tools.visibility.catalogs.Vizier") as mock_vizier:
-            # Make Vizier return empty result
-            mock_instance = MagicMock()
-            mock_instance.query_constraints.return_value = []
-            mock_vizier.return_value = mock_instance
+        # Make Vizier return empty result
+        mock_vizier_instance.query_constraints.return_value = []
+        monkeypatch.setattr(
+            "across.tools.visibility.catalogs.Vizier",
+            MagicMock(return_value=mock_vizier_instance),
+        )
 
-            # Should return fallback stars
-            stars = get_bright_stars(magnitude_limit=6.0)
-            assert len(stars) == 20  # Fallback has 20 stars
+        # Should return fallback stars
+        stars = get_bright_stars(magnitude_limit=6.0)
+        assert len(stars) == 20  # Fallback has 20 stars
 
     def test_get_bright_stars_all_magnitudes_within_limit(self, mock_vizier_patch: MagicMock) -> None:
         """Test that all returned stars are within magnitude limit."""
@@ -209,35 +221,49 @@ class TestGetBrightStarsEdgeCases:
             assert mag < 0.0
 
     def test_get_bright_stars_different_catalog_format(
-        self, mock_cache_dir_patch: Path, mock_vizier_table_alternate_columns: Table
+        self,
+        mock_cache_dir_patch: Path,
+        mock_vizier_instance: MagicMock,
+        mock_vizier_table_alternate_columns: Table,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test handling of different catalog column formats."""
-        with patch("across.tools.visibility.catalogs.Vizier") as mock_vizier:
-            mock_instance = MagicMock()
-            mock_instance.query_constraints.return_value = [mock_vizier_table_alternate_columns]
-            mock_vizier.return_value = mock_instance
+        mock_vizier_instance.query_constraints.return_value = [mock_vizier_table_alternate_columns]
+        monkeypatch.setattr(
+            "across.tools.visibility.catalogs.Vizier",
+            MagicMock(return_value=mock_vizier_instance),
+        )
 
-            stars = get_bright_stars(magnitude_limit=5.0)
-            assert len(stars) > 0
+        stars = get_bright_stars(magnitude_limit=5.0)
+        assert len(stars) > 0
 
-    def test_get_bright_stars_missing_ra_column_uses_fallback(self, mock_cache_dir_patch: Path) -> None:
+    def test_get_bright_stars_missing_ra_column_uses_fallback(
+        self,
+        mock_cache_dir_patch: Path,
+        mock_vizier_instance: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Test that missing RA column triggers fallback."""
         # Mock table missing RA column
         mock_table = Table()
         mock_table["UNKNOWN_COL"] = [1.0]
         mock_table["Vmag"] = [-1.46]
 
-        with patch("across.tools.visibility.catalogs.Vizier") as mock_vizier:
-            mock_instance = MagicMock()
-            mock_instance.query_constraints.return_value = [mock_table]
-            mock_vizier.return_value = mock_instance
+        mock_vizier_instance.query_constraints.return_value = [mock_table]
+        monkeypatch.setattr(
+            "across.tools.visibility.catalogs.Vizier",
+            MagicMock(return_value=mock_vizier_instance),
+        )
 
-            stars = get_bright_stars(magnitude_limit=5.0)
-            # Should use fallback
-            assert len(stars) == 20
+        stars = get_bright_stars(magnitude_limit=5.0)
+        # Should use fallback
+        assert len(stars) == 20
 
     def test_get_bright_stars_missing_magnitude_column_uses_fallback(
-        self, mock_cache_dir_patch: Path
+        self,
+        mock_cache_dir_patch: Path,
+        mock_vizier_instance: MagicMock,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that missing magnitude column triggers fallback."""
         # Mock table missing magnitude column
@@ -246,11 +272,12 @@ class TestGetBrightStarsEdgeCases:
         mock_table["_DE.icrs"] = [-16.72]
         mock_table["UNKNOWN_MAG"] = [-1.46]
 
-        with patch("across.tools.visibility.catalogs.Vizier") as mock_vizier:
-            mock_instance = MagicMock()
-            mock_instance.query_constraints.return_value = [mock_table]
-            mock_vizier.return_value = mock_instance
+        mock_vizier_instance.query_constraints.return_value = [mock_table]
+        monkeypatch.setattr(
+            "across.tools.visibility.catalogs.Vizier",
+            MagicMock(return_value=mock_vizier_instance),
+        )
 
-            stars = get_bright_stars(magnitude_limit=5.0)
-            # Should use fallback
-            assert len(stars) == 20
+        stars = get_bright_stars(magnitude_limit=5.0)
+        # Should use fallback
+        assert len(stars) == 20
