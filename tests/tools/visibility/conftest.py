@@ -426,6 +426,61 @@ def computed_joint_visibility(
 
 
 @pytest.fixture
+def boundary_joint_visibility(
+    mock_visibility_class: type[Visibility],
+    test_time_range: tuple[Time, Time],
+    test_coords: tuple[float, float],
+    test_step_size: TimeDelta,
+    test_observatory_id: uuid.UUID,
+    test_observatory_id_2: uuid.UUID,
+    test_observatory_name: str,
+    test_observatory_name_2: str,
+) -> JointVisibility[Visibility]:
+    """Fixture for joint visibility where a window ends at the ephemeris boundary."""
+    vis_1 = mock_visibility_class(
+        ra=test_coords[0],
+        dec=test_coords[1],
+        begin=test_time_range[0],
+        end=test_time_range[1],
+        step_size=test_step_size,
+        observatory_id=test_observatory_id,
+        observatory_name=test_observatory_name,
+    )
+    vis_2 = mock_visibility_class(
+        ra=test_coords[0],
+        dec=test_coords[1],
+        begin=test_time_range[0],
+        end=test_time_range[1],
+        step_size=test_step_size,
+        observatory_id=test_observatory_id_2,
+        observatory_name=test_observatory_name_2,
+    )
+
+    vis_1.compute()
+    vis_2.compute()
+
+    n_samples = len(vis_1.inconstraint)
+    inconstraint = np.zeros(n_samples, dtype=bool)
+    inconstraint[0] = True
+
+    vis_1.inconstraint = inconstraint
+    vis_2.inconstraint = inconstraint.copy()
+
+    return compute_joint_visibility(
+        visibilities=[vis_1, vis_2],
+        instrument_ids=[test_observatory_id, test_observatory_id_2],
+    )
+
+
+@pytest.fixture
+def boundary_joint_visibility_window(
+    boundary_joint_visibility: JointVisibility[Visibility],
+) -> VisibilityWindow:
+    """Fixture for the single window in boundary joint visibility."""
+    return boundary_joint_visibility.visibility_windows[0]
+
+
+@pytest.fixture
 def expected_joint_visibility_windows(
     test_visibility_time_range: tuple[Time, Time],
     test_observatory_id: uuid.UUID,

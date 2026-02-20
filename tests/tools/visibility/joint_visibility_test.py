@@ -5,10 +5,12 @@ import numpy as np
 import pytest
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas import VisibilityWindow
 from across.tools.visibility import (
     EphemerisVisibility,
     JointVisibility,
+    Visibility,
     compute_joint_visibility,
 )
 
@@ -231,3 +233,37 @@ class TestComputeJointVisibility:
             instrument_ids=[test_observatory_id, test_observatory_id_2],
         )
         assert len(joint_visibility_windows.visibility_windows) == 0
+
+    def test_compute_joint_visibility_handles_end_of_ephemeris_boundary_index(
+        self,
+        boundary_joint_visibility: JointVisibility[Visibility],
+    ) -> None:
+        """Joint visibility should produce one window at the ephemeris boundary."""
+        assert len(boundary_joint_visibility.visibility_windows) == 1
+
+    def test_compute_joint_visibility_boundary_end_constraint_is_window(
+        self,
+        boundary_joint_visibility_window: VisibilityWindow,
+    ) -> None:
+        """Joint visibility window at the ephemeris boundary should have end constraint of type WINDOW."""
+        assert boundary_joint_visibility_window.window.end.constraint == ConstraintType.WINDOW
+
+    def test_compute_joint_visibility_boundary_end_observatory_id_falls_back_to_first(
+        self,
+        boundary_joint_visibility_window: VisibilityWindow,
+        test_observatory_id: uuid.UUID,
+    ) -> None:
+        """Joint visibility window at the ephemeris boundary should have end
+        observatory_id that falls back to first input observatory_id."""
+        assert boundary_joint_visibility_window.window.end.observatory_id == test_observatory_id
+
+    def test_compute_joint_visibility_boundary_end_reason_uses_window_fallback(
+        self,
+        boundary_joint_visibility_window: VisibilityWindow,
+        test_observatory_name: str,
+    ) -> None:
+        """Joint visibility window at the ephemeris boundary should have end
+        reason that uses window fallback."""
+        assert boundary_joint_visibility_window.constraint_reason.end_reason == (
+            f"{test_observatory_name} {ConstraintType.WINDOW.value}"
+        )
