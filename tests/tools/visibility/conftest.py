@@ -1,10 +1,9 @@
-import contextlib
 import json
+import shutil
 import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -13,7 +12,6 @@ import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.table import Table  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
-from astropy.utils.data import clear_download_cache  # type: ignore[import-untyped]
 
 import across.tools.visibility.catalogs as catalogs
 from across.tools.core.enums.constraint_type import ConstraintType
@@ -35,16 +33,20 @@ from across.tools.visibility.constraints.base import ConstraintABC
 
 @pytest.fixture
 def isolated_star_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
-    """Fixture to isolate the star cache for testing."""
+    """Isolate and fully reset a test-local star cache before and after each test."""
     cache_dir = tmp_path / "star_catalogs"
-    cache_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(catalogs, "_get_cache_dir", lambda: cache_dir)
+
+    # Start each test from a clean cache state in a test-local directory.
+    cache_clear()
+    shutil.rmtree(cache_dir, ignore_errors=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
     yield
-    # Explicitly close any open cache connections
-    if catalogs._cache is not None:
-        with contextlib.suppress(Exception):
-            catalogs._cache.close()
-        catalogs._cache = None
+
+    # Fully clear the test-local cache again to prevent cross-test leakage.
+    cache_clear()
+    shutil.rmtree(cache_dir, ignore_errors=True)
 
 
 @pytest.fixture
@@ -645,24 +647,6 @@ def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
 # Catalog test fixtures
 
 
-@pytest.fixture(autouse=True)
-def clear_catalog_cache() -> Generator[None, None, None]:
-    """Automatically clear catalog and astropy download caches before each test."""
-
-    # Clear diskcache (our star catalogs)
-    cache_clear()
-
-    # Clear astropy download cache to prevent sqlite3 connection warnings
-    with contextlib.suppress(Exception):
-        clear_download_cache()
-
-    yield
-
-    # Clear caches after test as well
-    cache_clear()
-    clear_download_cache()
-
-
 @pytest.fixture
 def test_star_coord() -> SkyCoord:
     """Fixture for a test star coordinate (Sirius position)."""
@@ -741,32 +725,3 @@ def mock_cache_dir_patch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Gen
     """Fixture providing a patched cache directory."""
     monkeypatch.setattr(catalogs, "_get_cache_dir", lambda: tmp_path)
     yield tmp_path
-
-
-@pytest.fixture
-def mock_vizier_magnitude_filtering(monkeypatch: pytest.MonkeyPatch) -> Generator[MagicMock, None, None]:
-    """Fixture providing a Vizier mock that returns different results based on magnitude limit."""
-
-    def return_stars_by_mag(**kwargs: Any) -> list[Table]:
-        vmag = kwargs.get("Vmag")
-        # Parse magnitude limit
-        if vmag is not None and "<3" in vmag:
-            # Fewer stars for mag < 3
-            mock_table = Table()
-            mock_table["_RA.icrs"] = [101.28]
-            mock_table["_DE.icrs"] = [-16.72]
-            mock_table["Vmag"] = [-1.46]
-            return [mock_table]
-        else:
-            # More stars for mag < 6 (return multiple rows)
-            extended_table = Table()
-            extended_table["_RA.icrs"] = [101.28, 200.0, 250.0]
-            extended_table["_DE.icrs"] = [-16.72, 30.0, -40.0]
-            extended_table["Vmag"] = [-1.46, 3.5, 5.0]
-            return [extended_table]
-
-    mock_instance = MagicMock()
-    mock_instance.query_constraints.side_effect = return_stars_by_mag
-    mock_vizier = MagicMock(return_value=mock_instance)
-    monkeypatch.setattr(catalogs, "Vizier", mock_vizier)
-    yield mock_vizier

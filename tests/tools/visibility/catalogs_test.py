@@ -134,8 +134,24 @@ class TestGetBrightStars:
         stars = get_bright_stars(magnitude_limit=3.0)
         assert all(isinstance(mag, (float, int)) for _, mag in stars)
 
-    def test_get_bright_stars_magnitude_filtering(self, mock_vizier_magnitude_filtering: MagicMock) -> None:
-        """Test that magnitude filtering works correctly."""
+    def test_get_bright_stars_magnitude_filtering(
+        self,
+        mock_vizier_table: Table,
+        mock_vizier_instance: MagicMock,
+        mock_vizier_patch: MagicMock,
+    ) -> None:
+        """Test that different magnitude limits produce different result counts."""
+        table_mag_6 = Table()
+        table_mag_6["_RA.icrs"] = [101.28, 200.0, 250.0]
+        table_mag_6["_DE.icrs"] = [-16.72, 30.0, -40.0]
+        table_mag_6["Vmag"] = [-1.46, 3.5, 5.0]
+
+        def query_constraints_side_effect(**kwargs: object) -> list[Table]:
+            vmag = kwargs.get("Vmag")
+            return [mock_vizier_table] if vmag == "<3.0" else [table_mag_6]
+
+        mock_vizier_instance.query_constraints.side_effect = query_constraints_side_effect
+
         stars_3 = get_bright_stars(magnitude_limit=3.0)
 
         # Clear cache to ensure second call queries again
