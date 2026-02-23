@@ -39,15 +39,7 @@ def isolated_star_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Gene
     cache_dir = tmp_path / "star_catalogs"
     cache_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(catalogs, "_get_cache_dir", lambda: cache_dir)
-    cache_clear()
-    # Clear astropy download cache
-    with contextlib.suppress(Exception):
-        clear_download_cache()
     yield
-    cache_clear()
-    # Clear astropy download cache after test
-    with contextlib.suppress(Exception):
-        clear_download_cache()
     # Explicitly close any open cache connections
     if catalogs._cache is not None:
         with contextlib.suppress(Exception):
@@ -661,23 +653,14 @@ def clear_catalog_cache() -> Generator[None, None, None]:
     cache_clear()
 
     # Clear astropy download cache to prevent sqlite3 connection warnings
-    try:
-        from astropy.utils.data import clear_download_cache
-
+    with contextlib.suppress(Exception):
         clear_download_cache()
-    except Exception:
-        pass  # Ignore if astropy cache clearing fails
 
     yield
 
     # Clear caches after test as well
     cache_clear()
-    try:
-        from astropy.utils.data import clear_download_cache
-
-        clear_download_cache()
-    except Exception:
-        pass
+    clear_download_cache()
 
 
 @pytest.fixture
