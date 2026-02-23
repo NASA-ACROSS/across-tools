@@ -89,7 +89,7 @@ class TestFallbackBrightStars:
     ) -> None:
         """Test that fallback stars include Sirius (brightest star)."""
         # Sirius should be first and brightest (mag -1.46)
-        coord, mag = fallback_bright_stars[0]
+        _, mag = fallback_bright_stars[0]
         assert mag == pytest.approx(-1.46, abs=0.01)
 
     def test_get_fallback_bright_stars_all_bright(
