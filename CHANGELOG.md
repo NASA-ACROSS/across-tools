@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.2.1...v1.3.0) (2026-02-23)
+
+
+### Features
+
+* **visibility:** add pointing constraint and survey visibility ([#101](https://github.com/NASA-ACROSS/across-tools/issues/101)) ([176f94a](https://github.com/NASA-ACROSS/across-tools/commit/176f94a1f54d2ebe02f73ecad5fb8a97b4ac8d69))
+
+
+### Bug Fixes
+
+* back compat fix ([ccf3a59](https://github.com/NASA-ACROSS/across-tools/commit/ccf3a5924b53255649618198be9765ee995f433a))
+* **constraints:** typing issues with constraints ([#124](https://github.com/NASA-ACROSS/across-tools/issues/124)) ([ccf3a59](https://github.com/NASA-ACROSS/across-tools/commit/ccf3a5924b53255649618198be9765ee995f433a))
+* **visibility:** indexing bug with `JointVisibility` for boundary at end of ephemeris ([#125](https://github.com/NASA-ACROSS/across-tools/issues/125)) ([8e271b2](https://github.com/NASA-ACROSS/across-tools/commit/8e271b2d71675f2236c3c8577a8d703a04bc37c3))
+
 ## [1.2.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.2.0...v1.2.1) (2026-02-17)
 
 
