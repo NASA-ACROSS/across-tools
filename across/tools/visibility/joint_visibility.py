@@ -84,6 +84,10 @@ class JointVisibility(Visibility, Generic[T]):
         For a given index, return the constraint
         from the first visibility that is actually constrained.
         """
+        # Safely handle out-of-bounds indices
+        if i < 0 or i >= len(self.timestamp) if self.timestamp else True:
+            return ConstraintType.WINDOW
+
         # Find the first visibility that is constrained at this index
         for vis in self.visibilities:
             if vis.inconstraint[i]:
@@ -95,6 +99,10 @@ class JointVisibility(Visibility, Generic[T]):
         """
         For a given index, find the ID of the first instrument that is constrained.
         """
+        # Safely handle out-of-bounds indices
+        if i < 0 or i >= len(self.timestamp) if self.timestamp else True:
+            return self.instrument_ids[0] if self.instrument_ids else UUID(int=0)
+
         for vis, instrument_id in zip(self.visibilities, self.instrument_ids):
             if vis.inconstraint[i]:
                 return instrument_id
@@ -106,12 +114,16 @@ class JointVisibility(Visibility, Generic[T]):
         """
         For a given index, get the name of the first instrument that is constrained.
         """
-        for vis in self.visibilities:
-            if vis.inconstraint[i]:
-                return vis.observatory_name
+        # Safely handle out-of-bounds indices by using first visibility's name
+        if self.timestamp is None or i < len(self.timestamp):
+            for vis in self.visibilities:
+                if i >= 0 and i < len(vis.inconstraint) and vis.inconstraint[i]:
+                    return vis.observatory_name
 
-        # Unknown constraint found, so just return the first instrument name
-        return self.observatory_name
+        # Return first visibility's name as fallback
+        if self.visibilities:
+            return self.visibilities[0].observatory_name
+        return ""
 
     def prepare_data(self) -> None:
         """
