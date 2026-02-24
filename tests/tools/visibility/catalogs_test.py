@@ -184,7 +184,6 @@ class TestGetBrightStars:
 
         # First call - should query and cache
         stars1 = get_bright_stars(magnitude_limit=5.0)
-        assert len(stars1) > 0
 
     def test_get_bright_stars_disk_cache_integration_lengths_match(
         self, tmp_path: Path, mock_vizier_table: Table, monkeypatch: pytest.MonkeyPatch
@@ -203,7 +202,7 @@ class TestGetBrightStars:
 
         # Second call - should load from cache
         stars2 = get_bright_stars(magnitude_limit=5.0)
-        assert len(stars2) == len(stars1)
+        assert len(stars2) == len(stars1) > 0
 
     def test_get_bright_stars_uses_fallback_on_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
