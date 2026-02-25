@@ -9,6 +9,7 @@ from astropy.table import Table  # type: ignore[import-untyped]
 
 from across.tools.visibility.catalogs import (
     _get_cache_dir,
+    _get_fallback_bright_stars,
     cache_clear,
     get_bright_stars,
 )
@@ -183,7 +184,7 @@ class TestGetBrightStars:
         monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
 
         # First call - should query and cache
-        stars1 = get_bright_stars(magnitude_limit=5.0)
+        get_bright_stars(magnitude_limit=5.0)
 
     def test_get_bright_stars_disk_cache_integration_lengths_match(
         self, tmp_path: Path, mock_vizier_table: Table, monkeypatch: pytest.MonkeyPatch

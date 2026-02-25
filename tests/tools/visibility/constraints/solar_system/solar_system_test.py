@@ -13,13 +13,13 @@ from across.tools.visibility.constraints.solar_system import SolarSystemConstrai
 class TestSolarSystemConstraintAttributes:
     """Test suite for SolarSystemConstraint attributes."""
 
-    def test_constraint_short_name(self, default_solar_system_constraint: SolarSystemConstraint) -> None:
+    def test_constraint_short_name(self, solar_system_constraint: SolarSystemConstraint) -> None:
         """Test constraint short_name attribute."""
-        assert default_solar_system_constraint.short_name == "Solar System"
+        assert solar_system_constraint.short_name == "Solar System"
 
-    def test_constraint_name_value(self, default_solar_system_constraint: SolarSystemConstraint) -> None:
+    def test_constraint_name_value(self, solar_system_constraint: SolarSystemConstraint) -> None:
         """Test constraint name.value attribute."""
-        assert default_solar_system_constraint.name.value == "Solar System Object Avoidance"
+        assert solar_system_constraint.name.value == "Solar System Object Avoidance"
 
 
 class TestSolarSystemConstraintInitialization:
