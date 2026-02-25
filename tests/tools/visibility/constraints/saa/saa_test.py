@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
@@ -26,20 +28,35 @@ class TestSAAPolygonConstraintInstantiation:
         """Test that SAAPolygonConstraint polygon is not None."""
         assert saa_polygon_constraint.polygon is not None
 
-    def test_saa_polygon_constraint_polygon_coordinates(
+    def test_saa_polygon_constraint_polygon_is_polygon(
         self, saa_polygon_constraint: SAAPolygonConstraint
     ) -> None:
-        """Test that SAAPolygonConstraint polygon has correct coordinates."""
+        """Test that SAAPolygonConstraint polygon has Polygon type."""
         assert isinstance(saa_polygon_constraint.polygon, Polygon)
-        assert saa_polygon_constraint.polygon.exterior.coords[0] == (39.0, -30.0)
 
-    def test_saa_polygon_constraint_instantiation_from_json(
+    def test_saa_polygon_constraint_polygon_first_coordinate(
         self, saa_polygon_constraint: SAAPolygonConstraint
     ) -> None:
-        """Test that SAAPolygonConstraint can be instantiated from JSON."""
+        """Test that SAAPolygonConstraint polygon has expected first coordinate."""
+        polygon = cast(Polygon, saa_polygon_constraint.polygon)
+        assert polygon.exterior.coords[0] == (39.0, -30.0)
+
+    def test_saa_polygon_constraint_instantiation_from_json_not_none(
+        self, saa_polygon_constraint: SAAPolygonConstraint
+    ) -> None:
+        """Test SAAPolygonConstraint can be instantiated from JSON."""
         json_data = saa_polygon_constraint.model_dump_json()
         saa_constraint = SAAPolygonConstraint.model_validate_json(json_data)
+
         assert saa_constraint is not None
+
+    def test_saa_polygon_constraint_instantiation_from_json_type(
+        self, saa_polygon_constraint: SAAPolygonConstraint
+    ) -> None:
+        """Test SAAPolygonConstraint JSON roundtrip preserves type."""
+        json_data = saa_polygon_constraint.model_dump_json()
+        saa_constraint = SAAPolygonConstraint.model_validate_json(json_data)
+
         assert isinstance(saa_constraint, SAAPolygonConstraint)
 
     def test_saa_polygon_constraint_instantiation_from_dict_bad_polygon_type(
