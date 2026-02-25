@@ -1,9 +1,10 @@
 import json
+import shutil
 import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -12,6 +13,7 @@ from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.table import Table  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 
+import across.tools.visibility.catalogs as catalogs
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas.tle import TLE
 from across.tools.core.schemas.visibility import VisibilityComputedValues, VisibilityWindow
@@ -30,14 +32,21 @@ from across.tools.visibility.constraints.base import ConstraintABC
 
 
 @pytest.fixture
-def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
-    """Fixture to isolate the star cache for testing."""
+def isolated_star_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    """Isolate and fully reset a test-local star cache before and after each test."""
     cache_dir = tmp_path / "star_catalogs"
+    monkeypatch.setattr(catalogs, "_get_cache_dir", lambda: cache_dir)
+
+    # Start each test from a clean cache state in a test-local directory.
+    cache_clear()
+    shutil.rmtree(cache_dir, ignore_errors=True)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
-        cache_clear()
-        yield
-        cache_clear()
+
+    yield
+
+    # Fully clear the test-local cache again to prevent cross-test leakage.
+    cache_clear()
+    shutil.rmtree(cache_dir, ignore_errors=True)
 
 
 @pytest.fixture
@@ -638,16 +647,6 @@ def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
 # Catalog test fixtures
 
 
-@pytest.fixture(autouse=True)
-def clear_catalog_cache() -> Generator[None, None, None]:
-    """Automatically clear catalog cache before each test."""
-    from across.tools.visibility.catalogs import cache_clear
-
-    cache_clear()
-    yield
-    cache_clear()
-
-
 @pytest.fixture
 def test_star_coord() -> SkyCoord:
     """Fixture for a test star coordinate (Sirius position)."""
@@ -695,3 +694,34 @@ def mock_bright_stars() -> list[tuple[SkyCoord, float]]:
         # Capella
         (SkyCoord(ra="05h16m41.4s", dec="+45d59m52.8s", frame="icrs"), 0.08),
     ]
+
+
+@pytest.fixture
+def mock_vizier_instance(mock_vizier_table: Table) -> MagicMock:
+    """Fixture providing a pre-configured mock Vizier instance."""
+    mock_instance = MagicMock()
+    mock_instance.query_constraints.return_value = [mock_vizier_table]
+    return mock_instance
+
+
+@pytest.fixture
+def mock_vizier_patch(
+    mock_vizier_instance: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> Generator[MagicMock, None, None]:
+    """Fixture providing a patched Vizier context manager."""
+    mock_vizier = MagicMock(return_value=mock_vizier_instance)
+    monkeypatch.setattr(catalogs, "Vizier", mock_vizier)
+    yield mock_vizier
+
+
+@pytest.fixture
+def fallback_bright_stars() -> list[tuple[SkyCoord, float]]:
+    """Fixture providing the fallback bright stars list."""
+    return catalogs._get_fallback_bright_stars()
+
+
+@pytest.fixture
+def mock_cache_dir_patch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Generator[Path, None, None]:
+    """Fixture providing a patched cache directory."""
+    monkeypatch.setattr(catalogs, "_get_cache_dir", lambda: tmp_path)
+    yield tmp_path
