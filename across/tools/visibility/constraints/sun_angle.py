@@ -2,6 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -36,7 +37,7 @@ class SunAngleConstraint(ConstraintABC):
     min_angle: float | None = Field(default=None, ge=0, le=180, description="Minimum angle from the Sun")
     max_angle: float | None = Field(default=None, ge=0, le=180, description="Maximum angle from the Sun")
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the Sun constraint. This is done by checking if the
@@ -72,16 +73,14 @@ class SunAngleConstraint(ConstraintABC):
         # Construct the constraint based on the minimum and maximum angles
         in_constraint = np.zeros(len(ephemeris.sun[i]), dtype=bool)
 
+        self.computed_values.sun_angle = SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(
+            coordinate
+        )
+
         if self.min_angle is not None:
-            in_constraint |= (
-                SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(coordinate)
-                < self.min_angle * u.deg
-            )
+            in_constraint |= self.computed_values.sun_angle < self.min_angle * u.deg
         if self.max_angle is not None:
-            in_constraint |= (
-                SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(coordinate)
-                > self.max_angle * u.deg
-            )
+            in_constraint |= self.computed_values.sun_angle > self.max_angle * u.deg
 
         # Return the result as True or False, or an array of True/False
         return in_constraint

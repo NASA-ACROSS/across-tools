@@ -2,16 +2,19 @@ import json
 import uuid
 from collections.abc import Generator
 from datetime import datetime, timedelta
+from pathlib import Path
+from unittest.mock import patch
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
-from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]  # type: ignore[import-untyped]
-from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]  # type: ignore[import-untyped]
+from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.table import Table  # type: ignore[import-untyped]
+from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas.tle import TLE
-from across.tools.core.schemas.visibility import VisibilityWindow
+from across.tools.core.schemas.visibility import VisibilityComputedValues, VisibilityWindow
 from across.tools.ephemeris import Ephemeris, compute_tle_ephemeris
 from across.tools.visibility import (
     EphemerisVisibility,
@@ -21,8 +24,20 @@ from across.tools.visibility import (
     constraints_from_json,
 )
 from across.tools.visibility.base import Visibility
+from across.tools.visibility.catalogs import cache_clear
 from across.tools.visibility.constraints import AllConstraint, EarthLimbConstraint, SunAngleConstraint
 from across.tools.visibility.constraints.base import ConstraintABC
+
+
+@pytest.fixture
+def isolated_star_cache(tmp_path: Path) -> Generator[None, None, None]:
+    """Fixture to isolate the star cache for testing."""
+    cache_dir = tmp_path / "star_catalogs"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    with patch("across.tools.visibility.catalogs._get_cache_dir", return_value=cache_dir):
+        cache_clear()
+        yield
+        cache_clear()
 
 
 @pytest.fixture
@@ -35,6 +50,32 @@ def test_observatory_id() -> uuid.UUID:
 def test_observatory_name() -> str:
     """Fixture for a test observatory name"""
     return "Test Observatory"
+
+
+class MockConstraint:
+    """Mock constraint for testing computed values merging."""
+
+    def __init__(self, constraint_type: ConstraintType, value_attr: str):
+        """Initialize mock constraint with type and computed value attribute."""
+
+        self.name = constraint_type
+        self.computed_values = VisibilityComputedValues()
+
+        # Set appropriate test values based on the field type
+        if value_attr in ["sun_angle", "moon_angle", "earth_angle"]:
+            setattr(self.computed_values, value_attr, 45.0 * u.deg)
+        elif value_attr == "alt_az":
+            setattr(self.computed_values, value_attr, SkyCoord(ra=0 * u.deg, dec=0 * u.deg))
+
+    def __call__(self, *args, **kwargs):  # type: ignore
+        """Mock the constraint call to return a boolean array."""
+        return np.array([False] * 10, dtype=bool)
+
+
+@pytest.fixture
+def mock_constraint_class() -> type[MockConstraint]:
+    """Return the MockConstraint class for testing"""
+    return MockConstraint
 
 
 @pytest.fixture
@@ -60,6 +101,10 @@ class MockVisibility(Visibility):
 
     def _constraint(self, i: int) -> ConstraintType:
         return ConstraintType.UNKNOWN
+
+    def _merge_computed_values(self) -> None:
+        """Fake merging of computed values"""
+        return
 
     def prepare_data(self) -> None:
         """Fake data preparation"""
@@ -309,6 +354,52 @@ def computed_visibility(
 
 
 @pytest.fixture
+def computed_visibility_with_sequence_constraints(
+    skycoord_near_limb: SkyCoord,
+    test_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_tle_ephemeris: Ephemeris,
+    test_earth_limb_constraint: EarthLimbConstraint,
+    test_observatory_id: uuid.UUID,
+    test_observatory_name: str,
+) -> EphemerisVisibility:
+    """Fixture that returns computed visibility using Sequence constraints (tuple)."""
+    return compute_ephemeris_visibility(
+        coordinate=skycoord_near_limb,
+        begin=test_visibility_time_range[0],
+        end=test_visibility_time_range[1],
+        step_size=test_step_size,
+        observatory_name=test_observatory_name,
+        ephemeris=test_tle_ephemeris,
+        constraints=(test_earth_limb_constraint,),
+        observatory_id=test_observatory_id,
+    )
+
+
+@pytest.fixture
+def visibility_with_sequence_constraints(
+    skycoord_near_limb: SkyCoord,
+    test_visibility_time_range: tuple[Time, Time],
+    test_step_size: TimeDelta,
+    test_tle_ephemeris: Ephemeris,
+    test_earth_limb_constraint: EarthLimbConstraint,
+    test_observatory_id: uuid.UUID,
+    test_observatory_name: str,
+) -> EphemerisVisibility:
+    """Fixture that returns EphemerisVisibility initialized with Sequence constraints (tuple)."""
+    return EphemerisVisibility(
+        coordinate=skycoord_near_limb,
+        begin=test_visibility_time_range[0],
+        end=test_visibility_time_range[1],
+        step_size=test_step_size,
+        ephemeris=test_tle_ephemeris,
+        constraints=(test_earth_limb_constraint,),  # type: ignore[arg-type]
+        observatory_name=test_observatory_name,
+        observatory_id=test_observatory_id,
+    )
+
+
+@pytest.fixture
 def computed_visibility_with_overlap(
     skycoord_near_limb: SkyCoord,
     test_visibility_time_range: tuple[Time, Time],
@@ -378,6 +469,50 @@ def computed_joint_visibility(
             test_observatory_id_2,
         ],
     )
+
+
+@pytest.fixture
+def boundary_visibilities(
+    mock_visibility_class: type[Visibility],
+    test_time_range: tuple[Time, Time],
+    test_coords: tuple[float, float],
+    test_step_size: TimeDelta,
+    test_observatory_id: uuid.UUID,
+    test_observatory_id_2: uuid.UUID,
+    test_observatory_name: str,
+    test_observatory_name_2: str,
+) -> tuple[Visibility, Visibility]:
+    """Fixture for prepared visibilities with a boundary-ending inconstraint pattern."""
+    vis_1 = mock_visibility_class(
+        ra=test_coords[0],
+        dec=test_coords[1],
+        begin=test_time_range[0],
+        end=test_time_range[1],
+        step_size=test_step_size,
+        observatory_id=test_observatory_id,
+        observatory_name=test_observatory_name,
+    )
+    vis_2 = mock_visibility_class(
+        ra=test_coords[0],
+        dec=test_coords[1],
+        begin=test_time_range[0],
+        end=test_time_range[1],
+        step_size=test_step_size,
+        observatory_id=test_observatory_id_2,
+        observatory_name=test_observatory_name_2,
+    )
+
+    vis_1.compute()
+    vis_2.compute()
+
+    n_samples = len(vis_1.inconstraint)
+    inconstraint = np.zeros(n_samples, dtype=bool)
+    inconstraint[0] = True
+
+    vis_1.inconstraint = inconstraint
+    vis_2.inconstraint = inconstraint.copy()
+
+    return vis_1, vis_2
 
 
 @pytest.fixture
@@ -498,3 +633,65 @@ def not_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
 def and_or_sun_earth(or_sun_earth: ConstraintABC) -> ConstraintABC:
     """Fixture for an AND constraint of two OR(SUN, EARTH) constraints."""
     return or_sun_earth & or_sun_earth
+
+
+# Catalog test fixtures
+
+
+@pytest.fixture(autouse=True)
+def clear_catalog_cache() -> Generator[None, None, None]:
+    """Automatically clear catalog cache before each test."""
+    from across.tools.visibility.catalogs import cache_clear
+
+    cache_clear()
+    yield
+    cache_clear()
+
+
+@pytest.fixture
+def test_star_coord() -> SkyCoord:
+    """Fixture for a test star coordinate (Sirius position)."""
+    return SkyCoord(ra="06h45m08.9s", dec="-16d42m58.0s", frame="icrs")
+
+
+@pytest.fixture
+def mock_vizier_table() -> Table:
+    """Fixture for a mock Vizier table with test star data."""
+
+    mock_table = Table()
+    mock_table["_RA.icrs"] = [101.28]
+    mock_table["_DE.icrs"] = [-16.72]
+    mock_table["Vmag"] = [-1.46]
+    return mock_table
+
+
+@pytest.fixture
+def mock_vizier_table_alternate_columns() -> Table:
+    """Fixture for a mock Vizier table with alternate column names."""
+    mock_table = Table()
+    mock_table["RAJ2000"] = [101.28]
+    mock_table["DEJ2000"] = [-16.72]
+    mock_table["Vmag"] = [-1.46]
+    return mock_table
+
+
+@pytest.fixture
+def mock_bright_stars() -> list[tuple[SkyCoord, float]]:
+    """Fixture providing a small set of mock bright stars for testing.
+
+    Returns a list of (SkyCoord, magnitude) tuples representing
+    common bright stars used in tests. Prevents internet access
+    during constraint testing.
+    """
+    return [
+        # Sirius (brightest star, used in many tests)
+        (SkyCoord(ra="06h45m08.9s", dec="-16d42m58.0s", frame="icrs"), -1.46),
+        # Canopus
+        (SkyCoord(ra="06h23m57.1s", dec="-52d41m44.4s", frame="icrs"), -0.74),
+        # Arcturus
+        (SkyCoord(ra="14h15m39.7s", dec="+19d10m56.7s", frame="icrs"), -0.05),
+        # Vega
+        (SkyCoord(ra="18h36m56.3s", dec="+38d47m01.3s", frame="icrs"), 0.03),
+        # Capella
+        (SkyCoord(ra="05h16m41.4s", dec="+45d59m52.8s", frame="icrs"), 0.08),
+    ]

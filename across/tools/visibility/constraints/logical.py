@@ -13,6 +13,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import TypeAdapter, field_validator, model_serializer
@@ -128,7 +129,7 @@ class AndConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["And"] = "And"
     constraints: list[ConstraintABC]
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Evaluate AND constraint: returns True only if all sub-constraints are True.
 
@@ -143,7 +144,7 @@ class AndConstraint(ConstraintCoercionMixin, ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates constraint is violated.
         """
         if not self.constraints:
@@ -155,6 +156,7 @@ class AndConstraint(ConstraintCoercionMixin, ConstraintABC):
         # AND all constraints together
         for constraint in self.constraints:
             result &= constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+            self.computed_values.merge(constraint.computed_values)
 
         return result
 
@@ -206,7 +208,7 @@ class OrConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["Or"] = "Or"
     constraints: list[ConstraintABC]
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Evaluate OR constraint: returns True if any sub-constraint is True.
 
@@ -221,7 +223,7 @@ class OrConstraint(ConstraintCoercionMixin, ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates constraint is violated.
         """
         if not self.constraints:
@@ -233,6 +235,7 @@ class OrConstraint(ConstraintCoercionMixin, ConstraintABC):
         # OR all constraints together
         for constraint in self.constraints:
             result |= constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+            self.computed_values.merge(constraint.computed_values)
 
         return result
 
@@ -281,7 +284,7 @@ class NotConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["Not"] = "Not"
     constraint: ConstraintABC
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Evaluate NOT constraint: returns the negation of the sub-constraint.
 
@@ -296,10 +299,12 @@ class NotConstraint(ConstraintCoercionMixin, ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates constraint is violated.
         """
-        return ~self.constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+        constraint = ~self.constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+        self.computed_values.merge(self.constraint.computed_values)
+        return constraint
 
 
 class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
@@ -350,7 +355,7 @@ class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
     short_name: Literal["Xor"] = "Xor"
     constraints: list[ConstraintABC]
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Evaluate XOR constraint: returns True when odd number of sub-constraints are True.
 
@@ -365,7 +370,7 @@ class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
 
         Returns
         -------
-        np.typing.NDArray[np.bool_]
+        npt.NDArray[np.bool_]
             Boolean array where True indicates constraint is violated.
         """
         if not self.constraints:
@@ -377,5 +382,6 @@ class XorConstraint(ConstraintCoercionMixin, ConstraintABC):
         # XOR all constraints together
         for constraint in self.constraints:
             result ^= constraint(time=time, ephemeris=ephemeris, coordinate=coordinate)
+            self.computed_values.merge(constraint.computed_values)
 
         return result

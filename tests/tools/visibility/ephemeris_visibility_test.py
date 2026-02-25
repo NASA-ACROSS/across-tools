@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 import numpy as np
 import pytest
@@ -65,6 +66,50 @@ class TestEphemerisVisibility:
         with pytest.raises(ValueError, match="Timestamp not computed. Call prepare_data\\(\\) first."):
             first_true_index = int(np.argmax(earth_constraints))
             test_visibility._constraint(first_true_index)
+
+    def test_merge_computed_values_earth(
+        self, test_visibility: EphemerisVisibility, mock_constraint_class: Any
+    ) -> None:
+        """Test _merge_computed_values with Earth constraint."""
+        mock_earth_constraint = mock_constraint_class(ConstraintType.EARTH, "earth_angle")
+        test_visibility.constraints = [mock_earth_constraint]
+        test_visibility._merge_computed_values()
+
+        assert (
+            test_visibility.computed_values.earth_angle == mock_earth_constraint.computed_values.earth_angle
+        )
+
+    def test_merge_computed_values_sun(
+        self, test_visibility: EphemerisVisibility, mock_constraint_class: Any
+    ) -> None:
+        """Test _merge_computed_values with Sun constraint."""
+        mock_sun_constraint = mock_constraint_class(ConstraintType.SUN, "sun_angle")
+        test_visibility.constraints = [mock_sun_constraint]
+        test_visibility._merge_computed_values()
+
+        assert test_visibility.computed_values.sun_angle == mock_sun_constraint.computed_values.sun_angle
+
+    def test_merge_computed_values_moon(
+        self, test_visibility: EphemerisVisibility, mock_constraint_class: Any
+    ) -> None:
+        """Test _merge_computed_values with Moon constraint."""
+        mock_moon_constraint = mock_constraint_class(ConstraintType.MOON, "moon_angle")
+        test_visibility.constraints = [mock_moon_constraint]
+        test_visibility._merge_computed_values()
+
+        assert test_visibility.computed_values.moon_angle == mock_moon_constraint.computed_values.moon_angle
+
+    def test_merge_computed_values_alt_az(
+        self,
+        test_visibility: EphemerisVisibility,
+        mock_constraint_class: Any,
+    ) -> None:
+        """Test _merge_computed_values with AltAz constraint."""
+        mock_alt_az_constraint = mock_constraint_class(ConstraintType.ALT_AZ, "alt_az")
+        test_visibility.constraints = [mock_alt_az_constraint]
+        test_visibility._merge_computed_values()
+
+        assert test_visibility.computed_values.alt_az == mock_alt_az_constraint.computed_values.alt_az
 
     def test_no_constraints(
         self,
@@ -162,6 +207,14 @@ class TestComputeEphemerisVisibility:
         """Test that observatory_id is set correctly."""
         assert computed_visibility.observatory_id is not None
 
+    def test_compute_ephemeris_visibility_accepts_sequence_constraints(
+        self,
+        computed_visibility_with_sequence_constraints: EphemerisVisibility,
+        test_earth_limb_constraint: EarthLimbConstraint,
+    ) -> None:
+        """Test that compute_ephemeris_visibility accepts Sequence constraints."""
+        assert computed_visibility_with_sequence_constraints.constraints == [test_earth_limb_constraint]
+
 
 class TestEphemerisVisibilitySingleConstraint:
     """Test that EphemerisVisibility accepts a single constraint (not in a list)."""
@@ -216,6 +269,14 @@ class TestEphemerisVisibilitySingleConstraint:
         vis.compute()
         assert vis.visibility_windows is not None
         assert len(vis.visibility_windows) > 0
+
+    def test_sequence_constraint_initialization(
+        self,
+        visibility_with_sequence_constraints: EphemerisVisibility,
+        test_earth_limb_constraint: EarthLimbConstraint,
+    ) -> None:
+        """Test that EphemerisVisibility accepts sequence constraints and normalizes to list."""
+        assert visibility_with_sequence_constraints.constraints == [test_earth_limb_constraint]
 
     def test_single_vs_list_constraint_equivalence(
         self,

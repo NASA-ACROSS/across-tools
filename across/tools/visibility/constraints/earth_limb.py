@@ -2,6 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -40,7 +41,7 @@ class EarthLimbConstraint(ConstraintABC):
         default=None, ge=0, le=180, description="Maximum angle from the Earth limb"
     )
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Check for a given time, ephemeris and coordinate if positions given are
         inside the Earth limb constraint. This is done by checking if the
@@ -76,15 +77,17 @@ class EarthLimbConstraint(ConstraintABC):
 
         in_constraint = np.zeros(len(ephemeris.earth[i]), dtype=bool)
 
+        self.computed_values.earth_angle = SkyCoord(ephemeris.earth[i].ra, ephemeris.earth[i].dec).separation(
+            coordinate
+        )
+
         if self.min_angle is not None:
             in_constraint |= (
-                SkyCoord(ephemeris.earth[i].ra, ephemeris.earth[i].dec).separation(coordinate)
-                < ephemeris.earth_radius_angle[i] + self.min_angle * u.deg
+                self.computed_values.earth_angle < ephemeris.earth_radius_angle[i] + self.min_angle * u.deg
             )
         if self.max_angle is not None:
             in_constraint |= (
-                SkyCoord(ephemeris.earth[i].ra, ephemeris.earth[i].dec).separation(coordinate)
-                > ephemeris.earth_radius_angle[i] + self.max_angle * u.deg
+                self.computed_values.earth_angle > ephemeris.earth_radius_angle[i] + self.max_angle * u.deg
             )
 
         # Return the result as True or False, or an array of True/False

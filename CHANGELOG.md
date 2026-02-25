@@ -1,5 +1,94 @@
 # Changelog
 
+## [1.3.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.2.1...v1.3.0) (2026-02-23)
+
+
+### Features
+
+* **visibility:** add pointing constraint and survey visibility ([#101](https://github.com/NASA-ACROSS/across-tools/issues/101)) ([176f94a](https://github.com/NASA-ACROSS/across-tools/commit/176f94a1f54d2ebe02f73ecad5fb8a97b4ac8d69))
+
+
+### Bug Fixes
+
+* back compat fix ([ccf3a59](https://github.com/NASA-ACROSS/across-tools/commit/ccf3a5924b53255649618198be9765ee995f433a))
+* **constraints:** typing issues with constraints ([#124](https://github.com/NASA-ACROSS/across-tools/issues/124)) ([ccf3a59](https://github.com/NASA-ACROSS/across-tools/commit/ccf3a5924b53255649618198be9765ee995f433a))
+* **visibility:** indexing bug with `JointVisibility` for boundary at end of ephemeris ([#125](https://github.com/NASA-ACROSS/across-tools/issues/125)) ([8e271b2](https://github.com/NASA-ACROSS/across-tools/commit/8e271b2d71675f2236c3c8577a8d703a04bc37c3))
+
+## [1.2.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.2.0...v1.2.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* **visibility:** allow `computed_values` from `Visibility` to be serialized to JSON ([#115](https://github.com/NASA-ACROSS/across-tools/issues/115)) ([9ea2aeb](https://github.com/NASA-ACROSS/across-tools/commit/9ea2aeb43bccc8f71ad3fdea13cbe2d44e91eb5b))
+* **visibility:** fix crash in `SolarSystemConstraint` ([#117](https://github.com/NASA-ACROSS/across-tools/issues/117)) ([044a340](https://github.com/NASA-ACROSS/across-tools/commit/044a34068b4073b37ecb264082c0a8c763f745e6))
+
+## [1.2.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.1.0...v1.2.0) (2026-02-17)
+
+
+### Features
+
+* add xor to constraint operators ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* **footprint:** Add footprint.contains(coordinate) method ([#103](https://github.com/NASA-ACROSS/across-tools/issues/103)) ([054f03d](https://github.com/NASA-ACROSS/across-tools/commit/054f03d7840da4f674a613b11ec26e08f50f87a0))
+* **footprint:** adding plotting functionality for footprints ([#92](https://github.com/NASA-ACROSS/across-tools/issues/92)) ([c875b6a](https://github.com/NASA-ACROSS/across-tools/commit/c875b6a3c3892a0656dead5fccacba1dbf68115b))
+* **footprint:** query_pixel to use mocpy instead of healpy ([#94](https://github.com/NASA-ACROSS/across-tools/issues/94)) ([dc4ca81](https://github.com/NASA-ACROSS/across-tools/commit/dc4ca81db3da51adad28b9e4e6b70f45c8ac773f))
+* **visibility:** Add additional constraints to visibility calculator ([#105](https://github.com/NASA-ACROSS/across-tools/issues/105)) ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* **visibility:** allow visibility constraints to record calculated values in output ([#100](https://github.com/NASA-ACROSS/across-tools/issues/100)) ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* **visibility:** combine visibility constraints with logical operators ([#98](https://github.com/NASA-ACROSS/across-tools/issues/98)) ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* **visibility:** record computed visibility values in result ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+
+
+### Bug Fixes
+
+* actually commit bandpass update ([d2a5466](https://github.com/NASA-ACROSS/across-tools/commit/d2a546679433db295bba650f249a265dbca3603b))
+* add pass through of computed values in joint and composite constraints ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* add pass through of computed values in joint and composite constraints ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* add test coverage to constructor ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* add xor to constraint abc docstring ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* allow Constraint serializer to take single constraint ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* bad import in test ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* **bandpass:** add validation on bandwidth and central_wavelength ([#110](https://github.com/NASA-ACROSS/across-tools/issues/110)) ([d2da967](https://github.com/NASA-ACROSS/across-tools/commit/d2da96776b21240ecd06c2af78aca1cc9501279c))
+* clean up imports in unit test ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* clean up imports in unit test ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* docstring and method update ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* docstring and method update ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* **docs:** update documentation missing from recent PRs and fix docstrings ([#109](https://github.com/NASA-ACROSS/across-tools/issues/109)) ([d2a5466](https://github.com/NASA-ACROSS/across-tools/commit/d2a546679433db295bba650f249a265dbca3603b))
+* **ephemeris:** optimize TLE ephemeris generation using `rust_ephem` ([#96](https://github.com/NASA-ACROSS/across-tools/issues/96)) ([9b5831a](https://github.com/NASA-ACROSS/across-tools/commit/9b5831a6138bbfdc75c6f23fd773a22878cca201))
+* hacky fix for serialization of combined constraints ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* issue where constraint type of a combined constraint can return unknown ([#114](https://github.com/NASA-ACROSS/across-tools/issues/114)) ([63bd49e](https://github.com/NASA-ACROSS/across-tools/commit/63bd49e48ba86fc4983f54854699ea7ee1745325))
+* linting and mypy fixes ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* linting and mypy fixes ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* mypy errors in unit tests ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* mypy issues with unit tests ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* reduce boilerplate with mixin ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* reinstate missing function ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* reinstate missing function ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* reinstate missing tests ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* reinstate missing tests ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* remove tech spec document ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* remove tech spec document ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* show correct violation in constraint ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* simplify _merge_computed_values in ephemeris_visibility ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* simplify _merge_computed_values in ephemeris_visibility ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* slightly less hacky pydantic ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* slightly less hacky pydantic ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+* slightly less hacky, but still a bit hacky ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* support passing single constraint to EphemerisVisibility. Fix constraint reporting. ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* unit tests ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* up test coverage ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* update API docs ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* update doc example ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* update docstrings ([f260446](https://github.com/NASA-ACROSS/across-tools/commit/f260446ef29d6fb717ebd3ec92739d7329bb2286))
+* update google style docstrings to numpy ([d2a5466](https://github.com/NASA-ACROSS/across-tools/commit/d2a546679433db295bba650f249a265dbca3603b))
+* update some out of date docstrings ([d2a5466](https://github.com/NASA-ACROSS/across-tools/commit/d2a546679433db295bba650f249a265dbca3603b))
+* **visibility:** correct computed_values ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* **visibility:** correct computed_values ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+
+
+### Documentation
+
+* add draft tech spec ([ce180f8](https://github.com/NASA-ACROSS/across-tools/commit/ce180f8932da212302ef4e55be31d1e8e0a5bd9f))
+* add draft tech spec ([c12d74c](https://github.com/NASA-ACROSS/across-tools/commit/c12d74cf0cc6c3c8019fc1d75191efcbec5e1889))
+
 ## [1.1.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.0.0...v1.1.0) (2026-01-07)
 
 

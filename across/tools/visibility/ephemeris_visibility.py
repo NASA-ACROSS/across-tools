@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from collections.abc import Sequence
 from uuid import UUID
 
 import astropy.units as u  # type: ignore[import-untyped]
@@ -57,11 +58,11 @@ class EphemerisVisibility(Visibility):
 
     @field_validator("constraints", mode="before")
     @classmethod
-    def normalize_constraints(cls, v: ConstraintABC | list[ConstraintABC]) -> list[ConstraintABC]:
+    def normalize_constraints(cls, v: ConstraintABC | Sequence[ConstraintABC]) -> list[ConstraintABC]:
         """Normalize single constraint to list."""
-        if isinstance(v, list):
-            return v
-        return [v]
+        if isinstance(v, ConstraintABC):
+            return [v]
+        return list(v)
 
     def prepare_data(self) -> None:
         """
@@ -108,6 +109,13 @@ class EphemerisVisibility(Visibility):
             self.ephemeris.index(self.begin) : self.ephemeris.index(self.end)
         ]
 
+    def _merge_computed_values(self) -> None:
+        """
+        Merge computed values from all constraints into the main computed_values attribute.
+        """
+        for constraint in self.constraints:
+            self.computed_values.merge(constraint.computed_values)
+
     def _find_violated_constraint(self, constraint: ConstraintABC, index: int) -> ConstraintType:
         """
         Find which actual constraint is violated at a given index.
@@ -135,12 +143,14 @@ class EphemerisVisibility(Visibility):
         if isinstance(constraint, (OrConstraint, AndConstraint, XorConstraint)):
             # For OR: any sub-constraint that is violated
             for sub_constraint in constraint.constraints:
+                # Evaluate on full timestamp array to avoid slicing issues with get_slice
                 sub_result = sub_constraint(
-                    time=self.timestamp[index : index + 1],
+                    time=self.timestamp,
                     ephemeris=self.ephemeris,
                     coordinate=self.coordinate,
                 )
-                if sub_result[0]:  # If this constraint is violated
+                # Check if this constraint is violated at the specific index
+                if sub_result[index]:
                     return self._find_violated_constraint(sub_constraint, index)
             return ConstraintType.UNKNOWN
 
@@ -192,7 +202,7 @@ def compute_ephemeris_visibility(
     begin: Time,
     end: Time,
     ephemeris: Ephemeris,
-    constraints: list[ConstraintABC],
+    constraints: Sequence[ConstraintABC],
     ra: float | None = None,
     dec: float | None = None,
     coordinate: SkyCoord | None = None,
@@ -214,7 +224,7 @@ def compute_ephemeris_visibility(
         SkyCoord object representing the position in the sky, if applicable.
     ephemeris : Ephemeris
         The ephemeris data to use for visibility calculations.
-    constraints : list[Constraint]
+    constraints : Sequence[ConstraintABC]
         List of constraints to apply for visibility calculations.
     begin : Time
         Start time for visibility calculation.
@@ -239,7 +249,7 @@ def compute_ephemeris_visibility(
         dec=dec,
         coordinate=coordinate,
         ephemeris=ephemeris,
-        constraints=constraints,
+        constraints=list(constraints),
         begin=begin,
         end=end,
         step_size=step_size,

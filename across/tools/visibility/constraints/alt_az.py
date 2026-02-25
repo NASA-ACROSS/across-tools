@@ -2,6 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import AltAz, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field
@@ -39,7 +40,7 @@ class AltAzConstraint(PolygonConstraint):
     azimuth_min: float | None = Field(default=None, ge=0, lt=360)
     azimuth_max: float | None = Field(default=None, ge=0, lt=360)
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Calculate the Alt/Az constraint for a given time, ephemeris, and sky coordinates.
 
@@ -62,7 +63,7 @@ class AltAzConstraint(PolygonConstraint):
 
         # Convert the sky coordinates to Alt/Az coordinates
         assert ephemeris.earth_location is not None
-        alt_az = coordinate.transform_to(
+        self.computed_values.alt_az = coordinate.transform_to(
             AltAz(
                 obstime=time[i],
                 location=ephemeris.earth_location
@@ -72,21 +73,23 @@ class AltAzConstraint(PolygonConstraint):
         )
 
         # Initialize the constraint array as all False
-        in_constraint = np.zeros(len(alt_az), dtype=bool)
+        in_constraint = np.zeros(len(self.computed_values.alt_az), dtype=bool)
 
         # Calculate the basic Alt/Az min/max constraints
         if self.altitude_min is not None:
-            in_constraint |= alt_az.alt < self.altitude_min * u.deg
+            in_constraint |= self.computed_values.alt_az.alt < self.altitude_min * u.deg
         if self.altitude_max is not None:
-            in_constraint |= alt_az.alt > self.altitude_max * u.deg
+            in_constraint |= self.computed_values.alt_az.alt > self.altitude_max * u.deg
         if self.azimuth_min is not None:
-            in_constraint |= alt_az.az < self.azimuth_min * u.deg
+            in_constraint |= self.computed_values.alt_az.az < self.azimuth_min * u.deg
         if self.azimuth_max is not None:
-            in_constraint |= alt_az.az > self.azimuth_max * u.deg
+            in_constraint |= self.computed_values.alt_az.az > self.azimuth_max * u.deg
 
         # If a polygon is defined, then check if the Alt/Az is inside the polygon
         if self.polygon is not None:
-            in_constraint |= self.polygon.contains(points(alt_az.alt, alt_az.az))
+            in_constraint |= self.polygon.contains(
+                points(self.computed_values.alt_az.alt, self.computed_values.alt_az.az)
+            )
 
         # Return the value as a scalar or array
         return in_constraint

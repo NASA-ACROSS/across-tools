@@ -5,10 +5,12 @@ import numpy as np
 import pytest
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas import VisibilityWindow
 from across.tools.visibility import (
     EphemerisVisibility,
     JointVisibility,
+    Visibility,
     compute_joint_visibility,
 )
 
@@ -160,6 +162,26 @@ class TestComputeJointVisibility:
         """compute_joint_visibility should contain a list of EphemerisVisibilities."""
         assert isinstance(computed_joint_visibility.visibility_windows[0], VisibilityWindow)
 
+    def test_compute_joint_visibility_window_uses_observatory_id_not_instrument_id(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_overlap: EphemerisVisibility,
+    ) -> None:
+        """Joint window constrained dates should carry observatory IDs from visibilities."""
+        instrument_id_1 = uuid.uuid4()
+        instrument_id_2 = uuid.uuid4()
+
+        joint_visibility = compute_joint_visibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[instrument_id_1, instrument_id_2],
+        )
+        window = joint_visibility.visibility_windows[0].window
+
+        assert (window.begin.observatory_id, window.end.observatory_id) == (
+            computed_visibility.observatory_id,
+            computed_visibility.observatory_id,
+        )
+
     @pytest.mark.parametrize(
         "field",
         [
@@ -179,6 +201,17 @@ class TestComputeJointVisibility:
             computed_joint_visibility.visibility_windows[0].model_dump()[field]
             == expected_joint_visibility_windows[0].model_dump()[field]
         )
+
+    def test_compute_joint_visibility_computed_values_pass_through(
+        self, computed_joint_visibility: JointVisibility[EphemerisVisibility]
+    ) -> None:
+        """JointVisibility should pass through computed_values from input visibilities"""
+        # The joint visibility should have computed_values from the first visibility
+        # that has them (in this case, both visibilities should have earth_angle)
+        assert computed_joint_visibility.computed_values.earth_angle is not None
+        assert computed_joint_visibility.computed_values.sun_angle is None
+        assert computed_joint_visibility.computed_values.moon_angle is None
+        assert computed_joint_visibility.computed_values.alt_az is None
 
     def test_compute_joint_visibility_should_return_empty_list_if_no_windows(
         self,
@@ -220,3 +253,63 @@ class TestComputeJointVisibility:
             instrument_ids=[test_observatory_id, test_observatory_id_2],
         )
         assert len(joint_visibility_windows.visibility_windows) == 0
+
+    def test_compute_joint_visibility_handles_end_of_ephemeris_boundary_index(
+        self,
+        boundary_visibilities: tuple[Visibility, Visibility],
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """Joint visibility should produce one window at the ephemeris boundary."""
+        boundary_joint_visibility = compute_joint_visibility(
+            visibilities=[boundary_visibilities[0], boundary_visibilities[1]],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+        )
+        assert len(boundary_joint_visibility.visibility_windows) == 1
+
+    def test_compute_joint_visibility_boundary_end_constraint_is_window(
+        self,
+        boundary_visibilities: tuple[Visibility, Visibility],
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """Joint visibility window at the ephemeris boundary should have end constraint of type WINDOW."""
+        boundary_joint_visibility = compute_joint_visibility(
+            visibilities=[boundary_visibilities[0], boundary_visibilities[1]],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+        )
+        boundary_joint_visibility_window = boundary_joint_visibility.visibility_windows[0]
+        assert boundary_joint_visibility_window.window.end.constraint == ConstraintType.WINDOW
+
+    def test_compute_joint_visibility_boundary_end_observatory_id_falls_back_to_first(
+        self,
+        boundary_visibilities: tuple[Visibility, Visibility],
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """Joint visibility window at the ephemeris boundary should have end
+        observatory_id that falls back to first input observatory_id."""
+        boundary_joint_visibility = compute_joint_visibility(
+            visibilities=[boundary_visibilities[0], boundary_visibilities[1]],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+        )
+        boundary_joint_visibility_window = boundary_joint_visibility.visibility_windows[0]
+        assert boundary_joint_visibility_window.window.end.observatory_id == test_observatory_id
+
+    def test_compute_joint_visibility_boundary_end_reason_uses_window_fallback(
+        self,
+        boundary_visibilities: tuple[Visibility, Visibility],
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+        test_observatory_name: str,
+    ) -> None:
+        """Joint visibility window at the ephemeris boundary should have end
+        reason that uses window fallback."""
+        boundary_joint_visibility = compute_joint_visibility(
+            visibilities=[boundary_visibilities[0], boundary_visibilities[1]],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+        )
+        boundary_joint_visibility_window = boundary_joint_visibility.visibility_windows[0]
+        assert boundary_joint_visibility_window.constraint_reason.end_reason == (
+            f"{test_observatory_name} {ConstraintType.WINDOW.value}"
+        )

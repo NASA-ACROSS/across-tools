@@ -2,6 +2,7 @@ from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import numpy.typing as npt
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from shapely import Polygon, points
@@ -28,7 +29,7 @@ class SAAPolygonConstraint(PolygonConstraint):
     name: Literal[ConstraintType.SAA] = ConstraintType.SAA
     short_name: str = "SAA"
 
-    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> np.typing.NDArray[np.bool_]:
+    def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
         Evaluate the constraint at the given time(s) and ephemeris position(s).
 
