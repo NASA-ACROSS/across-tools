@@ -162,6 +162,26 @@ class TestComputeJointVisibility:
         """compute_joint_visibility should contain a list of EphemerisVisibilities."""
         assert isinstance(computed_joint_visibility.visibility_windows[0], VisibilityWindow)
 
+    def test_compute_joint_visibility_window_uses_observatory_id_not_instrument_id(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_overlap: EphemerisVisibility,
+    ) -> None:
+        """Joint window constrained dates should carry observatory IDs from visibilities."""
+        instrument_id_1 = uuid.uuid4()
+        instrument_id_2 = uuid.uuid4()
+
+        joint_visibility = compute_joint_visibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[instrument_id_1, instrument_id_2],
+        )
+        window = joint_visibility.visibility_windows[0].window
+
+        assert (window.begin.observatory_id, window.end.observatory_id) == (
+            computed_visibility.observatory_id,
+            computed_visibility.observatory_id,
+        )
+
     @pytest.mark.parametrize(
         "field",
         [

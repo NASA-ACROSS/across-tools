@@ -97,18 +97,18 @@ class JointVisibility(Visibility, Generic[T]):
 
     def _get_id(self, i: int) -> UUID:
         """
-        For a given index, find the ID of the first instrument that is constrained.
+        For a given index, find the observatory ID of the first visibility that is constrained.
         """
         # Safely handle out-of-bounds indices
-        if i < 0 or i >= len(self.timestamp) if self.timestamp else True:
-            return self.instrument_ids[0] if self.instrument_ids else UUID(int=0)
+        if self.timestamp is None or i < 0 or i >= len(self.timestamp):
+            return self.visibilities[0]._get_id(i) if self.visibilities else UUID(int=0)
 
-        for vis, instrument_id in zip(self.visibilities, self.instrument_ids):
+        for vis in self.visibilities:
             if vis.inconstraint[i]:
-                return instrument_id
+                return vis._get_id(i)
 
-        # Unknown constraint found, so just return the first instrument ID
-        return self.instrument_ids[0]
+        # Unknown constraint found, so just return the first visibility's observatory ID
+        return self.visibilities[0]._get_id(i) if self.visibilities else UUID(int=0)
 
     def _get_name(self, i: int) -> str:
         """
