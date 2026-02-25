@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.3.0...v1.3.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* **tests:** fix errors in `pytest` caused by caching ([#119](https://github.com/NASA-ACROSS/across-tools/issues/119)) ([e331a3a](https://github.com/NASA-ACROSS/across-tools/commit/e331a3ade56bde7a7bd6fc83ab401a8ba98ac37f))
+* **tests:** refactor constraint test directory layout ([#127](https://github.com/NASA-ACROSS/across-tools/issues/127)) ([96e9812](https://github.com/NASA-ACROSS/across-tools/commit/96e981247604178d3c3d136c01c83aadfefaa3ec))
+* **visibility:** report correct observatory id in joint visibility ([#130](https://github.com/NASA-ACROSS/across-tools/issues/130)) ([84ebf3f](https://github.com/NASA-ACROSS/across-tools/commit/84ebf3fe8720b9b5454f813c227e23683f0ba626))
+
 ## [1.3.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.2.1...v1.3.0) (2026-02-23)
 
 
