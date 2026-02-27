@@ -137,6 +137,34 @@ class TestJointVisibility:
         joint_vis.compute()
         assert joint_vis.visible(midnight_time) is True
 
+    def test_min_vis_excludes_short_windows(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_overlap: EphemerisVisibility,
+    ) -> None:
+        """JointVisibility with min_vis larger than all window durations should yield no windows."""
+        joint_vis = JointVisibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[uuid.uuid4(), uuid.uuid4()],
+            min_vis=999999,
+        )
+        joint_vis.compute()
+        assert len(joint_vis.visibility_windows) == 0
+
+    def test_min_vis_keeps_long_enough_windows(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_overlap: EphemerisVisibility,
+    ) -> None:
+        """JointVisibility with min_vis of 0 should keep all windows."""
+        joint_vis = JointVisibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[uuid.uuid4(), uuid.uuid4()],
+            min_vis=0,
+        )
+        joint_vis.compute()
+        assert len(joint_vis.visibility_windows) > 0
+
 
 class TestComputeJointVisibility:
     """Test the compute_joint_visibility function."""
@@ -212,6 +240,74 @@ class TestComputeJointVisibility:
         assert computed_joint_visibility.computed_values.sun_angle is None
         assert computed_joint_visibility.computed_values.moon_angle is None
         assert computed_joint_visibility.computed_values.alt_az is None
+
+    def test_compute_joint_visibility_min_vis_excludes_short_windows(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_overlap: EphemerisVisibility,
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """compute_joint_visibility with min_vis larger than all window durations should yield no windows."""
+        joint_vis = compute_joint_visibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+            min_vis=999999,
+        )
+        assert len(joint_vis.visibility_windows) == 0
+
+    def test_compute_joint_visibility_min_vis_keeps_long_enough_windows(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_overlap: EphemerisVisibility,
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """compute_joint_visibility with min_vis=0 (default) should keep all windows."""
+        joint_vis = compute_joint_visibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+            min_vis=0,
+        )
+        assert len(joint_vis.visibility_windows) > 0
+
+    def test_compute_joint_visibility_min_vis_threshold_boundary(
+        self,
+        computed_visibility: EphemerisVisibility,
+        computed_visibility_with_overlap: EphemerisVisibility,
+        test_observatory_id: uuid.UUID,
+        test_observatory_id_2: uuid.UUID,
+    ) -> None:
+        """Windows exactly at the min_vis boundary should be filtered (duration must be strictly greater)."""
+        # Compute with no min_vis to get the actual first window duration.
+        baseline = compute_joint_visibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+            min_vis=0,
+        )
+        assert len(baseline.visibility_windows) > 0
+        window_duration_s = round(
+            (
+                baseline.visibility_windows[0].window.end.datetime
+                - baseline.visibility_windows[0].window.begin.datetime
+            ).to_value("s")
+        )
+
+        # min_vis equal to the window duration should exclude it (strict >)
+        joint_vis_at = compute_joint_visibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+            min_vis=window_duration_s,
+        )
+        assert len(joint_vis_at.visibility_windows) == 0
+
+        # min_vis one second less should include it
+        joint_vis_below = compute_joint_visibility(
+            visibilities=[computed_visibility, computed_visibility_with_overlap],
+            instrument_ids=[test_observatory_id, test_observatory_id_2],
+            min_vis=window_duration_s - 1,
+        )
+        assert len(joint_vis_below.visibility_windows) > 0
 
     def test_compute_joint_visibility_should_return_empty_list_if_no_windows(
         self,
