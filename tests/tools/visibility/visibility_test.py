@@ -52,6 +52,26 @@ class TestVisibility:
         mock_visibility.compute()
         assert len(mock_visibility.visibility_windows) > 0
 
+    def test_window_boundaries_have_zero_microseconds(
+        self, computed_visibility_boundaries: list[Time]
+    ) -> None:
+        """Window boundaries should not contain microsecond drift."""
+        assert all(boundary.datetime.microsecond == 0 for boundary in computed_visibility_boundaries)
+
+    def test_window_boundaries_align_to_step_grid(
+        self, computed_visibility: Visibility, computed_visibility_boundaries: list[Time]
+    ) -> None:
+        """Window boundaries should align to begin + n * step_size."""
+        step_seconds = computed_visibility.step_size.to_value(u.s)
+        begin_unix = computed_visibility.begin.unix
+        assert all(
+            np.isclose(
+                boundary.unix - begin_unix,
+                round((boundary.unix - begin_unix) / step_seconds) * step_seconds,
+            )
+            for boundary in computed_visibility_boundaries
+        )
+
     def test_visible_at_noon(self, mock_visibility: Visibility, noon_time: Time) -> None:
         """Test that target is visible at noon"""
         mock_visibility.compute()
