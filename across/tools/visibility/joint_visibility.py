@@ -152,6 +152,7 @@ class JointVisibility(Visibility, Generic[T]):
 def compute_joint_visibility(
     visibilities: list[T],
     instrument_ids: list[UUID],
+    min_vis: int = 0,
 ) -> JointVisibility[T]:
     """
     Compute joint visibility windows for any number of instrument Visibilities.
@@ -163,6 +164,9 @@ def compute_joint_visibility(
         List of Visibility objects or children objects of Visibility.
     instrument_ids: list[UUID]
         List of IDs of the instruments belonging to the Visibility objects.
+    min_vis: int, optional
+        Minimum visibility duration in seconds for a window to be included.
+        Default is 0.
 
     Returns
     -------
@@ -172,6 +176,7 @@ def compute_joint_visibility(
     joint_vis = JointVisibility(
         visibilities=visibilities,
         instrument_ids=instrument_ids,
+        min_vis=min_vis,
     )
     joint_vis.compute()
     return joint_vis
