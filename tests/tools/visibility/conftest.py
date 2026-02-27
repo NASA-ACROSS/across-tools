@@ -363,6 +363,16 @@ def computed_visibility(
 
 
 @pytest.fixture
+def computed_visibility_boundaries(computed_visibility: EphemerisVisibility) -> list[Time]:
+    """Flatten begin/end boundary times from all computed visibility windows."""
+    return [
+        boundary
+        for window in computed_visibility.visibility_windows
+        for boundary in (window.window.begin.datetime, window.window.end.datetime)
+    ]
+
+
+@pytest.fixture
 def computed_visibility_with_sequence_constraints(
     skycoord_near_limb: SkyCoord,
     test_visibility_time_range: tuple[Time, Time],
@@ -541,8 +551,7 @@ def expected_joint_visibility_windows(
                         "observatory_id": test_observatory_id,
                     },
                     "end": {
-                        "datetime": test_visibility_time_range[0]
-                        + timedelta(minutes=4, seconds=59, microseconds=999982),
+                        "datetime": test_visibility_time_range[0] + timedelta(minutes=5),
                         "constraint": ConstraintType.EARTH,
                         "observatory_id": test_observatory_id,
                     },

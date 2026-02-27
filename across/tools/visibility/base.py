@@ -195,9 +195,17 @@ class Visibility(ABC, BaseSchema):
         implementation is to create a timestamp array from the begin and end
         times with a step size defined by the step_size attribute.
         """
-        self.timestamp = Time(
-            np.arange(self.begin.jd, self.end.jd, self.step_size.to_value(u.d)), format="jd"
-        )
+        step_seconds = self.step_size.to_value(u.s)
+        offsets = np.arange(0.0, (self.end - self.begin).to_value(u.s), step_seconds)
+        self.timestamp = Time(self.begin.unix + offsets, format="unix")
+
+    def _quantize_to_step(self, t: Time) -> Time:
+        """
+        Quantize a time to the nearest configured step size relative to begin.
+        """
+        step_seconds = self.step_size.to_value(u.s)
+        steps = np.round((t.unix - self.begin.unix) / step_seconds)
+        return Time(self.begin.unix + steps * step_seconds, format="unix")
 
     def index(self, t: Time) -> int:
         """
@@ -305,12 +313,12 @@ class Visibility(ABC, BaseSchema):
         visibility_windows = []
         for i in indices:
             constrained_date_begin = ConstrainedDate(
-                datetime=self.timestamp[i[0]].datetime,
+                datetime=self._quantize_to_step(self.timestamp[i[0]]).datetime,
                 constraint=self._constraint(i[0] - 1),
                 observatory_id=self._get_id(i[0] - 1),
             )
             constrained_date_end = ConstrainedDate(
-                datetime=self.timestamp[i[1]].datetime,
+                datetime=self._quantize_to_step(self.timestamp[i[1]]).datetime,
                 constraint=self._constraint(i[1] + 1),
                 observatory_id=self._get_id(i[1] + 1),
             )
