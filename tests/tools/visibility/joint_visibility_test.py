@@ -284,21 +284,6 @@ class TestComputeJointVisibility:
         )
         assert len(joint_vis.visibility_windows) > 0
 
-    def test_compute_joint_visibility_min_vis_threshold_boundary_has_baseline_windows(
-        self,
-        computed_visibility: EphemerisVisibility,
-        computed_visibility_with_overlap: EphemerisVisibility,
-        test_observatory_id: uuid.UUID,
-        test_observatory_id_2: uuid.UUID,
-    ) -> None:
-        """Baseline compute_joint_visibility with min_vis=0 should produce windows."""
-        baseline = compute_joint_visibility(
-            visibilities=[computed_visibility, computed_visibility_with_overlap],
-            instrument_ids=[test_observatory_id, test_observatory_id_2],
-            min_vis=0,
-        )
-        assert len(baseline.visibility_windows) > 0
-
     def test_compute_joint_visibility_min_vis_threshold_boundary_excludes_equal_duration(
         self,
         computed_visibility: EphemerisVisibility,
