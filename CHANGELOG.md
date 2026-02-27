@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.3.2](https://github.com/NASA-ACROSS/across-tools/compare/v1.3.1...v1.3.2) (2026-02-27)
+
+
+### Bug Fixes
+
+* **ci/cd:** make build documentation workflow faster with caching ([#133](https://github.com/NASA-ACROSS/across-tools/issues/133)) ([2233303](https://github.com/NASA-ACROSS/across-tools/commit/2233303f7f56e6e399b0b91d86807e819ddc61dd))
+* **visibility:** add `min_vis` support to `compute_joint_visibility` ([#137](https://github.com/NASA-ACROSS/across-tools/issues/137)) ([efd0096](https://github.com/NASA-ACROSS/across-tools/commit/efd0096a36302daf248457925d10067a0ef3c996))
+* **visibility:** ensure dates are in whole unites of step_size ([87cd318](https://github.com/NASA-ACROSS/across-tools/commit/87cd3184909e226e6f9a45bd1e604a741ceec66b))
+* **visibility:** ensure dates are in whole units of `step_size` ([#135](https://github.com/NASA-ACROSS/across-tools/issues/135)) ([87cd318](https://github.com/NASA-ACROSS/across-tools/commit/87cd3184909e226e6f9a45bd1e604a741ceec66b))
+
 ## [1.3.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.3.0...v1.3.1) (2026-02-25)
 
 
