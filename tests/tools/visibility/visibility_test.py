@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
-from plotly.graph_objs import Figure  # type: ignore[import-untyped]
+from plotly.graph_objs import Figure
 from pydantic import ValidationError
 
 from across.tools.visibility import Visibility

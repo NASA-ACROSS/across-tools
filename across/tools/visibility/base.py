@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
-import plotly.graph_objects as go  # type: ignore[import-untyped]
+import plotly.graph_objects as go
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
@@ -373,8 +373,8 @@ class Visibility(ABC, BaseSchema):
             window_endtime = window.window.end.datetime.utc.datetime.isoformat(sep=" ")
             fig.add_trace(
                 go.Scatter(
-                    x=[offset - 0.35, offset + 0.35, offset + 0.35, offset - 0.35],
-                    y=[window_starttime, window_starttime, window_endtime, window_endtime],
+                    x=[offset - 0.35, offset + 0.35, offset + 0.35, offset - 0.35, offset - 0.35],
+                    y=[window_starttime, window_starttime, window_endtime, window_endtime, window_starttime],
                     fill="toself",
                     mode="lines",
                     hoveron="fills",

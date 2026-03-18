@@ -4,7 +4,7 @@ from datetime import datetime
 import numpy as np
 import pytest
 from astropy.time import Time  # type: ignore[import-untyped]
-from plotly.graph_objs import Figure  # type: ignore[import-untyped]
+from plotly.graph_objs import Figure
 
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas import VisibilityWindow

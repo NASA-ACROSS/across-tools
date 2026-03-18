@@ -2,7 +2,7 @@ from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 import numpy as np
-import plotly.graph_objects as go  # type: ignore[import-untyped]
+import plotly.graph_objects as go
 from pydantic import Field, model_validator
 
 from ..core.enums import ConstraintType
@@ -189,8 +189,14 @@ class JointVisibility(Visibility, Generic[T]):
             window_endtime = window.window.end.datetime.utc.datetime.isoformat(sep=" ")
             fig.add_trace(
                 go.Scatter(
-                    x=[min_extent - 0.5, max_extent + 0.5, max_extent + 0.5, min_extent - 0.5],
-                    y=[window_starttime, window_starttime, window_endtime, window_endtime],
+                    x=[
+                        min_extent - 0.5,
+                        max_extent + 0.5,
+                        max_extent + 0.5,
+                        min_extent - 0.5,
+                        min_extent - 0.5,
+                    ],
+                    y=[window_starttime, window_starttime, window_endtime, window_endtime, window_starttime],
                     fill="toself",
                     mode="lines",
                     hoveron="fills",
