@@ -403,13 +403,14 @@ class Visibility(ABC, BaseSchema):
 
         fig.update_layout(
             title="Visibility Windows",
-            xaxis_title="Visibility Windows",
-            yaxis_title="Time",
             yaxis=dict(
+                title="Time",
+                range=[self.end.to_datetime(), self.begin.to_datetime()],  # descending time
                 type="date",
-                autorange="reversed",  # descending time
+                autorange=False,  # don't resize
             ),
             xaxis=dict(
+                title="Visibility Windows",
                 tickvals=[offset],
                 ticktext=[self.observatory_name],
             ),
