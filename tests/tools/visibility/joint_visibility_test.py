@@ -4,6 +4,7 @@ from datetime import datetime
 import numpy as np
 import pytest
 from astropy.time import Time  # type: ignore[import-untyped]
+from plotly.graph_objs import Figure  # type: ignore[import-untyped]
 
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas import VisibilityWindow
@@ -435,4 +436,59 @@ class TestComputeJointVisibility:
         boundary_joint_visibility_window = boundary_joint_visibility.visibility_windows[0]
         assert boundary_joint_visibility_window.constraint_reason.end_reason == (
             f"{test_observatory_name} {ConstraintType.WINDOW.value}"
+        )
+
+
+class TestJointVisibilityPlotting:
+    """
+    Class to run set of `JointVisibility.plot` tests
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, computed_joint_visibility: JointVisibility[EphemerisVisibility]) -> None:
+        """
+        Init with fixtures
+        """
+        self.visibility = computed_joint_visibility
+
+    def test_should_return_plotly_figure_when_plotting(self) -> None:
+        """
+        Should return a plotly Figure when plotting the visibility windows
+        """
+        fig = self.visibility.plot()
+
+        assert isinstance(fig, Figure)
+
+    def test_plot_should_add_to_existing_figure(self) -> None:
+        """
+        Should add the visibility windows to an existing plotly Figure
+        """
+        existing_fig = Figure()
+        fig = self.visibility.plot(fig=existing_fig)
+
+        assert fig is existing_fig
+
+    def test_plot_should_set_layout_dimensions(self) -> None:
+        """
+        Should set the layout dimensions when passed as args
+        """
+        width = 100
+        height = 200
+        fig = self.visibility.plot(width=width, height=height)
+
+        assert all([fig.layout.width == width, fig.layout.height == height])
+
+    def test_plot_should_set_window_x_offset(self) -> None:
+        """
+        Should set the windows' x-axis offset when passed as an arg
+        """
+        offset = 10
+        fig = self.visibility.plot(offset=offset)
+
+        expected_offsets = np.arange(len(self.visibility.visibilities)) + offset + 1
+        assert all(
+            [
+                round(tickval) == expected_offset
+                for tickval, expected_offset in zip(fig.layout.xaxis.tickvals, expected_offsets)
+            ]
         )

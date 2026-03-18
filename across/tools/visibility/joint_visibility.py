@@ -2,6 +2,7 @@ from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 import numpy as np
+import plotly.graph_objects as go  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
 
 from ..core.enums import ConstraintType
@@ -147,6 +148,92 @@ class JointVisibility(Visibility, Generic[T]):
         for visibility in self.visibilities:
             if visibility.computed_values is not None:
                 self.computed_values.merge(visibility.computed_values)
+
+    def plot(
+        self, fig: go.Figure | None = None, offset: int | float = 0, width: int = 700, height: int = 1000
+    ) -> go.Figure:
+        """
+        Method to visualize joint visibility windows using plotly.
+        Plots the individual instrument visibility windows and the regions
+        of joint visibility on one figure.
+
+        Parameters
+        ----------
+        fig : go.Figure, optional
+            An existing plotly figure to add to, by default None
+        offset : int | float, optional
+            The x-axis offset to plot new visibility windows, by default 0
+        width: int, optional
+            The width of the plot, in pixels. Defaults to 700.
+        height: int, optional
+            The height of the plot, in pixels. Defaults to 1000.
+
+        Returns
+        -------
+        go.Figure
+            The plotly figure containing the footprint plot
+        """
+        if fig is None:
+            fig = go.Figure()
+        tickvals = []
+        ticktext = []
+        for i, visibility in enumerate(self.visibilities):
+            fig = visibility.plot(fig=fig, offset=offset + i + 1)
+            tickvals.append(offset + i + 1)
+            ticktext.append(visibility.observatory_name)
+
+        min_extent = min(tickvals)
+        max_extent = max(tickvals)
+        for window in self.visibility_windows:
+            window_starttime = window.window.begin.datetime.utc.datetime.isoformat(sep=" ")
+            window_endtime = window.window.end.datetime.utc.datetime.isoformat(sep=" ")
+            fig.add_trace(
+                go.Scatter(
+                    x=[min_extent - 0.5, max_extent + 0.5, max_extent + 0.5, min_extent - 0.5],
+                    y=[window_starttime, window_starttime, window_endtime, window_endtime],
+                    fill="toself",
+                    mode="lines",
+                    hoveron="fills",
+                    line=dict(
+                        width=1,
+                        color="black",
+                    ),
+                    marker=dict(size=0, opacity=0),
+                    fillcolor="pink",
+                    opacity=0.5,
+                    hoverinfo="text",
+                    text=(
+                        "<b>Joint Window</b><br>"
+                        f"Start: {window_starttime}<br>"
+                        f"Start Reason: {window.constraint_reason.start_reason}<br>"
+                        f"End: {window_endtime}<br>"
+                        f"End Reason: {window.constraint_reason.end_reason}<br>"
+                    ),
+                    hoverlabel=dict(
+                        bgcolor="white",
+                        font_color="black",
+                    ),
+                    showlegend=False,
+                    zorder=-1,
+                )
+            )
+
+        fig.update_layout(
+            title="Visibility Windows",
+            xaxis_title="Visibility Windows",
+            yaxis_title="Time",
+            yaxis=dict(
+                type="date",
+                autorange="reversed",  # descending time
+            ),
+            xaxis=dict(
+                tickvals=tickvals,
+                ticktext=ticktext,
+            ),
+            width=width,
+            height=height,
+        )
+        return fig
 
 
 def compute_joint_visibility(
