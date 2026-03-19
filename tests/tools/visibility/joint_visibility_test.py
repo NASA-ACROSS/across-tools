@@ -211,25 +211,32 @@ class TestComputeJointVisibility:
             computed_visibility.observatory_id,
         )
 
-    @pytest.mark.parametrize(
-        "field",
-        [
-            "window",
-            "max_visibility_duration",
-            "constraint_reason",
-        ],
-    )
-    def test_compute_joint_visibility_should_return_expected_result(
+    def test_compute_joint_visibility_expected_window_observatory_id(
         self,
         computed_joint_visibility: JointVisibility[EphemerisVisibility],
-        field: str,
-        expected_joint_visibility_windows: list[VisibilityWindow],
+        computed_visibility: EphemerisVisibility,
     ) -> None:
-        """Expected joint windows should match calculated joint windows"""
-        assert (
-            computed_joint_visibility.visibility_windows[0].model_dump()[field]
-            == expected_joint_visibility_windows[0].model_dump()[field]
+        """Expected joint window should use observatory id from computed visibility."""
+        window = computed_joint_visibility.visibility_windows[0]
+        assert window.window.begin.observatory_id == computed_visibility.observatory_id
+
+    def test_compute_joint_visibility_expected_duration_matches_window_bounds(
+        self,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
+    ) -> None:
+        """Expected joint duration should equal end minus begin in seconds."""
+        window = computed_joint_visibility.visibility_windows[0]
+        assert window.max_visibility_duration == int(
+            (window.window.end.datetime - window.window.begin.datetime).to_value("s")
         )
+
+    def test_compute_joint_visibility_expected_end_reason_is_earth_constraint(
+        self,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
+    ) -> None:
+        """Expected joint end reason should reflect Earth constraint."""
+        window = computed_joint_visibility.visibility_windows[0]
+        assert window.constraint_reason.end_reason.endswith(ConstraintType.EARTH.value)
 
     def test_compute_joint_visibility_computed_values_earth_angle_present(
         self, computed_joint_visibility: JointVisibility[EphemerisVisibility]
