@@ -227,7 +227,7 @@ class JointVisibility(Visibility, Generic[T]):
         fig.update_layout(
             title="Visibility Windows",
             yaxis=dict(
-                title="Time",
+                title="Time (UTC)",
                 range=[self.end.to_datetime(), self.begin.to_datetime()],  # descending time
                 type="date",
                 autorange=False,  # don't resize
