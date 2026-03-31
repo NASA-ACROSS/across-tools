@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
+from plotly.graph_objs import Figure
 from pydantic import ValidationError
 
 from across.tools.visibility import Visibility
@@ -184,3 +185,52 @@ class TestVisibility:
             observatory_name=test_observatory_name,
         )
         assert dog.step_size == default_step_size
+
+
+class TestVisibilityPlotting:
+    """
+    Class to run set of `Visibility.plot` tests
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, mock_visibility: Visibility) -> None:
+        """
+        Init with fixtures
+        """
+        self.visibility = mock_visibility
+
+    def test_should_return_plotly_figure_when_plotting(self) -> None:
+        """
+        Should return a plotly Figure when plotting the visibility windows
+        """
+        fig = self.visibility.plot()
+
+        assert isinstance(fig, Figure)
+
+    def test_plot_should_add_to_existing_figure(self) -> None:
+        """
+        Should add the visibility windows to an existing plotly Figure
+        """
+        existing_fig = Figure()
+        fig = self.visibility.plot(fig=existing_fig)
+
+        assert fig is existing_fig
+
+    def test_plot_should_set_layout_dimensions(self) -> None:
+        """
+        Should set the layout dimensions when passed as args
+        """
+        width = 100
+        height = 200
+        fig = self.visibility.plot(width=width, height=height)
+
+        assert all([fig.layout.width == width, fig.layout.height == height])
+
+    def test_plot_should_set_window_x_offset(self) -> None:
+        """
+        Should set the windows' x-axis offset when passed as an arg
+        """
+        offset = 10
+        fig = self.visibility.plot(offset=offset)
+
+        assert fig.layout.xaxis.tickvals[0] == offset

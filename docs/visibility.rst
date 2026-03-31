@@ -599,6 +599,58 @@ Example: Accessing Window Details
        print(f"  Started because: {start_reason}")
        print(f"  Ended because: {end_reason}")
 
+Plotting Visibility
+-------------------
+
+Both ``EphemerisVisibility`` and ``JointVisibility`` objects can be visualized with
+the ``plot`` method. The returned object is a Plotly ``Figure``, so it can be shown
+directly in notebooks, or further customized before display.
+
+Single-observatory plot
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+  fig = visibility.plot(
+     offset=0,
+     width=700,
+     height=1000,
+  )
+  fig.show()
+
+Joint visibility plot
+^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+  joint = compute_joint_visibility(
+     visibilities=[vis_swift, vis_lsst],
+     instrument_ids=[obs_id_swift, obs_id_lsst],
+  )
+
+  fig = joint.plot(
+     offset=0,
+     width=700,
+     height=1000,
+  )
+  fig.show()
+
+In joint plots, individual instrument windows are shown in separate columns and
+joint windows are highlighted across all instrument columns.
+
+.. figure:: _static/visibility_joint_plot_example.png
+  :alt: Example joint visibility plot with two observatories and highlighted overlap windows.
+  :width: 360px
+
+  Example ``JointVisibility.plot`` output.
+
+The ``plot`` method accepts the following keyword arguments:
+
+- ``fig``: Existing Plotly figure to add traces to.
+- ``offset``: Horizontal placement of window columns on the x-axis.
+- ``width``: Figure width in pixels.
+- ``height``: Figure height in pixels.
+
 Constraint Serialization
 ------------------------
 

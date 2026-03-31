@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
+import plotly.graph_objects as go
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
@@ -341,6 +342,82 @@ class Visibility(ABC, BaseSchema):
                 visibility_windows.append(visibility_window)
 
         return visibility_windows
+
+    def plot(
+        self, fig: go.Figure | None = None, offset: int | float = 0, width: int = 700, height: int = 1000
+    ) -> go.Figure:
+        """
+        Method to visualize visibility windows using plotly.
+
+        Parameters
+        ----------
+        fig : go.Figure, optional
+            An existing plotly figure to add to, by default None
+        offset : int | float, optional
+            The x-axis offset to plot new visibility windows, by default 0
+        width: int, optional
+            The width of the plot, in pixels. Defaults to 700
+        height: int, optional
+            The height of the plot, in pixels. Defaults to 1000
+
+        Returns
+        -------
+        go.Figure
+            The plotly figure containing the footprint plot
+        """
+        if fig is None:
+            fig = go.Figure()
+
+        for window in self.visibility_windows:
+            window_starttime = window.window.begin.datetime.utc.datetime.isoformat(sep=" ")
+            window_endtime = window.window.end.datetime.utc.datetime.isoformat(sep=" ")
+            fig.add_trace(
+                go.Scatter(
+                    x=[offset - 0.35, offset + 0.35, offset + 0.35, offset - 0.35, offset - 0.35],
+                    y=[window_starttime, window_starttime, window_endtime, window_endtime, window_starttime],
+                    fill="toself",
+                    mode="lines",
+                    hoveron="fills",
+                    line=dict(
+                        width=1,
+                        color="black",
+                    ),
+                    marker=dict(size=0, opacity=0),
+                    fillcolor="salmon",
+                    opacity=0.7,
+                    hoverinfo="text",
+                    text=(
+                        f"<b>{self.observatory_name}</b><br>"
+                        f"Start: {window_starttime}<br>"
+                        f"Start Reason: {window.constraint_reason.start_reason}<br>"
+                        f"End: {window_endtime}<br>"
+                        f"End Reason: {window.constraint_reason.end_reason}"
+                    ),
+                    hoverlabel=dict(
+                        bgcolor="white",
+                        font_color="black",
+                    ),
+                    showlegend=False,
+                )
+            )
+
+        fig.update_layout(
+            title="Visibility Windows",
+            yaxis=dict(
+                title="Time (UTC)",
+                range=[self.end.to_datetime(), self.begin.to_datetime()],  # descending time
+                type="date",
+                autorange=False,  # don't resize
+            ),
+            xaxis=dict(
+                title="Visibility Windows",
+                tickvals=[offset],
+                ticktext=[self.observatory_name],
+            ),
+            width=width,
+            height=height,
+        )
+        return fig
 
     def compute(self) -> None:
         """

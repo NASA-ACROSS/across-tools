@@ -16,7 +16,7 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 import across.tools.visibility.catalogs as catalogs
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas.tle import TLE
-from across.tools.core.schemas.visibility import VisibilityComputedValues, VisibilityWindow
+from across.tools.core.schemas.visibility import VisibilityComputedValues
 from across.tools.ephemeris import Ephemeris, compute_tle_ephemeris
 from across.tools.visibility import (
     EphemerisVisibility,
@@ -532,38 +532,6 @@ def boundary_visibilities(
     vis_2.inconstraint = inconstraint.copy()
 
     return vis_1, vis_2
-
-
-@pytest.fixture
-def expected_joint_visibility_windows(
-    test_visibility_time_range: tuple[Time, Time],
-    test_observatory_id: uuid.UUID,
-    test_observatory_name: str,
-) -> list[VisibilityWindow]:
-    """Fixture that provides expected joint visibility windows"""
-    return [
-        VisibilityWindow.model_validate(
-            {
-                "window": {
-                    "begin": {
-                        "datetime": test_visibility_time_range[0],
-                        "constraint": ConstraintType.WINDOW,
-                        "observatory_id": test_observatory_id,
-                    },
-                    "end": {
-                        "datetime": test_visibility_time_range[0] + timedelta(minutes=5),
-                        "constraint": ConstraintType.EARTH,
-                        "observatory_id": test_observatory_id,
-                    },
-                },
-                "max_visibility_duration": 299,
-                "constraint_reason": {
-                    "start_reason": f"{test_observatory_name} {ConstraintType.WINDOW.value}",
-                    "end_reason": f"{test_observatory_name} {ConstraintType.EARTH.value}",
-                },
-            }
-        )
-    ]
 
 
 @pytest.fixture

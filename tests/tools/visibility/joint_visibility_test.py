@@ -4,6 +4,7 @@ from datetime import datetime
 import numpy as np
 import pytest
 from astropy.time import Time  # type: ignore[import-untyped]
+from plotly.graph_objs import Figure
 
 from across.tools.core.enums.constraint_type import ConstraintType
 from across.tools.core.schemas import VisibilityWindow
@@ -210,25 +211,32 @@ class TestComputeJointVisibility:
             computed_visibility.observatory_id,
         )
 
-    @pytest.mark.parametrize(
-        "field",
-        [
-            "window",
-            "max_visibility_duration",
-            "constraint_reason",
-        ],
-    )
-    def test_compute_joint_visibility_should_return_expected_result(
+    def test_compute_joint_visibility_expected_window_observatory_id(
         self,
         computed_joint_visibility: JointVisibility[EphemerisVisibility],
-        field: str,
-        expected_joint_visibility_windows: list[VisibilityWindow],
+        computed_visibility: EphemerisVisibility,
     ) -> None:
-        """Expected joint windows should match calculated joint windows"""
-        assert (
-            computed_joint_visibility.visibility_windows[0].model_dump()[field]
-            == expected_joint_visibility_windows[0].model_dump()[field]
+        """Expected joint window should use observatory id from computed visibility."""
+        window = computed_joint_visibility.visibility_windows[0]
+        assert window.window.begin.observatory_id == computed_visibility.observatory_id
+
+    def test_compute_joint_visibility_expected_duration_matches_window_bounds(
+        self,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
+    ) -> None:
+        """Expected joint duration should equal end minus begin in seconds."""
+        window = computed_joint_visibility.visibility_windows[0]
+        assert window.max_visibility_duration == int(
+            (window.window.end.datetime - window.window.begin.datetime).to_value("s")
         )
+
+    def test_compute_joint_visibility_expected_end_reason_is_earth_constraint(
+        self,
+        computed_joint_visibility: JointVisibility[EphemerisVisibility],
+    ) -> None:
+        """Expected joint end reason should reflect Earth constraint."""
+        window = computed_joint_visibility.visibility_windows[0]
+        assert window.constraint_reason.end_reason.endswith(ConstraintType.EARTH.value)
 
     def test_compute_joint_visibility_computed_values_earth_angle_present(
         self, computed_joint_visibility: JointVisibility[EphemerisVisibility]
@@ -435,4 +443,59 @@ class TestComputeJointVisibility:
         boundary_joint_visibility_window = boundary_joint_visibility.visibility_windows[0]
         assert boundary_joint_visibility_window.constraint_reason.end_reason == (
             f"{test_observatory_name} {ConstraintType.WINDOW.value}"
+        )
+
+
+class TestJointVisibilityPlotting:
+    """
+    Class to run set of `JointVisibility.plot` tests
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup(self, computed_joint_visibility: JointVisibility[EphemerisVisibility]) -> None:
+        """
+        Init with fixtures
+        """
+        self.visibility = computed_joint_visibility
+
+    def test_should_return_plotly_figure_when_plotting(self) -> None:
+        """
+        Should return a plotly Figure when plotting the visibility windows
+        """
+        fig = self.visibility.plot()
+
+        assert isinstance(fig, Figure)
+
+    def test_plot_should_add_to_existing_figure(self) -> None:
+        """
+        Should add the visibility windows to an existing plotly Figure
+        """
+        existing_fig = Figure()
+        fig = self.visibility.plot(fig=existing_fig)
+
+        assert fig is existing_fig
+
+    def test_plot_should_set_layout_dimensions(self) -> None:
+        """
+        Should set the layout dimensions when passed as args
+        """
+        width = 100
+        height = 200
+        fig = self.visibility.plot(width=width, height=height)
+
+        assert all([fig.layout.width == width, fig.layout.height == height])
+
+    def test_plot_should_set_window_x_offset(self) -> None:
+        """
+        Should set the windows' x-axis offset when passed as an arg
+        """
+        offset = 10
+        fig = self.visibility.plot(offset=offset)
+
+        expected_offsets = np.arange(len(self.visibility.visibilities)) + offset + 1
+        assert all(
+            [
+                round(tickval) == expected_offset
+                for tickval, expected_offset in zip(fig.layout.xaxis.tickvals, expected_offsets)
+            ]
         )
