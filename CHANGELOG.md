@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.3.2...v1.4.0) (2026-04-01)
+
+
+### Features
+
+* **visibility:** add visibility window plotting functionality ([#139](https://github.com/NASA-ACROSS/across-tools/issues/139)) ([93a8fbf](https://github.com/NASA-ACROSS/across-tools/commit/93a8fbf82f0f9d40f5dc7b32f26d60d052d8fbe1))
+
+
+### Bug Fixes
+
+* removing inclusive language... ([#142](https://github.com/NASA-ACROSS/across-tools/issues/142)) ([dbd88f2](https://github.com/NASA-ACROSS/across-tools/commit/dbd88f2d50f88e33adf2667299bbcdf638e36659))
+
 ## [1.3.2](https://github.com/NASA-ACROSS/across-tools/compare/v1.3.1...v1.3.2) (2026-02-27)
 
 
