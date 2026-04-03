@@ -5,6 +5,8 @@ import numpy as np
 import plotly.graph_objects as go
 from pydantic import Field, model_validator
 
+from across.tools.core.plotting import plot_joint_visibility_windows, plot_visibility_windows
+
 from ..core.enums import ConstraintType
 from ..core.schemas import (
     AstropyDateTime,
@@ -155,7 +157,8 @@ class JointVisibility(Visibility, Generic[T]):
         """
         Method to visualize joint visibility windows using plotly.
         Plots the individual instrument visibility windows and the regions
-        of joint visibility on one figure.
+        of joint visibility on one figure. Calls the across-tools plotting
+        core functionality and configures the plot layout to user specifications.
 
         Parameters
         ----------
@@ -178,51 +181,23 @@ class JointVisibility(Visibility, Generic[T]):
         tickvals = []
         ticktext = []
         for i, visibility in enumerate(self.visibilities):
-            fig = visibility.plot(fig=fig, offset=offset + i + 1)
+            fig = plot_visibility_windows(
+                visibility_windows=[window.model_dump() for window in visibility.visibility_windows],
+                observatory_name=visibility.observatory_name,
+                fig=fig,
+                offset=offset + i + 1,
+            )
             tickvals.append(offset + i + 1)
             ticktext.append(visibility.observatory_name)
 
         min_extent = min(tickvals)
         max_extent = max(tickvals)
-        for window in self.visibility_windows:
-            window_starttime = window.window.begin.datetime.utc.datetime.isoformat(sep=" ")
-            window_endtime = window.window.end.datetime.utc.datetime.isoformat(sep=" ")
-            fig.add_trace(
-                go.Scatter(
-                    x=[
-                        min_extent - 0.5,
-                        max_extent + 0.5,
-                        max_extent + 0.5,
-                        min_extent - 0.5,
-                        min_extent - 0.5,
-                    ],
-                    y=[window_starttime, window_starttime, window_endtime, window_endtime, window_starttime],
-                    fill="toself",
-                    mode="lines",
-                    hoveron="fills",
-                    line=dict(
-                        width=1,
-                        color="black",
-                    ),
-                    marker=dict(size=0, opacity=0),
-                    fillcolor="pink",
-                    opacity=0.5,
-                    hoverinfo="text",
-                    text=(
-                        "<b>Joint Window</b><br>"
-                        f"Start: {window_starttime}<br>"
-                        f"Start Reason: {window.constraint_reason.start_reason}<br>"
-                        f"End: {window_endtime}<br>"
-                        f"End Reason: {window.constraint_reason.end_reason}<br>"
-                    ),
-                    hoverlabel=dict(
-                        bgcolor="white",
-                        font_color="black",
-                    ),
-                    showlegend=False,
-                    zorder=-1,
-                )
-            )
+        fig = plot_joint_visibility_windows(
+            visibility_windows=[window.model_dump() for window in self.visibility_windows],
+            min_extent=min_extent,
+            max_extent=max_extent,
+            fig=fig,
+        )
 
         fig.update_layout(
             title="Visibility Windows",

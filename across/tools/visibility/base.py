@@ -14,6 +14,7 @@ from across.tools.core.schemas import AstropyDateTime, AstropyTimeDelta
 from across.tools.core.schemas.visibility import VisibilityComputedValues
 
 from ..core.enums.constraint_type import ConstraintType
+from ..core.plotting import plot_visibility_windows
 from ..core.schemas import (
     ConstrainedDate,
     ConstraintReason,
@@ -348,6 +349,8 @@ class Visibility(ABC, BaseSchema):
     ) -> go.Figure:
         """
         Method to visualize visibility windows using plotly.
+        Calls the across-tools plotting core functionality and configures the plot
+        layout to user specifications.
 
         Parameters
         ----------
@@ -368,38 +371,12 @@ class Visibility(ABC, BaseSchema):
         if fig is None:
             fig = go.Figure()
 
-        for window in self.visibility_windows:
-            window_starttime = window.window.begin.datetime.utc.datetime.isoformat(sep=" ")
-            window_endtime = window.window.end.datetime.utc.datetime.isoformat(sep=" ")
-            fig.add_trace(
-                go.Scatter(
-                    x=[offset - 0.35, offset + 0.35, offset + 0.35, offset - 0.35, offset - 0.35],
-                    y=[window_starttime, window_starttime, window_endtime, window_endtime, window_starttime],
-                    fill="toself",
-                    mode="lines",
-                    hoveron="fills",
-                    line=dict(
-                        width=1,
-                        color="black",
-                    ),
-                    marker=dict(size=0, opacity=0),
-                    fillcolor="salmon",
-                    opacity=0.7,
-                    hoverinfo="text",
-                    text=(
-                        f"<b>{self.observatory_name}</b><br>"
-                        f"Start: {window_starttime}<br>"
-                        f"Start Reason: {window.constraint_reason.start_reason}<br>"
-                        f"End: {window_endtime}<br>"
-                        f"End Reason: {window.constraint_reason.end_reason}"
-                    ),
-                    hoverlabel=dict(
-                        bgcolor="white",
-                        font_color="black",
-                    ),
-                    showlegend=False,
-                )
-            )
+        fig = plot_visibility_windows(
+            visibility_windows=[window.model_dump() for window in self.visibility_windows],
+            observatory_name=self.observatory_name,
+            fig=fig,
+            offset=offset,
+        )
 
         fig.update_layout(
             title="Visibility Windows",
