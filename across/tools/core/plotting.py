@@ -192,7 +192,7 @@ def plot_footprint(
         show_legend = i == 0 and not name_exists
 
         # Set legend group to name or unique id
-        legend_group = name if name else None
+        legend_group = name if name else f"footprint-{id(detectors)}"
 
         fig.add_trace(
             go.Scattergeo(
