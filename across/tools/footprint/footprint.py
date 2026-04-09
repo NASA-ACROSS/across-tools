@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from astropy.coordinates import Angle, SkyCoord  # type: ignore[import-untyped]
 from mocpy import MOC  # type: ignore[import-untyped]
 
+from ..core.plotting import plot_footprint
 from ..core.schemas import BaseSchema, Coordinate, HealpixOrder, Polygon, RollAngle
 from .projection import project_detector
 
@@ -169,7 +170,9 @@ class Footprint(BaseSchema):
         lon_axis_tick: int = 60,
     ) -> go.Figure:
         """
-        Method to plot the footprint using plotly
+        Method to plot the footprint using plotly.
+        Calls the across-tools plotting core functionality and configures the plot
+        layout to user specifications.
 
         Parameters
         ----------
@@ -203,34 +206,11 @@ class Footprint(BaseSchema):
                 ),
             )
 
-        for i, detector in enumerate(self.detectors):
-            ra_values = [coord.ra for coord in detector.coordinates] + [detector.coordinates[0].ra]
-            dec_values = [coord.dec for coord in detector.coordinates] + [detector.coordinates[0].dec]
-
-            # Check if trace with same name already exists
-            name_exists = False
-            if name:
-                for trace in fig.data:
-                    name_exists = trace.name == name  # type: ignore[attr-defined]
-                    break
-
-            # Only show legend for first detector if name exists
-            show_legend = i == 0 and not name_exists
-
-            # Set legend group to name or unique id
-            legend_group = name if name else f"footprint-{id(self)}"
-
-            fig.add_trace(
-                go.Scattergeo(
-                    lon=ra_values,
-                    lat=dec_values,
-                    mode="lines",
-                    fill="none",
-                    name=name if name else legend_group,
-                    legendgroup=legend_group,
-                    line=dict(color=color) if color else None,
-                    showlegend=show_legend,
-                )
-            )
+        fig = plot_footprint(
+            detectors=[detector.model_dump() for detector in self.detectors],
+            fig=fig,
+            name=name,
+            color=color,
+        )
 
         return fig
