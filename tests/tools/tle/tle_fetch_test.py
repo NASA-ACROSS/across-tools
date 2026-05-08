@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -81,10 +80,10 @@ class TestTLEFetch:
         self,
         valid_spacetrack_tle_response: str,
         tle_fetch_object: TLEFetch,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test TLEFetch get method returns a list."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = tle_fetch_object.get()
         assert isinstance(result, list)
@@ -93,10 +92,10 @@ class TestTLEFetch:
         self,
         valid_spacetrack_tle_response: str,
         tle_fetch_object: TLEFetch,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test TLEFetch get method returns one TLE for one response pair."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = tle_fetch_object.get()
         assert len(result) == 1
@@ -105,10 +104,10 @@ class TestTLEFetch:
         self,
         valid_spacetrack_tle_response: str,
         tle_fetch_object: TLEFetch,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test TLEFetch get method returns TLE entries."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = tle_fetch_object.get()
         assert isinstance(result[0], TLE)
@@ -117,10 +116,10 @@ class TestTLEFetch:
         self,
         valid_spacetrack_tle_response: str,
         tle_fetch_object: TLEFetch,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test TLEFetch get method returns correct norad_id."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = tle_fetch_object.get()
         assert result
@@ -130,10 +129,10 @@ class TestTLEFetch:
         self,
         valid_spacetrack_tle_response: str,
         tle_fetch_object: TLEFetch,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test TLEFetch get method returns correct satellite name."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = tle_fetch_object.get()
         assert result
@@ -142,10 +141,10 @@ class TestTLEFetch:
     def test_get_empty_response(
         self,
         empty_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test TLEFetch get method with an empty response."""
-        configure_mock_spacetrack_gp(empty_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = empty_spacetrack_tle_response
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}],
@@ -160,10 +159,10 @@ class TestTLEFetch:
     def test_get_list_satellites_returns_two_entries(
         self,
         multi_norad_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """List satellites query returns one entry per requested satellite."""
-        configure_mock_spacetrack_gp(multi_norad_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = multi_norad_spacetrack_tle_response
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}, {"name": "SWIFT", "id": 28485}],
@@ -178,10 +177,10 @@ class TestTLEFetch:
     def test_get_list_satellites_returns_matching_ids(
         self,
         multi_norad_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """List satellites query returns only requested satellites."""
-        configure_mock_spacetrack_gp(multi_norad_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = multi_norad_spacetrack_tle_response
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}, {"name": "SWIFT", "id": 28485}],
@@ -196,10 +195,10 @@ class TestTLEFetch:
     def test_get_list_satellites_keeps_newest_first_match(
         self,
         multi_norad_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """List satellites query keeps newest entry per satellite based on ordering."""
-        configure_mock_spacetrack_gp(multi_norad_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = multi_norad_spacetrack_tle_response
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}, {"name": "SWIFT", "id": 28485}],
@@ -214,10 +213,10 @@ class TestTLEFetch:
     def test_get_filters_to_newest_epoch_for_same_norad_id(
         self,
         duplicate_norad_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """When Space-Track returns multiple TLEs for same NORAD ID, keep only the newest."""
-        configure_mock_spacetrack_gp(duplicate_norad_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = duplicate_norad_spacetrack_tle_response
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}],
@@ -271,10 +270,10 @@ class TestGetTLE:
     def test_get_tle_returns_tle_list_type(
         self,
         valid_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test get_tle returns a list."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = get_tle(
             satellites=[{"name": "ISS", "id": 25544}],
@@ -288,10 +287,10 @@ class TestGetTLE:
     def test_get_tle_returns_tle_list_length(
         self,
         valid_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test get_tle returns one element for one TLE pair."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = get_tle(
             satellites=[{"name": "ISS", "id": 25544}],
@@ -305,10 +304,10 @@ class TestGetTLE:
     def test_get_tle_returns_tle_item_type(
         self,
         valid_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test get_tle returns TLE entries."""
-        configure_mock_spacetrack_gp(valid_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = get_tle(
             satellites=[{"name": "ISS", "id": 25544}],
@@ -322,10 +321,10 @@ class TestGetTLE:
     def test_get_tle_no_results(
         self,
         empty_spacetrack_tle_response: str,
-        configure_mock_spacetrack_gp: Callable[[str], MagicMock],
+        mock_spacetrack_instance: MagicMock,
     ) -> None:
         """Test when no TLEs are found"""
-        configure_mock_spacetrack_gp(empty_spacetrack_tle_response)
+        mock_spacetrack_instance.gp.return_value = empty_spacetrack_tle_response
 
         result = get_tle(
             satellites=[{"name": "UNKNOWN", "id": 99999}],

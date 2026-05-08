@@ -197,7 +197,10 @@ class TLEFetch:
                         tle2=tle2,
                     )
                 )
+
                 seen_ids.add(parsed_id)
+
+                # all requested satellite ids have been parsed into TLEs from the response
                 if seen_ids == requested_ids:
                     break
 

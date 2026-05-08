@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -57,16 +57,16 @@ def empty_spacetrack_tle_response() -> str:
 
 
 @pytest.fixture
-def configure_mock_spacetrack_gp(mock_spacetrack: MagicMock) -> Callable[[str], MagicMock]:
+def mock_spacetrack_instance(mock_spacetrack: MagicMock) -> MagicMock:
     """Configure the mocked SpaceTrack client gp() response and return the client."""
 
-    def _configure(response: str) -> MagicMock:
-        mock_client = MagicMock()
-        mock_client.gp.return_value = response
-        mock_spacetrack.return_value.__enter__.return_value = mock_client
-        return mock_client
+    """Mocked spacetrack instance"""
+    mock_instance = MagicMock()
+    mock_instance.gp = MagicMock()
 
-    return _configure
+    mock_spacetrack.return_value.__enter__.return_value = mock_instance
+
+    return mock_instance
 
 
 @pytest.fixture
