@@ -3,6 +3,7 @@
 # All Rights Reserved.
 
 
+import logging
 import re
 from datetime import datetime, timedelta
 from typing import TypedDict
@@ -60,6 +61,17 @@ class TLEFetch:
     -------
     get
         Get TLEs for given epoch
+
+    Raises
+    ------
+    TypeError
+        - satellites must be a list of dicts with 'name' and 'id' keys
+        - each satellite must be a dict
+        - each satellite dict must have 'name' and 'id' keys
+        - satellite 'name' must be a string
+        - satellite 'id' must be an integer
+    ValueError
+        - satellites list cannot be empty
     """
 
     # Configuration parameters
@@ -119,8 +131,6 @@ class TLEFetch:
 
         Raises
         ------
-        TypeError
-            If ``norad_id`` is not a list of integers.
         SpaceTrackAuthenticationError
             If space-track.org authentication fails.
         """
@@ -167,25 +177,18 @@ class TLEFetch:
         sat_name_map = {sat["id"]: sat["name"] for sat in self.satellites}
         requested_ids = set(sat_name_map.keys())
         seen_ids: set[int] = set()
-        filtered_pairs: list[tuple[str, str]] = []
+        tles: list[TLE] = []
 
         # Filter to the first occurrence of each requested NORAD ID (newest due to orderby parameter)
         for tle1, tle2 in tle_pairs:
             parsed_id = self._extract_norad_id_from_tle1(tle1)
             if parsed_id is None:
+                logging.warning("Could not parse norad_id from space-track", {"tle1": tle1, "tle2": tle2})
                 continue
-            if parsed_id in requested_ids and parsed_id not in seen_ids:
-                filtered_pairs.append((tle1, tle2))
-                seen_ids.add(parsed_id)
-                if seen_ids == requested_ids:
-                    break
-
-        tle_pairs = filtered_pairs
-
-        tles = []
-        for tle1, tle2 in tle_pairs:
-            parsed_id = self._extract_norad_id_from_tle1(tle1)
-            if parsed_id is not None:
+            if parsed_id not in requested_ids:
+                logging.warning(f"Received norad_id {parsed_id} TLE from space-track that was not requested")
+                continue
+            if parsed_id not in seen_ids:
                 tles.append(
                     TLE(
                         satellite_name=sat_name_map.get(parsed_id),
@@ -194,6 +197,9 @@ class TLEFetch:
                         tle2=tle2,
                     )
                 )
+                seen_ids.add(parsed_id)
+                if seen_ids == requested_ids:
+                    break
 
         return tles
 
@@ -232,11 +238,13 @@ def get_tle(
     Raises
     ------
     TypeError
-        If ``satellites`` is not a list of dicts with 'name' and 'norad_id' keys.
+        - satellites must be a list of dicts with 'name' and 'id' keys
+        - each satellite must be a dict
+        - each satellite dict must have 'name' and 'id' keys
+        - satellite 'name' must be a string
+        - satellite 'id' must be an integer
     ValueError
-        If ``satellites`` list is empty.
-    AuthenticationError
-        If space-Track.org authentication fails.
+        - satellites list cannot be empty
     """
 
     tle = TLEFetch(
