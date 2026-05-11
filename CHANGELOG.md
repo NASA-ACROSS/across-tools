@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.4.0...v1.5.0) (2026-05-11)
+
+
+### Features
+
+* **tle:** modify tle tool to accept array of satellites and return array of tles ([#148](https://github.com/NASA-ACROSS/across-tools/issues/148)) ([af8912c](https://github.com/NASA-ACROSS/across-tools/commit/af8912c4dd0ccbc9d5c404ec30b373c820478d19))
+
 ## [1.4.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.3.2...v1.4.0) (2026-04-09)
 
 
