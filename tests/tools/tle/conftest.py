@@ -25,49 +25,6 @@ def valid_spacetrack_tle_response() -> str:
 
 
 @pytest.fixture
-def multi_norad_spacetrack_tle_response() -> str:
-    """Return a TLE response containing multiple NORAD IDs and repeated entries."""
-    return (
-        "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
-        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n"
-        "1 28485U 05055A   08263.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
-        "2 28485  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n"
-        "1 25544U 98067A   08262.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
-        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537"
-    )
-
-
-@pytest.fixture
-def duplicate_norad_spacetrack_tle_response() -> str:
-    """Return a TLE response with multiple entries for the same NORAD ID at different epochs."""
-    return (
-        "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
-        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n"
-        "1 25544U 98067A   08263.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
-        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n"
-        "1 25544U 98067A   08262.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
-        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537"
-    )
-
-
-@pytest.fixture
-def empty_spacetrack_tle_response() -> str:
-    """Return an empty TLE response."""
-    return ""
-
-
-@pytest.fixture
-def mock_spacetrack_instance(mock_spacetrack: MagicMock) -> MagicMock:
-    """Mocked spacetrack instance"""
-    mock_instance = MagicMock()
-    mock_instance.gp = MagicMock()
-
-    mock_spacetrack.return_value.__enter__.return_value = mock_instance
-
-    return mock_instance
-
-
-@pytest.fixture
 def valid_tle_data(valid_spacetrack_tle_response: str) -> dict[str, Any]:
     """Fixture providing valid TLE data."""
     return {
@@ -82,8 +39,9 @@ def valid_tle_data(valid_spacetrack_tle_response: str) -> dict[str, Any]:
 def tle_fetch_object() -> Generator[TLEFetch]:
     """Example TLEFetch object."""
     yield TLEFetch(
-        satellites=[{"name": "ISS", "id": 25544}],
+        norad_id=25544,
         epoch=datetime(2008, 9, 20),
+        satellite_name="ISS",
         spacetrack_user="user",
         spacetrack_pwd="pass",
     )
