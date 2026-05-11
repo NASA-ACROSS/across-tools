@@ -58,8 +58,6 @@ def empty_spacetrack_tle_response() -> str:
 
 @pytest.fixture
 def mock_spacetrack_instance(mock_spacetrack: MagicMock) -> MagicMock:
-    """Configure the mocked SpaceTrack client gp() response and return the client."""
-
     """Mocked spacetrack instance"""
     mock_instance = MagicMock()
     mock_instance.gp = MagicMock()
