@@ -1,4 +1,3 @@
-
 # across-tools
 
 [![Unit test smoke test](https://github.com/NASA-ACROSS/across-tools/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/NASA-ACROSS/across-tools/actions/workflows/smoke-test.yml)
@@ -10,7 +9,7 @@
 [![Codecov](https://codecov.io/gh/NASA-ACROSS/across-tools/branch/main/graph/badge.svg)](https://codecov.io/gh/NASA-ACROSS/across-tools)
 [![Read The Docs](https://img.shields.io/readthedocs/across-tools)](https://across-tools.readthedocs.io/) -->
 
-The `across-tools` repository is the NASA-ACROSS library to perform specific astronomy-related calculations on the data hosted in the `across-server`. This repository is responsible for instrument bandpasses, footprint, ephemeris, two-line element (tle) analysis, and observatory/instrument visibility calculations. 
+The `across-tools` repository is the NASA-ACROSS library to perform specific astronomy-related calculations on the data hosted in the `across-server`. This repository is responsible for instrument bandpasses, footprint, ephemeris, two-line element (tle) analysis, and observatory/instrument visibility calculations.
 
 ## Installation
 
@@ -82,5 +81,5 @@ The copyright notice to be included in the software is as follows:
 
 Copyright © 2025 United States Government as represented by the Administrator
 of the National Aeronautics and Space Administration and The Penn State
-Research Foundation.  All rights reserved. This software is licensed under the
+Research Foundation. All rights reserved. This software is licensed under the
 Apache 2.0 License.
