@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.6.0...v1.6.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* **publish:** install uv in workflow ([#160](https://github.com/NASA-ACROSS/across-tools/issues/160)) ([dd3d182](https://github.com/NASA-ACROSS/across-tools/commit/dd3d18295c9d14a0e7acc021337570b6fcc10522))
+
 ## [1.6.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.5.0...v1.6.0) (2026-05-14)
 
 
