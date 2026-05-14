@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -16,10 +15,6 @@ class TestTLEFetch:
     def test_init_satellites(self, tle_fetch_object: TLEFetch) -> None:
         """Test TLEFetch initialization satellites."""
         assert tle_fetch_object.satellites == [{"name": "ISS", "id": 25544}]
-
-    def test_init_epoch(self, tle_fetch_object: TLEFetch) -> None:
-        """Test TLEFetch initialization epoch."""
-        assert tle_fetch_object.epoch == datetime(2008, 9, 20)
 
     def test_get_returns_correct_satellite_name_from_input(self, tle_fetch_object: TLEFetch) -> None:
         """Test TLEFetch returns satellite name from input satellites list."""
@@ -40,7 +35,7 @@ class TestTLEFetch:
     @patch.dict("os.environ", {"SPACETRACK_USER": "env_user", "SPACETRACK_PWD": "env_pass"}, clear=True)
     def test_init_with_env_vars_user(self) -> None:
         """Test TLEFetch initialization with environment variable user."""
-        tle_fetch = TLEFetch(satellites=[{"name": "ISS", "id": 25544}], epoch=datetime(2008, 9, 20))
+        tle_fetch = TLEFetch(satellites=[{"name": "ISS", "id": 25544}])
         assert tle_fetch.spacetrack_user == "env_user"
 
     @patch("across.tools.core.config.config.SPACETRACK_PWD", "env_pass")
@@ -48,33 +43,33 @@ class TestTLEFetch:
     @patch.dict("os.environ", {"SPACETRACK_USER": "env_user", "SPACETRACK_PWD": "env_pass"})
     def test_init_with_env_vars_pwd(self) -> None:
         """Test TLEFetch initialization with environment variable password."""
-        tle_fetch = TLEFetch(satellites=[{"name": "ISS", "id": 25544}], epoch=datetime(2008, 9, 20))
+        tle_fetch = TLEFetch(satellites=[{"name": "ISS", "id": 25544}])
         assert tle_fetch.spacetrack_pwd == "env_pass"
 
     def test_init_raises_type_error_if_satellites_not_list(self) -> None:
         """Test TLEFetch initialization raises TypeError if satellites is not a list."""
         with pytest.raises(TypeError):
-            TLEFetch(satellites={"name": "ISS", "id": 25544}, epoch=datetime(2008, 9, 20))  # type: ignore
+            TLEFetch(satellites={"name": "ISS", "id": 25544})  # type: ignore
 
     def test_init_raises_type_error_if_satellites_empty(self) -> None:
         """Test TLEFetch initialization raises ValueError if satellites list is empty."""
         with pytest.raises(ValueError):
-            TLEFetch(satellites=[], epoch=datetime(2008, 9, 20))
+            TLEFetch(satellites=[])
 
     def test_init_raises_type_error_if_satellite_missing_keys(self) -> None:
         """Test TLEFetch initialization raises TypeError if satellite dict lacks name or id."""
         with pytest.raises(TypeError):
-            TLEFetch(satellites=[{"name": "ISS"}], epoch=datetime(2008, 9, 20))  # type: ignore
+            TLEFetch(satellites=[{"name": "ISS"}])  # type: ignore
 
     def test_init_raises_type_error_if_satellite_name_not_string(self) -> None:
         """Test TLEFetch initialization raises TypeError if satellite name is not a string."""
         with pytest.raises(TypeError):
-            TLEFetch(satellites=[{"name": 123, "id": 25544}], epoch=datetime(2008, 9, 20))  # type: ignore
+            TLEFetch(satellites=[{"name": 123, "id": 25544}])  # type: ignore
 
     def test_init_raises_type_error_if_satellite_id_not_int(self) -> None:
         """Test TLEFetch initialization raises TypeError if satellite id is not an int."""
         with pytest.raises(TypeError):
-            TLEFetch(satellites=[{"name": "ISS", "id": "25544"}], epoch=datetime(2008, 9, 20))  # type: ignore
+            TLEFetch(satellites=[{"name": "ISS", "id": "25544"}])  # type: ignore
 
     def test_get_returns_tle_list_type(
         self,
@@ -148,7 +143,6 @@ class TestTLEFetch:
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="user",
             spacetrack_pwd="pass",
         )
@@ -166,7 +160,6 @@ class TestTLEFetch:
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}, {"name": "SWIFT", "id": 28485}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="user",
             spacetrack_pwd="pass",
         )
@@ -184,7 +177,6 @@ class TestTLEFetch:
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}, {"name": "SWIFT", "id": 28485}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="user",
             spacetrack_pwd="pass",
         )
@@ -202,7 +194,6 @@ class TestTLEFetch:
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}, {"name": "SWIFT", "id": 28485}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="user",
             spacetrack_pwd="pass",
         )
@@ -220,7 +211,6 @@ class TestTLEFetch:
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="user",
             spacetrack_pwd="pass",
         )
@@ -237,7 +227,6 @@ class TestTLEFetch:
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="user",
             spacetrack_pwd="pass",
         )
@@ -255,7 +244,6 @@ class TestTLEFetch:
 
         tle_fetch = TLEFetch(
             satellites=[{"name": "ISS", "id": 25544}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="user",
             spacetrack_pwd="pass",
         )
@@ -277,7 +265,6 @@ class TestGetTLE:
 
         result = get_tle(
             satellites=[{"name": "ISS", "id": 25544}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )
@@ -294,7 +281,6 @@ class TestGetTLE:
 
         result = get_tle(
             satellites=[{"name": "ISS", "id": 25544}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )
@@ -311,7 +297,6 @@ class TestGetTLE:
 
         result = get_tle(
             satellites=[{"name": "ISS", "id": 25544}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )
@@ -328,7 +313,6 @@ class TestGetTLE:
 
         result = get_tle(
             satellites=[{"name": "UNKNOWN", "id": 99999}],
-            epoch=datetime(2008, 9, 20),
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )

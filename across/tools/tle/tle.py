@@ -5,7 +5,6 @@
 
 import logging
 import re
-from datetime import datetime, timedelta
 from typing import TypedDict
 
 from httpx import HTTPStatusError
@@ -35,8 +34,6 @@ class TLEFetch:
     satellites : list[NoradSatellite]
         List of satellites to query, each with 'name' and 'id' keys.
         Only the id is used to query against spacetrack_client.gp norad_cat_id
-    epoch : datetime
-        Epoch of TLE to retrieve.
     spacetrack_user : str, optional
         Space-Track.org username. Falls back to SPACETRACK_USER config.
     spacetrack_pwd : str, optional
@@ -48,8 +45,6 @@ class TLEFetch:
     ----------
     satellites : list[NoradSatellite]
         List of satellites with name and NORAD ID.
-    epoch : datetime
-        Epoch of the TLE
     spacetrack_user : str, optional
         Space-Track.org username
     spacetrack_pwd  : str, optional
@@ -76,7 +71,6 @@ class TLEFetch:
 
     # Configuration parameters
     satellites: list[NoradSatellite]
-    epoch: datetime
     spacetrack_user: str | None
     spacetrack_pwd: str | None
     spacetrack_base_url: str | None
@@ -84,7 +78,6 @@ class TLEFetch:
     def __init__(
         self,
         satellites: list[NoradSatellite],
-        epoch: datetime,
         spacetrack_user: str | None = None,
         spacetrack_pwd: str | None = None,
         spacetrack_base_url: str | None = None,
@@ -104,7 +97,6 @@ class TLEFetch:
                 raise TypeError("satellite 'id' must be an integer")
 
         self.satellites = satellites
-        self.epoch = epoch
         self.spacetrack_user = spacetrack_user or config.SPACETRACK_USER
         self.spacetrack_pwd = spacetrack_pwd or config.SPACETRACK_PWD
         self.spacetrack_base_url = spacetrack_base_url
@@ -137,10 +129,6 @@ class TLEFetch:
         if not self.satellites:
             return []
 
-        # Build space-track.org query
-        epoch_start = self.epoch - timedelta(days=7)
-        epoch_stop = self.epoch + timedelta(days=7)
-
         spacetrack_client_args = {"identity": self.spacetrack_user, "password": self.spacetrack_pwd}
 
         # set base_url when provided upstream to override space-track server to access
@@ -159,10 +147,10 @@ class TLEFetch:
 
             # Fetch the TLEs between the requested epochs
             tletext = spacetrack_client.gp(
+                decay_date="null-val",
+                creation_date=">now-0.5",
                 norad_cat_id=norad_ids,
-                orderby="epoch desc",
                 format="tle",
-                epoch=f">{epoch_start},<{epoch_stop}",
             )
 
         # Check if we got a return
@@ -209,7 +197,6 @@ class TLEFetch:
 
 def get_tle(
     satellites: list[NoradSatellite],
-    epoch: datetime,
     spacetrack_user: str | None = None,
     spacetrack_pwd: str | None = None,
     spacetrack_base_url: str | None = None,
@@ -223,8 +210,6 @@ def get_tle(
     ----------
     satellites : list[NoradSatellite]
         List of satellites to query, each with 'name' and 'id' keys.
-    epoch : datetime
-        The epoch timestamp for which to retrieve the TLE data.
     spacetrack_user : str, optional
         space-Track.org username.
     spacetrack_pwd : str, optional
@@ -252,7 +237,6 @@ def get_tle(
 
     tle = TLEFetch(
         satellites=satellites,
-        epoch=epoch,
         spacetrack_user=spacetrack_user,
         spacetrack_pwd=spacetrack_pwd,
         spacetrack_base_url=spacetrack_base_url,
