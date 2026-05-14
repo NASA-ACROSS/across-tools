@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.6.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.5.0...v1.6.0) (2026-05-14)
+
+
+### Features
+
+* use uv for project management and ci ([9ab02de](https://github.com/NASA-ACROSS/across-tools/commit/9ab02def77100b6513309de168912939789e0181))
+* use uv in project management ([#154](https://github.com/NASA-ACROSS/across-tools/issues/154)) ([9ab02de](https://github.com/NASA-ACROSS/across-tools/commit/9ab02def77100b6513309de168912939789e0181))
+
+
+### Bug Fixes
+
+* **tle:** use space track recommended parameters for retrieving newest TLEs ([#159](https://github.com/NASA-ACROSS/across-tools/issues/159)) ([092fe23](https://github.com/NASA-ACROSS/across-tools/commit/092fe233fc81aa655e04be7de15fe4e424bcf5dc))
+
 ## [1.5.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.4.0...v1.5.0) (2026-05-11)
 
 
