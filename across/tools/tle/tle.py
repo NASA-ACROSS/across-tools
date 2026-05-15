@@ -92,13 +92,18 @@ class TLEFetch(BaseSchema):
         match = re.match(r"^1\s+(\d+)", tle1)
         return int(match.group(1)) if match else None
 
-    def get(self) -> list[TLE]:
+    def get(self, lookback: float = 0.5) -> list[TLE]:
         """
         Return TLE data for requested NORAD ID(s), within +/- 7 days.
 
         Aggregates response by NORAD ID
         by scanning the first section of TLE line 1, and only the
         newest TLE for each requested NORAD ID is retained.
+
+        Parameters
+        ----------
+        lookback : float, optional
+            Lookback period in days for TLE data. Default is 0.5 (12 hours).
 
         Returns
         -------
@@ -120,12 +125,6 @@ class TLEFetch(BaseSchema):
         if self.spacetrack_base_url is not None:
             spacetrack_client_args["base_url"] = self.spacetrack_base_url
 
-        spacetrack_client_args = {"identity": self.spacetrack_user, "password": self.spacetrack_pwd}
-
-        # set base_url when provided upstream to override space-track server to access
-        if self.spacetrack_base_url is not None:
-            spacetrack_client_args["base_url"] = self.spacetrack_base_url
-
         # Log into space-track.org
         with SpaceTrackClient(**spacetrack_client_args) as spacetrack_client:
             try:
@@ -139,7 +138,7 @@ class TLEFetch(BaseSchema):
             # Fetch the TLEs between the requested epochs
             tletext = spacetrack_client.gp(
                 decay_date="null-val",
-                creation_date=">now-0.5",
+                creation_date=f">now-{lookback}",
                 norad_cat_id=norad_ids,
                 format="tle",
             )
@@ -191,6 +190,7 @@ def get_tle(
     spacetrack_user: str | None = None,
     spacetrack_pwd: str | None = None,
     spacetrack_base_url: str | None = None,
+    lookback: float = 0.5,
 ) -> list[TLE]:
     """
     Gets the Two-Line Element (TLE) data for one or more satellites at a specific epoch.
@@ -207,6 +207,8 @@ def get_tle(
         space-Track.org password.
     spacetrack_base_url : str, optional
         Optional Space-Track API base URL override.
+    lookback : float, optional
+        Lookback period in days for TLE data. Default is 0.5 (12
 
     Returns
     -------
@@ -232,4 +234,4 @@ def get_tle(
         spacetrack_pwd=spacetrack_pwd,
         spacetrack_base_url=spacetrack_base_url,
     )
-    return tle.get()
+    return tle.get(lookback=lookback)
