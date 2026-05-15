@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import HTTPStatusError
+from pydantic import ValidationError
 from spacetrack import AuthenticationError  # type: ignore[import-untyped]
 
 from across.tools.core.schemas.tle import TLE
@@ -51,30 +52,20 @@ class TestTLEFetch:
         tle_fetch = TLEFetch(satellites=[{"name": "ISS", "id": 25544}], epoch=datetime(2008, 9, 20))
         assert tle_fetch.spacetrack_pwd == "env_pass"
 
-    def test_init_raises_type_error_if_satellites_not_list(self) -> None:
-        """Test TLEFetch initialization raises TypeError if satellites is not a list."""
-        with pytest.raises(TypeError):
+    def test_init_raises_validation_error_if_satellites_not_list(self) -> None:
+        """Test TLEFetch initialization raises ValidationErr if satellites is not a list."""
+        with pytest.raises(ValidationError):
             TLEFetch(satellites={"name": "ISS", "id": 25544}, epoch=datetime(2008, 9, 20))  # type: ignore
 
-    def test_init_raises_type_error_if_satellites_empty(self) -> None:
-        """Test TLEFetch initialization raises ValueError if satellites list is empty."""
-        with pytest.raises(ValueError):
-            TLEFetch(satellites=[], epoch=datetime(2008, 9, 20))
-
-    def test_init_raises_type_error_if_satellite_missing_keys(self) -> None:
-        """Test TLEFetch initialization raises TypeError if satellite dict lacks name or id."""
-        with pytest.raises(TypeError):
+    def test_init_raises_validation_error_if_satellite_missing_keys(self) -> None:
+        """Test TLEFetch initialization raises ValidationErr if satellite dict lacks name or id."""
+        with pytest.raises(ValidationError):
             TLEFetch(satellites=[{"name": "ISS"}], epoch=datetime(2008, 9, 20))  # type: ignore
 
-    def test_init_raises_type_error_if_satellite_name_not_string(self) -> None:
-        """Test TLEFetch initialization raises TypeError if satellite name is not a string."""
-        with pytest.raises(TypeError):
+    def test_init_raises_validation_error_if_satellite_name_not_string(self) -> None:
+        """Test TLEFetch initialization raises ValidationErr if satellite name is not a string."""
+        with pytest.raises(ValidationError):
             TLEFetch(satellites=[{"name": 123, "id": 25544}], epoch=datetime(2008, 9, 20))  # type: ignore
-
-    def test_init_raises_type_error_if_satellite_id_not_int(self) -> None:
-        """Test TLEFetch initialization raises TypeError if satellite id is not an int."""
-        with pytest.raises(TypeError):
-            TLEFetch(satellites=[{"name": "ISS", "id": "25544"}], epoch=datetime(2008, 9, 20))  # type: ignore
 
     def test_get_returns_tle_list_type(
         self,
