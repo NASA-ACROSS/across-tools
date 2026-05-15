@@ -44,23 +44,22 @@ dependencies = [
 [project.urls]
 "Source Code" = "https://github.com/NASA-ACROSS/across-tools"
 
-# On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "diskcache-stubs>=5.6.0",
     "jupyter>=1.1.1",
-    "mypy>=1.19.1,<2.0",
     "nbsphinx>=0.9.8",
     "plotly-stubs>=0.0.6",
-    "pre-commit>=4.5.1",
-    "pytest>=9.0.2",
-    "pytest-cov>=7.0.0",
-    "ruff>=0.14.14",
     "sphinx-autoapi>=3.6.1",
     "sphinx-copybutton>=0.5.2",
     "sphinx-rtd-theme>=3.1.0",
-    "types-shapely>=2.0.4",
+    { include-group = "lint" },
+    { include-group = "test" },
+    { include-group = "types" },
 ]
+lint = ["pre-commit>=4.5.1", "ruff>=0.15.12"]
+types = ["mypy>=1.19.1,<2.0", "types-shapely>=2.0.4"]
+test = ["pytest>=9.0.2", "pytest-cov>=7.0.0"]
 
 [build-system]
 requires = [

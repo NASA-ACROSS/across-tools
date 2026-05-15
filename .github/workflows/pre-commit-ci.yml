@@ -16,19 +16,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v8.1.0
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.10"
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          python -m pip install --upgrade pip
-          pip install .[dev]
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: --all-files --verbose
+          make install
+      - name: Run pre-commit hooks
+        run: |
+          make run_hooks
         env:
           SKIP: "check-lincc-frameworks-template-version,no-commit-to-branch,check-added-large-files,validate-pyproject,sphinx-build,pytest-check"
       - uses: pre-commit-ci/lite-action@v1.1.0

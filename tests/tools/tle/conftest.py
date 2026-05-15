@@ -1,5 +1,4 @@
 from collections.abc import Generator
-from datetime import datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -83,7 +82,6 @@ def tle_fetch_object() -> Generator[TLEFetch]:
     """Example TLEFetch object."""
     yield TLEFetch(
         satellites=[{"name": "ISS", "id": 25544}],
-        epoch=datetime(2008, 9, 20),
         spacetrack_user="user",
         spacetrack_pwd="pass",
     )

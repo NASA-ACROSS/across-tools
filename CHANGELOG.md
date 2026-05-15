@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.6.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.6.0...v1.6.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* **publish:** install uv in workflow ([#160](https://github.com/NASA-ACROSS/across-tools/issues/160)) ([dd3d182](https://github.com/NASA-ACROSS/across-tools/commit/dd3d18295c9d14a0e7acc021337570b6fcc10522))
+
+## [1.6.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.5.0...v1.6.0) (2026-05-14)
+
+
+### Features
+
+* use uv for project management and ci ([9ab02de](https://github.com/NASA-ACROSS/across-tools/commit/9ab02def77100b6513309de168912939789e0181))
+* use uv in project management ([#154](https://github.com/NASA-ACROSS/across-tools/issues/154)) ([9ab02de](https://github.com/NASA-ACROSS/across-tools/commit/9ab02def77100b6513309de168912939789e0181))
+
+
+### Bug Fixes
+
+* **tle:** use space track recommended parameters for retrieving newest TLEs ([#159](https://github.com/NASA-ACROSS/across-tools/issues/159)) ([092fe23](https://github.com/NASA-ACROSS/across-tools/commit/092fe233fc81aa655e04be7de15fe4e424bcf5dc))
+
+## [1.5.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.4.0...v1.5.0) (2026-05-11)
+
+
+### Features
+
+* **tle:** modify tle tool to accept array of satellites and return array of tles ([#148](https://github.com/NASA-ACROSS/across-tools/issues/148)) ([af8912c](https://github.com/NASA-ACROSS/across-tools/commit/af8912c4dd0ccbc9d5c404ec30b373c820478d19))
+
 ## [1.4.0](https://github.com/NASA-ACROSS/across-tools/compare/v1.3.2...v1.4.0) (2026-04-09)
 
 
