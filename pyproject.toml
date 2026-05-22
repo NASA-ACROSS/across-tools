@@ -139,3 +139,7 @@ omit = ["across/tools/_version.py"]
 strict = true
 explicit_package_bases = true
 namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = ["diskcache"]
+ignore_missing_imports = true
