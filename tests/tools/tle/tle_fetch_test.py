@@ -7,7 +7,7 @@ from spacetrack import AuthenticationError  # type: ignore[import-untyped]
 
 from across.tools.core.schemas.tle import TLE
 from across.tools.tle.exceptions import SpaceTrackAuthenticationError
-from across.tools.tle.tle import TLEFetch, get_tle
+from across.tools.tle.tle import TLEFetch, get_tle, get_tles
 
 
 class TestTLEFetch:
@@ -108,7 +108,6 @@ class TestTLEFetch:
         mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = tle_fetch_object.get()
-        assert result
         assert result[0].norad_id == 25544
 
     def test_get_returns_correct_satellite_name(
@@ -243,10 +242,10 @@ class TestTLEFetch:
             tle_fetch.get()
 
 
-class TestGetTLE:
+class TestGetTLEs:
     """Test suite for the get_tle function."""
 
-    def test_get_tle_returns_tle_list_type(
+    def test_get_tles_returns_tle_list_type(
         self,
         valid_spacetrack_tle_response: str,
         mock_spacetrack_instance: MagicMock,
@@ -254,7 +253,7 @@ class TestGetTLE:
         """Test get_tle returns a list."""
         mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
-        result = get_tle(
+        result = get_tles(
             satellites=[{"name": "ISS", "id": 25544}],
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
@@ -262,15 +261,15 @@ class TestGetTLE:
 
         assert isinstance(result, list)
 
-    def test_get_tle_returns_tle_list_length(
+    def test_get_tles_returns_tle_list_length(
         self,
         valid_spacetrack_tle_response: str,
         mock_spacetrack_instance: MagicMock,
     ) -> None:
-        """Test get_tle returns one element for one TLE pair."""
+        """Test get_tles returns one element for one TLE pair."""
         mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
-        result = get_tle(
+        result = get_tles(
             satellites=[{"name": "ISS", "id": 25544}],
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
@@ -278,21 +277,57 @@ class TestGetTLE:
 
         assert len(result) == 1
 
-    def test_get_tle_returns_tle_item_type(
+    def test_get_tles_returns_tle_item_type(
         self,
         valid_spacetrack_tle_response: str,
         mock_spacetrack_instance: MagicMock,
     ) -> None:
-        """Test get_tle returns TLE entries."""
+        """Test get_tles returns TLE entries."""
         mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
-        result = get_tle(
+        result = get_tles(
             satellites=[{"name": "ISS", "id": 25544}],
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )
 
         assert isinstance(result[0], TLE)
+
+    def test_get_tles_no_results(
+        self,
+        empty_spacetrack_tle_response: str,
+        mock_spacetrack_instance: MagicMock,
+    ) -> None:
+        """Test when no TLEs are found"""
+        mock_spacetrack_instance.gp.return_value = empty_spacetrack_tle_response
+
+        result = get_tles(
+            satellites=[{"name": "UNKNOWN", "id": 99999}],
+            spacetrack_user="test_user",
+            spacetrack_pwd="test_pass",
+        )
+
+        assert len(result) == 0
+
+
+class TestGetTLE:
+    """Test suite for the get_tle function."""
+
+    def test_get_tle_returns_tle(
+        self,
+        valid_spacetrack_tle_response: str,
+        mock_spacetrack_instance: MagicMock,
+    ) -> None:
+        """Test get_tle returns a TLE instance."""
+        mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
+
+        result = get_tle(
+            satellites={"name": "ISS", "id": 25544},
+            spacetrack_user="test_user",
+            spacetrack_pwd="test_pass",
+        )
+
+        assert isinstance(result, TLE)
 
     def test_get_tle_no_results(
         self,
@@ -303,9 +338,9 @@ class TestGetTLE:
         mock_spacetrack_instance.gp.return_value = empty_spacetrack_tle_response
 
         result = get_tle(
-            satellites=[{"name": "UNKNOWN", "id": 99999}],
+            satellites={"name": "UNKNOWN", "id": 99999},
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )
 
-        assert result == []
+        assert result is None

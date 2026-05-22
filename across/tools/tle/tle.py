@@ -5,6 +5,7 @@
 
 import logging
 import re
+from datetime import datetime, timedelta
 
 from httpx import HTTPStatusError
 from pydantic import model_validator
@@ -76,9 +77,11 @@ class TLEFetch(BaseSchema):
 
     # Configuration parameters
     satellites: list[NoradSatellite]
+    epoch: datetime | None = None
     spacetrack_user: str | None = None
     spacetrack_pwd: str | None = None
     spacetrack_base_url: str | None = None
+    lookback: float = 0.5
 
     @model_validator(mode="after")
     def _default_spacetrack_settings(self) -> "TLEFetch":
@@ -92,7 +95,7 @@ class TLEFetch(BaseSchema):
         match = re.match(r"^1\s+(\d+)", tle1)
         return int(match.group(1)) if match else None
 
-    def get(self, lookback: float = 0.5) -> list[TLE]:
+    def get(self) -> list[TLE]:
         """
         Return TLE data for requested NORAD ID(s), within +/- 7 days.
 
@@ -119,6 +122,13 @@ class TLEFetch(BaseSchema):
         if not self.satellites:
             return []
 
+        if self.epoch is not None:
+            epoch_start = self.epoch - timedelta(days=self.lookback)
+            epoch_stop = self.epoch + timedelta(days=self.lookback)
+            creation_date_query = f">{epoch_start},<{epoch_stop}"
+        else:
+            creation_date_query = f">now-{self.lookback}"
+
         spacetrack_client_args = {"identity": self.spacetrack_user, "password": self.spacetrack_pwd}
 
         # set base_url when provided upstream to override space-track server to access
@@ -138,7 +148,7 @@ class TLEFetch(BaseSchema):
             # Fetch the TLEs between the requested epochs
             tletext = spacetrack_client.gp(
                 decay_date="null-val",
-                creation_date=f">now-{lookback}",
+                creation_date=creation_date_query,
                 norad_cat_id=norad_ids,
                 format="tle",
             )
@@ -186,7 +196,69 @@ class TLEFetch(BaseSchema):
 
 
 def get_tle(
+    satellites: NoradSatellite,
+    epoch: datetime | None = None,
+    spacetrack_user: str | None = None,
+    spacetrack_pwd: str | None = None,
+    spacetrack_base_url: str | None = None,
+    lookback: float = 0.5,
+) -> TLE | None:
+    """
+    Gets the Two-Line Element (TLE) data for one or more satellites at a specific epoch.
+    Credentials for space-track.org can be provided as arguments, or they can
+    be set as environment variables SPACETRACK_USER and SPACETRACK_PWD.
+
+    Parameters
+    ----------
+    satellites : NoradSatellite
+        Satellite to query, with 'name' and 'id' keys.
+    epoch : datetime
+        Epoch of TLE to retrieve.
+    spacetrack_user : str, optional
+        space-Track.org username.
+    spacetrack_pwd : str, optional
+        space-Track.org password.
+    spacetrack_base_url : str, optional
+        Optional Space-Track API base URL override.
+    lookback : float, optional
+        Lookback period in days for TLE data. Default is 0.5 (12
+
+    Returns
+    -------
+    TLE | None
+        TLE object matching the requested satellite. None if no data is
+        found.
+
+    Raises
+    ------
+    TypeError
+        - satellites must be a list of dicts with 'name' and 'id' keys
+        - each satellite must be a dict
+        - each satellite dict must have 'name' and 'id' keys
+        - satellite 'name' must be a string
+        - satellite 'id' must be an integer
+    ValueError
+        - satellites list cannot be empty
+    """
+
+    tle = TLEFetch(
+        satellites=[satellites],
+        epoch=epoch,
+        spacetrack_user=spacetrack_user,
+        spacetrack_pwd=spacetrack_pwd,
+        spacetrack_base_url=spacetrack_base_url,
+        lookback=lookback,
+    )
+    values = tle.get()
+    if len(values):
+        return values[0]
+    else:
+        return None
+
+
+def get_tles(
     satellites: list[NoradSatellite],
+    epoch: datetime | None = None,
     spacetrack_user: str | None = None,
     spacetrack_pwd: str | None = None,
     spacetrack_base_url: str | None = None,
@@ -201,6 +273,8 @@ def get_tle(
     ----------
     satellites : list[NoradSatellite]
         List of satellites to query, each with 'name' and 'id' keys.
+    epoch : datetime
+        Epoch of TLE to retrieve.
     spacetrack_user : str, optional
         space-Track.org username.
     spacetrack_pwd : str, optional
@@ -230,8 +304,10 @@ def get_tle(
 
     tle = TLEFetch(
         satellites=satellites,
+        epoch=epoch,
         spacetrack_user=spacetrack_user,
         spacetrack_pwd=spacetrack_pwd,
         spacetrack_base_url=spacetrack_base_url,
+        lookback=lookback,
     )
-    return tle.get(lookback=lookback)
+    return tle.get()
