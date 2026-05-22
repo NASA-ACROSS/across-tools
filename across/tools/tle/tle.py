@@ -196,7 +196,8 @@ class TLEFetch(BaseSchema):
 
 
 def get_tle(
-    satellites: NoradSatellite,
+    norad_id: int,
+    satellite_name: str | None = None,
     epoch: datetime | None = None,
     spacetrack_user: str | None = None,
     spacetrack_pwd: str | None = None,
@@ -204,14 +205,16 @@ def get_tle(
     lookback: float = 0.5,
 ) -> TLE | None:
     """
-    Gets the Two-Line Element (TLE) data for one or more satellites at a specific epoch.
+    Gets the Two-Line Element (TLE) data for one satellite at a specific epoch.
     Credentials for space-track.org can be provided as arguments, or they can
     be set as environment variables SPACETRACK_USER and SPACETRACK_PWD.
 
     Parameters
     ----------
-    satellites : NoradSatellite
-        Satellite to query, with 'name' and 'id' keys.
+    satellite_name : str | None
+        Name of the satellite to query.
+    norad_id : int
+        NORAD ID of the satellite to query.
     epoch : datetime
         Epoch of TLE to retrieve.
     spacetrack_user : str, optional
@@ -242,7 +245,7 @@ def get_tle(
     """
 
     tle = TLEFetch(
-        satellites=[satellites],
+        satellites=[NoradSatellite(name=satellite_name or f"NORAD {norad_id}", id=norad_id)],
         epoch=epoch,
         spacetrack_user=spacetrack_user,
         spacetrack_pwd=spacetrack_pwd,

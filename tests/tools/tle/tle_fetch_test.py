@@ -322,7 +322,8 @@ class TestGetTLE:
         mock_spacetrack_instance.gp.return_value = valid_spacetrack_tle_response
 
         result = get_tle(
-            satellites={"name": "ISS", "id": 25544},
+            norad_id=25544,
+            satellite_name="ISS",
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )
@@ -338,7 +339,8 @@ class TestGetTLE:
         mock_spacetrack_instance.gp.return_value = empty_spacetrack_tle_response
 
         result = get_tle(
-            satellites={"name": "UNKNOWN", "id": 99999},
+            norad_id=99999,
+            satellite_name="UNKNOWN",
             spacetrack_user="test_user",
             spacetrack_pwd="test_pass",
         )
