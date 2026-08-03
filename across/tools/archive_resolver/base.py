@@ -88,7 +88,7 @@ class MASTArchiveResolver(ArchiveResolver):
 
     name: Literal["MAST"] = "MAST"
     archive_url_template: str = (
-        "https://mast.stsci.edu/search/ui/#/hst/results?proposal_id={external_observation_id}"
+        "https://mast.stsci.edu/search/ui/#/{mission}/results?proposal_id={external_observation_id}"
     )
     mission: MASTMission
 
@@ -107,7 +107,7 @@ class MASTArchiveResolver(ArchiveResolver):
         """
         self._sanitize_id()
         self.archive_url = self.archive_url_template.format(
-            external_observation_id=self.external_observation_id
+            mission=self.mission.value.lower(), external_observation_id=self.external_observation_id
         )
 
 
@@ -138,5 +138,6 @@ class HEASARCArchiveResolver(ArchiveResolver):
         external_observation_id into the archive_url_template.
         """
         self.archive_url = self.archive_url_template.format(
-            heasarc_table=self.heasarc_table, external_observation_id=self.external_observation_id
+            heasarc_table=self.heasarc_table.value.lower(),
+            external_observation_id=self.external_observation_id,
         )
