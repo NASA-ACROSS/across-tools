@@ -88,7 +88,7 @@ class MASTArchiveResolver(ArchiveResolver):
 
     name: Literal["MAST"] = "MAST"
     archive_url_template: str = (
-        "https://mast.stsci.edu/search/ui/#/{mission}/results?proposal_id={external_observation_id}"
+        "https://mast.stsci.edu/search/ui/#/{mission}/results?{proposal_keyword}_id={external_observation_id}"
     )
     mission: MASTMission
 
@@ -106,8 +106,11 @@ class MASTArchiveResolver(ArchiveResolver):
         external_observation_id into the archive_url_template.
         """
         self._sanitize_id()
+        proposal_keyword = "proposal" if self.mission == MASTMission.HST else "program"
         self.archive_url = self.archive_url_template.format(
-            mission=self.mission.value.lower(), external_observation_id=self.external_observation_id
+            mission=self.mission.value.lower(),
+            proposal_keyword=proposal_keyword,
+            external_observation_id=self.external_observation_id,
         )
 
 
