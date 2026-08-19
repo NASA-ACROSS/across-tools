@@ -28,7 +28,7 @@ class SolarSystemConstraint(ConstraintABC):
         Observations closer than this will be constrained.
     bodies : list[str]
         List of Solar System bodies to avoid. Defaults to major planets.
-        Options include: 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'.
+        Options include: 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'.
 
     Methods
     -------
@@ -107,6 +107,13 @@ class SolarSystemConstraint(ConstraintABC):
             # Maximum brightness around -4.7
             phase_angle = body_coord.separation(ephemeris.sun[i]).deg
             magnitude = -4.7 + 0.013 * phase_angle + 4.3e-7 * phase_angle**3
+            return magnitude
+
+        elif body_name == SolarSystemObject.EARTH:
+            # Earth magnitude calculation
+            # Absolute magnitude ~-3.86 (Mallama & Hilton 2018)
+            distance_au = body_coord.distance.to(u.AU)
+            magnitude = -3.86 + 5 * np.log10(distance_au.value)
             return magnitude
 
         elif body_name == SolarSystemObject.MARS:

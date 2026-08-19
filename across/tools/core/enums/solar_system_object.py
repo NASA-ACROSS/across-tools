@@ -6,6 +6,7 @@ class SolarSystemObject(str, Enum):
 
     MERCURY = "mercury"
     VENUS = "venus"
+    EARTH = "earth"
     MARS = "mars"
     JUPITER = "jupiter"
     SATURN = "saturn"
