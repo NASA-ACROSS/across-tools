@@ -329,6 +329,21 @@ class TestCalculateBodyMagnitude:
         expected = -4.7 + 0.013 * phase_angle + 4.3e-7 * phase_angle**3
         assert np.allclose(result, [expected])
 
+    def test_calculate_magnitude_earth(
+        self,
+        body_coord_1au: SkyCoord,
+        mock_ephemeris_with_sun: Ephemeris,
+        solar_system_constraint: SolarSystemConstraint,
+        slice_index: slice,
+    ) -> None:
+        """Test magnitude calculation for Earth."""
+        result = solar_system_constraint._calculate_body_magnitude(
+            SolarSystemObject.EARTH, body_coord_1au, mock_ephemeris_with_sun, slice_index
+        )
+        distance_au = 1
+        expected = -3.86 + 5 * np.log10(distance_au)
+        assert np.allclose(result, [expected])
+
     def test_calculate_magnitude_mars(
         self,
         body_coord_1_5au: SkyCoord,
