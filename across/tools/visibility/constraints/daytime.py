@@ -110,7 +110,9 @@ class DaytimeConstraint(ConstraintABC):
         i = get_slice(time, ephemeris)
 
         # Calculate angular separation between Sun and Earth centers as seen from spacecraft
-        sun_earth_separation = ephemeris.sun[i].separation(ephemeris.earth[i])
+        sun_earth_separation = SkyCoord(ephemeris.sun[i].ra, ephemeris.sun[i].dec).separation(
+            SkyCoord(ephemeris.earth[i].ra, ephemeris.earth[i].dec)
+        )
 
         # Spacecraft is in eclipse (not in sunlight) if the angular separation
         # between Sun and Earth centers is less than the sum of their angular radii

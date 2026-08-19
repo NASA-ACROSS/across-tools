@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import cast
 
 import astropy.units as u  # type: ignore[import-untyped]
-import diskcache
+import diskcache  # type: ignore[import-untyped]
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astroquery.vizier import Vizier  # type: ignore[import-untyped]
 
