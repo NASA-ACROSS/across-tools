@@ -13,6 +13,33 @@ from ...ephemeris import Ephemeris
 from .base import ConstraintABC, get_slice
 
 
+def _rust_ephem_body_name(body_name: SolarSystemObject | str) -> str:
+    """
+    Return the name to use when requesting a Solar System body from rust-ephem.
+
+    The planetary ephemeris kernel shipped with rust-ephem (de440s) only
+    contains records for the planetary barycenters, so planets are requested as
+    e.g. "mars barycenter". The Earth is the exception: "earth barycenter" is
+    the Earth-Moon barycenter, which sits ~4700 km from the geocenter, an error
+    of tens of degrees as seen from low Earth orbit, so the geocenter is
+    requested instead.
+
+    Parameters
+    ----------
+    body_name : SolarSystemObject | str
+        Name of the body ('earth', 'mars', etc.)
+
+    Returns
+    -------
+    str
+        The body name to pass to `rust_ephem.TLEEphemeris.get_body`.
+    """
+    name = body_name.value if isinstance(body_name, SolarSystemObject) else body_name
+    if name == SolarSystemObject.EARTH:
+        return name
+    return f"{name} barycenter"
+
+
 class SolarSystemConstraint(ConstraintABC):
     """
     Constraint that avoids observing too close to bright Solar System objects.
@@ -186,10 +213,10 @@ class SolarSystemConstraint(ConstraintABC):
 
             # Get the body's position at the observation time
             try:
-                if hasattr(ephemeris, "_tle_ephem") or False:
+                if hasattr(ephemeris, "_tle_ephem"):
                     # Use rust-ephem's performant get_body if available
                     self.computed_values.body_coordinates[body_name] = ephemeris._tle_ephem.get_body(
-                        body_name + " barycenter"
+                        _rust_ephem_body_name(body_name)
                     )[i]
                 else:
                     # Fallback to astropy's get_body
@@ -205,10 +232,11 @@ class SolarSystemConstraint(ConstraintABC):
                 self.computed_values.body_separation = {}
 
             # Calculate angular separation (and record it in computed
-            # values)
-            self.computed_values.body_separation[body_name] = coordinate.separation(
-                self.computed_values.body_coordinates[body_name].icrs
-            )
+            # values).
+            body_coordinate = self.computed_values.body_coordinates[body_name]
+            self.computed_values.body_separation[body_name] = SkyCoord(
+                body_coordinate.ra, body_coordinate.dec
+            ).separation(coordinate)
 
             # Initialize body_magnitude dict if needed
             if self.computed_values.body_magnitude is None:
@@ -216,7 +244,7 @@ class SolarSystemConstraint(ConstraintABC):
 
             # Calculate apparent magnitude of the body
             self.computed_values.body_magnitude[body_name] = self._calculate_body_magnitude(
-                body_name, self.computed_values.body_coordinates[body_name], ephemeris, i
+                body_name, body_coordinate, ephemeris, i
             )
 
             # Check if too close and bright enough to violate the constraint

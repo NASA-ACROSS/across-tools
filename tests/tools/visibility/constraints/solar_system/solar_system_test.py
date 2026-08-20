@@ -1,13 +1,17 @@
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
 import pytest
-from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.coordinates import SkyCoord, get_body  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
 from across.tools.core.enums.solar_system_object import SolarSystemObject
 from across.tools.ephemeris import Ephemeris
-from across.tools.visibility.constraints.solar_system import SolarSystemConstraint
+from across.tools.visibility.constraints.earth_limb import EarthLimbConstraint
+from across.tools.visibility.constraints.solar_system import (
+    SolarSystemConstraint,
+    _rust_ephem_body_name,
+)
 
 
 class TestSolarSystemConstraintAttributes:
@@ -429,3 +433,90 @@ class TestCalculateBodyMagnitude:
             solar_system_constraint._calculate_body_magnitude(
                 "pluto", body_coord, mock_ephemeris, slice_index
             )
+
+
+class TestRustEphemBodyName:
+    """Test suite for the _rust_ephem_body_name helper."""
+
+    def test_earth_requests_geocenter(self) -> None:
+        """Earth should be requested as the geocenter, not the Earth-Moon barycenter."""
+        assert _rust_ephem_body_name(SolarSystemObject.EARTH) == "earth"
+
+    def test_planet_requests_barycenter(self) -> None:
+        """Planets should be requested as their barycenter, as only those are in de440s."""
+        assert _rust_ephem_body_name(SolarSystemObject.MARS) == "mars barycenter"
+
+    def test_string_body_name_accepted(self) -> None:
+        """A plain string body name should be handled as well as the enum."""
+        assert _rust_ephem_body_name("jupiter") == "jupiter barycenter"
+
+
+class TestSolarSystemConstraintSeparation:
+    """Test suite for the separations computed by SolarSystemConstraint."""
+
+    def test_earth_separation_matches_earth_limb_constraint(
+        self, test_tle_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """
+        The Earth separation should match the Earth angle computed by
+        EarthLimbConstraint, as both measure the angle from the spacecraft to
+        the center of the Earth.
+        """
+        constraint = SolarSystemConstraint(bodies=["earth"], min_separation=10.0)
+        constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, sky_coord)
+
+        earth_limb_constraint = EarthLimbConstraint(min_angle=30)
+        earth_limb_constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, sky_coord)
+
+        assert constraint.computed_values.body_separation is not None
+        assert u.allclose(
+            constraint.computed_values.body_separation[SolarSystemObject.EARTH],
+            earth_limb_constraint.computed_values.earth_angle,
+            atol=1 * u.arcsec,
+        )
+
+    def test_earth_distance_is_geocentric(self, test_tle_ephemeris: Ephemeris, sky_coord: SkyCoord) -> None:
+        """
+        The Earth position should be the geocenter as recorded in the ephemeris,
+        not the Earth-Moon barycenter ~4700 km away from it.
+        """
+        constraint = SolarSystemConstraint(bodies=["earth"], min_separation=10.0)
+        constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, sky_coord)
+
+        assert constraint.computed_values.body_coordinates is not None
+        assert u.allclose(
+            constraint.computed_values.body_coordinates[SolarSystemObject.EARTH].distance,
+            test_tle_ephemeris.earth.distance,
+            atol=1 * u.km,
+        )
+
+    def test_planet_separation_measured_from_observer(
+        self, ground_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """
+        Separations should be measured from the observer, so they should match
+        the separation from the body's observer centered RA/Dec.
+        """
+        constraint = SolarSystemConstraint(bodies=["mars"], min_separation=10.0)
+        constraint(ground_ephemeris.timestamp, ground_ephemeris, sky_coord)
+
+        mars = get_body("mars", ground_ephemeris.timestamp, ground_ephemeris.earth_location)
+        expected = SkyCoord(mars.ra, mars.dec).separation(sky_coord)
+
+        assert constraint.computed_values.body_separation is not None
+        assert u.allclose(
+            constraint.computed_values.body_separation[SolarSystemObject.MARS],
+            expected,
+            atol=1 * u.arcsec,
+        )
+
+    @pytest.mark.parametrize("body", list(SolarSystemObject))
+    def test_all_bodies_resolve_for_tle_ephemeris(
+        self, body: SolarSystemObject, test_tle_ephemeris: Ephemeris, sky_coord: SkyCoord
+    ) -> None:
+        """Every supported body should be resolvable from the rust-ephem kernel."""
+        constraint = SolarSystemConstraint(bodies=[body], min_separation=10.0)
+        constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, sky_coord)
+
+        assert constraint.computed_values.body_separation is not None
+        assert body in constraint.computed_values.body_separation
