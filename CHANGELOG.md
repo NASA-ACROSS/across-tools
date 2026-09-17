@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.2](https://github.com/NASA-ACROSS/across-tools/compare/v1.6.1...v1.6.2) (2026-09-17)
+
+
+### Bug Fixes
+
+* **constraints:** add earth support to solar system constraint  ([#173](https://github.com/NASA-ACROSS/across-tools/issues/173)) ([806afe0](https://github.com/NASA-ACROSS/across-tools/commit/806afe07eabdb4e595f4cbe8dfa00c4eabf4eeef))
+* **constraints:** Optimize DaytimeConstraint by calculating sun_earth_separation in SkyCoord ([#174](https://github.com/NASA-ACROSS/across-tools/issues/174)) ([4fb43e8](https://github.com/NASA-ACROSS/across-tools/commit/4fb43e819d7d91c8a138b6386fce94e2c066e304))
+
 ## [1.6.1](https://github.com/NASA-ACROSS/across-tools/compare/v1.6.0...v1.6.1) (2026-05-14)
 
 
