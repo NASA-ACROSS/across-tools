@@ -79,6 +79,9 @@ class AirmassConstraint(ConstraintABC):
         )
 
         # Constrain observations with airmass above the maximum
-        in_constraint: npt.NDArray[np.bool_] = self.computed_values.air_mass > self.max_air_mass
+        if self.computed_values.air_mass is not None:
+            in_constraint = self.computed_values.air_mass > self.max_air_mass
+        else:
+            in_constraint = np.array([])
 
         return in_constraint
