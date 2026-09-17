@@ -122,7 +122,7 @@ lint: ## Run linting
 	@$(VENV_BIN)/pre-commit run --all-files;
 
 types: ## Run type checks
-	@$(VENV_BIN)/mypy;
+	@$(VENV_BIN)/mypy across/tools;
 
 
 # Group: Cleaning
