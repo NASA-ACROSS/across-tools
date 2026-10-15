@@ -5,6 +5,9 @@ from .custom_types import AstropyDateTime, AstropyTimeDelta
 from .healpix_order import HealpixOrder
 from .polygon import Polygon
 from .roll_angle import RollAngle
+from .roll_angle_allowed_range import RollAngleAllowedRange
+from .roll_angle_constraining_object import RollAngleConstrainingObject
+from .spacecraft_component_vector import SpacecraftComponentVector
 from .visibility import ConstrainedDate, ConstraintReason, VisibilityWindow, Window
 
 __all__ = [
@@ -23,4 +26,7 @@ __all__ = [
     "ConstraintReason",
     "AstropyDateTime",
     "AstropyTimeDelta",
+    "RollAngleAllowedRange",
+    "RollAngleConstrainingObject",
+    "SpacecraftComponentVector",
 ]

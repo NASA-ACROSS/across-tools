@@ -14,6 +14,7 @@ from across.tools.visibility.constraints import (
     EarthLimbConstraint,
     NotConstraint,
     OrConstraint,
+    RollAngleConstraint,
     XorConstraint,
 )
 
@@ -164,7 +165,33 @@ class TestEphemerisVisibility:
         with pytest.raises(ValueError, match="Timestamp not computed. Call _compute_timestamp\\(\\) first."):
             vis.prepare_data()
 
-    def test_compute_timestamp_line_106(
+    def test_roll_constraints_no_timestamp_error(
+        self,
+        skycoord_near_limb: SkyCoord,
+        test_visibility_time_range: tuple[Time, Time],
+        test_step_size: TimeDelta,
+        test_tle_ephemeris: Ephemeris,
+        test_roll_angle_constraint: RollAngleConstraint,
+        test_observatory_name: str,
+        test_observatory_id: uuid.UUID,
+    ) -> None:
+        """Test EphemerisVisibility with a RollAngleConstraint and no timestamp raises error (line 92)."""
+        vis = EphemerisVisibility(
+            coordinate=skycoord_near_limb,
+            begin=test_visibility_time_range[0],
+            end=test_visibility_time_range[1],
+            step_size=test_step_size,
+            ephemeris=test_tle_ephemeris,
+            constraints=[test_roll_angle_constraint],
+            observatory_name=test_observatory_name,
+            observatory_id=test_observatory_id,
+        )
+        # Don't compute timestamp, force prepare_data to be called directly
+        # This triggers the error on line 92
+        with pytest.raises(ValueError, match="Timestamp not computed. Call _compute_timestamp\\(\\) first."):
+            vis.prepare_data()
+
+    def test_compute_timestamp_line_133(
         self,
         skycoord_near_limb: SkyCoord,
         test_visibility_time_range: tuple[Time, Time],
@@ -173,7 +200,7 @@ class TestEphemerisVisibility:
         test_observatory_name: str,
         test_observatory_id: uuid.UUID,
     ) -> None:
-        """Test _compute_timestamp raises error when ephemeris is None (line 106)."""
+        """Test _compute_timestamp raises error when ephemeris is None (line 133)."""
         vis = EphemerisVisibility(
             coordinate=skycoord_near_limb,
             begin=test_visibility_time_range[0],
@@ -357,6 +384,61 @@ class TestEphemerisVisibilitySingleConstraint:
         assert isinstance(vis.constraints, list)
         assert len(vis.constraints) == 1
         assert vis.constraints[0].name == ConstraintType.OR
+        assert vis.visibility_windows is not None
+
+    def test_compute_with_roll_angle_constraint(
+        self,
+        skycoord_near_limb: SkyCoord,
+        test_visibility_time_range: tuple[Time, Time],
+        test_step_size: TimeDelta,
+        test_tle_ephemeris: Ephemeris,
+        test_roll_angle_constraint: RollAngleConstraint,
+        test_observatory_name: str,
+        test_observatory_id: uuid.UUID,
+    ) -> None:
+        """Test that compute handles roll angle constraints alone."""
+        vis = EphemerisVisibility(
+            coordinate=skycoord_near_limb,
+            begin=test_visibility_time_range[0],
+            end=test_visibility_time_range[1],
+            step_size=test_step_size,
+            ephemeris=test_tle_ephemeris,
+            constraints=[test_roll_angle_constraint],
+            observatory_name=test_observatory_name,
+            observatory_id=test_observatory_id,
+        )
+        vis.compute()
+
+        assert isinstance(vis.constraints, list)
+        assert vis.constraints[0].name == ConstraintType.ROLL
+        assert vis.visibility_windows is not None
+
+    def test_compute_list_of_constraints_with_roll_angle(
+        self,
+        skycoord_near_limb: SkyCoord,
+        test_visibility_time_range: tuple[Time, Time],
+        test_step_size: TimeDelta,
+        test_tle_ephemeris: Ephemeris,
+        test_earth_limb_constraint: EarthLimbConstraint,
+        test_roll_angle_constraint: RollAngleConstraint,
+        test_observatory_name: str,
+        test_observatory_id: uuid.UUID,
+    ) -> None:
+        """Test that compute handles roll angle constraints with other constraints."""
+        vis = EphemerisVisibility(
+            coordinate=skycoord_near_limb,
+            begin=test_visibility_time_range[0],
+            end=test_visibility_time_range[1],
+            step_size=test_step_size,
+            ephemeris=test_tle_ephemeris,
+            constraints=[test_earth_limb_constraint, test_roll_angle_constraint],
+            observatory_name=test_observatory_name,
+            observatory_id=test_observatory_id,
+        )
+        vis.compute()
+
+        assert isinstance(vis.constraints, list)
+        assert vis.constraints[1].name == ConstraintType.ROLL
         assert vis.visibility_windows is not None
 
 
