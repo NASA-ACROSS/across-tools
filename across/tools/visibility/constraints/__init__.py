@@ -14,6 +14,7 @@ from .galactic_plane import GalacticPlaneConstraint
 from .logical import AndConstraint, NotConstraint, OrConstraint, XorConstraint
 from .moon_angle import MoonAngleConstraint
 from .pointing import PointingConstraint
+from .roll_angle import RollAngleConstraint
 from .saa import SAAPolygonConstraint
 from .solar_system import SolarSystemConstraint
 from .sun_angle import SunAngleConstraint
@@ -38,6 +39,7 @@ __all__ = [
     "NotConstraint",
     "XorConstraint",
     "PointingConstraint",
+    "RollAngleConstraint",
     "Constraint",
 ]
 
@@ -59,7 +61,8 @@ AllConstraint = Annotated[
     | OrConstraint
     | NotConstraint
     | XorConstraint
-    | PointingConstraint,
+    | PointingConstraint
+    | RollAngleConstraint,
     Field(discriminator="name"),
 ]
 
