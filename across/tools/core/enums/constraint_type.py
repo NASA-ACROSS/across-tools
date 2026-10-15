@@ -26,3 +26,4 @@ class ConstraintType(str, Enum):
     NOT = "Not"
     XOR = "Xor"
     POINTING = "Pointing"
+    ROLL = "Roll Angle"

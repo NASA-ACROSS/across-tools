@@ -78,9 +78,37 @@ class EphemerisVisibility(Visibility):
         # If we have composite constraints, we need to handle them differently
         # For now, just evaluate each constraint as a separate item
         for constraint in self.constraints:
-            self.calculated_constraints[constraint.name] = constraint(
-                time=self.timestamp, ephemeris=self.ephemeris, coordinate=self.coordinate
-            )
+            if constraint.short_name != "Roll Angle":
+                self.calculated_constraints[constraint.name] = constraint(
+                    time=self.timestamp, ephemeris=self.ephemeris, coordinate=self.coordinate
+                )
+
+        # Evaluate roll angle constraint on the unconstrained times returned by the other constraints
+        roll_constraints = [c for c in self.constraints if c.short_name == "Roll Angle"]
+        if roll_constraints:
+            if self.timestamp is None:
+                raise ValueError("Timestamp not computed. Call _compute_timestamp() first.")
+
+            # Check if calculated constraints is empty
+            if len(self.calculated_constraints) == 0:
+                unconstrained_windows = np.ones(len(self.timestamp), dtype=np.bool_)
+                unconstrained_times = self.timestamp
+            else:
+                unconstrained_windows = ~np.logical_or.reduce(
+                    [v for v in self.calculated_constraints.values()]
+                )
+                unconstrained_times = self.timestamp[unconstrained_windows]
+
+            # Evaluate each roll constraint on the unconstrained times
+            for constraint in roll_constraints:
+                roll_result = constraint(
+                    time=unconstrained_times, ephemeris=self.ephemeris, coordinate=self.coordinate
+                )
+                # Create a full array of False and set the indices of the unconstrained times
+                # to the roll result
+                full_roll_result = np.zeros(len(self.timestamp), dtype=np.bool_)
+                full_roll_result[unconstrained_windows] = roll_result
+                self.calculated_constraints[constraint.name] = full_roll_result
 
         # self.inconstraint is the logical or of all constraints
         # This works for both simple and composite constraints since they all
