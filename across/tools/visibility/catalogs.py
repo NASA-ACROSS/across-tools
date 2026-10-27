@@ -7,6 +7,7 @@ from typing import cast
 import astropy.units as u  # type: ignore[import-untyped]
 import diskcache
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.table import Column  # type: ignore[import-untyped]
 from astroquery.vizier import Vizier  # type: ignore[import-untyped]
 
 # Column name options for different catalogs
@@ -110,6 +111,97 @@ def get_bright_stars(
     except Exception:
         pass
 
+    # Query Vizier, falling back to the brightest stars if the query fails
+    # (not cached to allow retries)
+    result = _query_bright_stars(magnitude_limit, catalog, max_stars)
+    if result is None:
+        return _get_fallback_bright_stars()
+
+    # Create star data
+    stars, magnitudes = result
+    star_data = [(star, float(mag)) for star, mag in zip(stars, magnitudes)]
+
+    # Cache result (if it fails, then no caching)
+    with contextlib.suppress(Exception):
+        _get_cache_instance()[cache_key] = star_data
+
+    return star_data
+
+
+def get_bright_star_coordinates(
+    magnitude_limit: float = 6.0,
+    catalog: str = "I/239/hip_main",
+    max_stars: int | None = None,
+) -> SkyCoord:
+    """
+    Retrieve the coordinates of bright stars from a catalog as a single
+    array SkyCoord.
+
+    This returns the same stars as `get_bright_stars`, but as one array
+    SkyCoord rather than a list of scalar SkyCoords. This makes separation
+    calculations against all the stars a single vectorized operation, and is
+    much faster to load from the disk cache.
+
+    Parameters
+    ----------
+    magnitude_limit : float, optional
+        Magnitude limit for stars to retrieve. Default is 6.0.
+    catalog : str, optional
+        Vizier catalog identifier. Default is "I/239/hip_main".
+    max_stars : int, optional
+        Maximum number of stars to retrieve. Default is None.
+
+    Returns
+    -------
+    SkyCoord
+        Array SkyCoord of the bright stars.
+    """
+    # Create a cache key from function parameters
+    cache_key = f"star_coordinates_{magnitude_limit}_{catalog}_{max_stars}"
+
+    # Try to get from cache
+    try:
+        cached_data = _get_cache_instance().get(cache_key)
+        if cached_data is not None:
+            return cast(SkyCoord, cached_data)
+    except Exception:
+        pass
+
+    # Query Vizier, falling back to the brightest stars if the query fails
+    # (not cached to allow retries)
+    result = _query_bright_stars(magnitude_limit, catalog, max_stars)
+    if result is None:
+        return SkyCoord([star for star, _ in _get_fallback_bright_stars()])
+
+    # Cache result (if it fails, then no caching)
+    stars, _ = result
+    with contextlib.suppress(Exception):
+        _get_cache_instance()[cache_key] = stars
+
+    return stars
+
+
+def _query_bright_stars(
+    magnitude_limit: float, catalog: str, max_stars: int | None
+) -> tuple[SkyCoord, Column] | None:
+    """
+    Query Vizier for stars brighter than a magnitude limit.
+
+    Parameters
+    ----------
+    magnitude_limit : float
+        Magnitude limit for stars to retrieve.
+    catalog : str
+        Vizier catalog identifier.
+    max_stars : int, optional
+        Maximum number of stars to retrieve.
+
+    Returns
+    -------
+    tuple[SkyCoord, Column] | None
+        Array SkyCoord of the stars and their magnitudes, or None if the
+        query failed or the catalog columns could not be identified.
+    """
     # Query Vizier
     try:
         vizier = Vizier(row_limit=max_stars if max_stars is not None else -1)
@@ -118,16 +210,15 @@ def get_bright_stars(
     except Exception:
         star_table = None
 
-    # Fallback if query fails (not cached to allow retries)
     if star_table is None:
-        return _get_fallback_bright_stars()
+        return None
 
     # Find RA, dec and magnitude column
     ra_col = next((col for col in _RA_COLUMNS if col in star_table.colnames), None)
     dec_col = next((col for col in _DEC_COLUMNS if col in star_table.colnames), None)
     mag_col = next((col for col in _MAG_COLUMNS if col in star_table.colnames), None)
     if ra_col is None or dec_col is None or mag_col is None:
-        return _get_fallback_bright_stars()
+        return None
 
     # Get RA/Dec with proper units
     ra_data = star_table[ra_col]
@@ -139,18 +230,7 @@ def get_bright_stars(
     if not (hasattr(dec_data, "unit") and dec_data.unit is not None):
         dec_data = dec_data * u.deg
 
-    # Extract magnitudes
-    magnitudes = star_table[mag_col]
-
-    # Create star data
-    stars = SkyCoord(ra=ra_data, dec=dec_data, frame="icrs")
-    star_data = [(star, float(mag)) for star, mag in zip(stars, magnitudes)]
-
-    # Cache result (if it fails, then no caching)
-    with contextlib.suppress(Exception):
-        _get_cache_instance()[cache_key] = star_data
-
-    return star_data
+    return SkyCoord(ra=ra_data, dec=dec_data, frame="icrs"), star_table[mag_col]
 
 
 def _get_fallback_bright_stars() -> list[tuple[SkyCoord, float]]:

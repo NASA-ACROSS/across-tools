@@ -1,5 +1,7 @@
+from collections.abc import Callable
 from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
@@ -185,3 +187,41 @@ class TestBrightStarConstraintCall:
         result = constraint(mixed_bright_star_times, ground_ephemeris, mixed_bright_star_coords)
 
         assert result[1]  # Second coordinate is at Sirius
+
+
+class TestBrightStarConstraintMatchesPerStarSeparation:
+    """Test suite comparing BrightStarConstraint with checking each bright star individually."""
+
+    @pytest.mark.parametrize("min_separation", [1.0, 5.0, 20.0, 60.0])
+    def test_constraint_coordinate_array_matches_per_star_separation(
+        self,
+        ground_ephemeris: Ephemeris,
+        mock_get_bright_stars: MagicMock,
+        per_star_result_factory: Callable[[SkyCoord, float], np.typing.NDArray[np.bool_]],
+        sky_grid_coords: SkyCoord,
+        sky_grid_times: Time,
+        min_separation: float,
+    ) -> None:
+        """Test that results for an array of coordinates match checking each star individually."""
+        constraint = BrightStarConstraint(min_separation=min_separation)
+        result = constraint(sky_grid_times, ground_ephemeris, sky_grid_coords)
+
+        assert np.array_equal(result, per_star_result_factory(sky_grid_coords, min_separation))
+
+    @pytest.mark.parametrize("min_separation", [1.0, 5.0, 20.0, 60.0])
+    def test_constraint_scalar_coordinates_match_per_star_separation(
+        self,
+        begin_time_array: Time,
+        ground_ephemeris: Ephemeris,
+        mock_get_bright_stars: MagicMock,
+        per_star_result_factory: Callable[[SkyCoord, float], np.typing.NDArray[np.bool_]],
+        sky_grid_coords: SkyCoord,
+        min_separation: float,
+    ) -> None:
+        """Test that results for individual scalar coordinates match checking each star individually."""
+        constraint = BrightStarConstraint(min_separation=min_separation)
+        result = np.array(
+            [constraint(begin_time_array, ground_ephemeris, coordinate)[0] for coordinate in sky_grid_coords]
+        )
+
+        assert np.array_equal(result, per_star_result_factory(sky_grid_coords, min_separation))
