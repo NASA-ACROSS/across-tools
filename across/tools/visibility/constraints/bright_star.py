@@ -9,7 +9,7 @@ from pydantic import Field
 
 from ...core.enums import ConstraintType
 from ...ephemeris import Ephemeris
-from ..catalogs import get_bright_stars
+from ..catalogs import get_bright_star_coordinates
 from .base import ConstraintABC
 
 
@@ -65,15 +65,13 @@ class BrightStarConstraint(ConstraintABC):
             (is too close to a bright star).
         """
         # Get bright stars from catalog filtered by magnitude limit
-        bright_stars = get_bright_stars(magnitude_limit=self.magnitude_limit)
+        bright_stars = get_bright_star_coordinates(magnitude_limit=self.magnitude_limit)
 
-        # Check separation from each bright star
-        min_separation_rad = self.min_separation * u.deg
+        # Check separation from all bright stars at once, by broadcasting the
+        # coordinate(s) against the array of stars. Note: magnitude is already
+        # filtered by get_bright_star_coordinates().
+        separation = coordinate.reshape(coordinate.shape + (1,)).separation(bright_stars)
         in_constraint = np.zeros(len(time), dtype=bool)
-
-        for star, _ in bright_stars:
-            separation = coordinate.separation(star)
-            # Note: magnitude is already filtered by get_bright_stars()
-            in_constraint |= separation < min_separation_rad
+        in_constraint |= np.any(separation < self.min_separation * u.deg, axis=-1)
 
         return in_constraint

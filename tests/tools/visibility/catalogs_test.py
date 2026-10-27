@@ -3,6 +3,7 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import astropy.units as u  # type: ignore[import-untyped]
 import pytest
 from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
 from astropy.table import Table  # type: ignore[import-untyped]
@@ -11,6 +12,7 @@ from across.tools.visibility.catalogs import (
     _get_cache_dir,
     _get_fallback_bright_stars,
     cache_clear,
+    get_bright_star_coordinates,
     get_bright_stars,
 )
 
@@ -317,3 +319,85 @@ class TestGetBrightStarsEdgeCases:
         stars = get_bright_stars(magnitude_limit=5.0)
         # Should use fallback
         assert len(stars) == 20
+
+
+@pytest.mark.usefixtures("isolated_star_cache")
+class TestGetBrightStarCoordinates:
+    """Test suite for get_bright_star_coordinates."""
+
+    def test_get_bright_star_coordinates_returns_skycoord(self, mock_vizier_patch: MagicMock) -> None:
+        """Test that get_bright_star_coordinates returns a SkyCoord."""
+        stars = get_bright_star_coordinates(magnitude_limit=3.0)
+        assert isinstance(stars, SkyCoord)
+
+    def test_get_bright_star_coordinates_returns_array_not_scalar(self, mock_vizier_patch: MagicMock) -> None:
+        """Test that get_bright_star_coordinates returns an array SkyCoord, not a scalar."""
+        stars = get_bright_star_coordinates(magnitude_limit=3.0)
+        assert not stars.isscalar
+
+    def test_get_bright_star_coordinates_matches_get_bright_stars_length(
+        self, mock_vizier_patch: MagicMock
+    ) -> None:
+        """Test that the same number of stars as get_bright_stars is returned."""
+        assert len(get_bright_star_coordinates(magnitude_limit=3.0)) == len(
+            get_bright_stars(magnitude_limit=3.0)
+        )
+
+    def test_get_bright_star_coordinates_matches_get_bright_stars_positions(
+        self, mock_vizier_patch: MagicMock
+    ) -> None:
+        """Test that the star positions match those from get_bright_stars."""
+        coordinates = get_bright_star_coordinates(magnitude_limit=3.0)
+        expected = SkyCoord([star for star, _ in get_bright_stars(magnitude_limit=3.0)])
+        assert u.allclose(coordinates.separation(expected), 0 * u.deg, atol=1e-9 * u.deg)
+
+    def test_get_bright_star_coordinates_matches_vizier_table_ra(
+        self, mock_vizier_patch: MagicMock, mock_vizier_table: Table
+    ) -> None:
+        """Test that the star RA values match the catalog table."""
+        coordinates = get_bright_star_coordinates(magnitude_limit=3.0)
+        assert u.allclose(coordinates.ra, mock_vizier_table["_RA.icrs"] * u.deg)
+
+    def test_get_bright_star_coordinates_matches_vizier_table_dec(
+        self, mock_vizier_patch: MagicMock, mock_vizier_table: Table
+    ) -> None:
+        """Test that the star Dec values match the catalog table."""
+        coordinates = get_bright_star_coordinates(magnitude_limit=3.0)
+        assert u.allclose(coordinates.dec, mock_vizier_table["_DE.icrs"] * u.deg)
+
+    def test_get_bright_star_coordinates_cached_after_first_call(
+        self, mock_vizier_instance: MagicMock, mock_vizier_patch: MagicMock
+    ) -> None:
+        """Test that the second call is served from the cache without querying Vizier."""
+        get_bright_star_coordinates(magnitude_limit=4.0)
+        get_bright_star_coordinates(magnitude_limit=4.0)
+        assert mock_vizier_instance.query_constraints.call_count == 1
+
+    def test_get_bright_star_coordinates_cached_positions_match(self, mock_vizier_patch: MagicMock) -> None:
+        """Test that the cached star positions match the original query."""
+        first = get_bright_star_coordinates(magnitude_limit=4.0)
+        cache_clear()
+        second = get_bright_star_coordinates(magnitude_limit=4.0)
+        assert u.allclose(first.separation(second), 0 * u.deg)
+
+    def test_get_bright_star_coordinates_uses_fallback_on_failure(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that the fallback stars are returned when the Vizier query fails."""
+        mock_instance = MagicMock()
+        mock_instance.query_constraints.side_effect = Exception("Network error")
+        monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", MagicMock(return_value=mock_instance))
+
+        coordinates = get_bright_star_coordinates(magnitude_limit=6.0)
+        expected = SkyCoord([star for star, _ in _get_fallback_bright_stars()])
+        assert u.allclose(coordinates.separation(expected), 0 * u.deg)
+
+    def test_get_bright_star_coordinates_fallback_not_cached(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that a failed query is retried on the next call, rather than caching the fallback."""
+        mock_instance = MagicMock()
+        mock_instance.query_constraints.return_value = []
+        monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", MagicMock(return_value=mock_instance))
+
+        get_bright_star_coordinates(magnitude_limit=6.0)
+        get_bright_star_coordinates(magnitude_limit=6.0)
+        assert mock_instance.query_constraints.call_count == 2
