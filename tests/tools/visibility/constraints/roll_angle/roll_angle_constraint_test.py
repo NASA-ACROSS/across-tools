@@ -1,7 +1,10 @@
+import astropy.units as u  # type: ignore[import-untyped]
+import numpy as np
 import pytest
-from astropy.coordinates import SkyCoord  # type: ignore[import-untyped]
+from astropy.coordinates import GCRS, SkyCoord  # type: ignore[import-untyped]
 from astropy.time import Time  # type: ignore[import-untyped]
 
+from across.tools.core.schemas import RollAngleConstrainingObject, SpacecraftComponentVector
 from across.tools.ephemeris import Ephemeris
 from across.tools.visibility.constraints.roll_angle import RollAngleConstraint, get_discontinuous_slice
 
@@ -168,6 +171,44 @@ class TestRollAngleConstraintCall:
         test_tle_ephemeris.earth_location = None
         with pytest.raises(ValueError, match="Earth location required for object positions"):
             roll_angle_constraint_constrain_any_components(begin_time_array, test_tle_ephemeris, sky_coord)
+
+    def test_should_not_depend_on_other_timesteps_when_the_constraint_has_fixed_roll_angle(
+        self,
+        test_tle_ephemeris: Ephemeris,
+    ) -> None:
+        """
+        Test that, for a fixed roll angle, the result at each timestep is the same whether all
+        timesteps are evaluated together or one at a time.
+
+        A nearby target is used so that its direction from the spacecraft changes between timesteps.
+        The minimum sun angle is swept so that any difference in the computed separation between
+        the two evaluations shows up as a different boolean result for some threshold.
+        """
+        times = test_tle_ephemeris.timestamp
+        nearby_target = SkyCoord(
+            ra=150 * u.deg, dec=20 * u.deg, distance=10_000 * u.km, frame=GCRS(obstime=times[0])
+        )
+
+        mismatched_min_angles = []
+        for min_angle in range(5, 180, 5):
+            component = SpacecraftComponentVector(
+                name="Test Vector",
+                x=0.6,
+                y=0.0,
+                z=0.8,
+                constraining_bodies=[RollAngleConstrainingObject(name="sun", min_angle=float(min_angle))],
+            )
+            constraint = RollAngleConstraint(
+                constrained_components=[component], optimal_roll_angle=[180.0], allowed_roll=None
+            )
+            all_timesteps = constraint(times, test_tle_ephemeris, nearby_target)
+            one_timestep_at_a_time = np.concatenate(
+                [constraint(times[k : k + 1], test_tle_ephemeris, nearby_target) for k in range(len(times))]
+            )
+            if not np.array_equal(all_timesteps, one_timestep_at_a_time):
+                mismatched_min_angles.append(min_angle)
+
+        assert mismatched_min_angles == []
 
 
 class TestGetDiscontinuousSlice:

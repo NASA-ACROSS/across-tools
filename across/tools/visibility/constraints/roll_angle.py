@@ -160,7 +160,7 @@ class RollAngleConstraint(ConstraintABC):
         roll_ind: int,
     ) -> npt.NDArray[np.bool_]:
         """
-        Compute the constraint per timestep for a givne roll index.
+        Compute the constraint per timestep for a given roll index.
         For each constraining body, compare the component separation vector
         with the min and max angles for that body. If any body is outside of the
         allowed range, the constraint is violated.
