@@ -96,6 +96,16 @@ class TestRollAngleConstraintCall:
         result = roll_angle_constraint(begin_time_array, test_tle_ephemeris, sky_coord)
         assert result.dtype == bool
 
+    def test_constraint_returns_one_value_per_timestep(
+        self,
+        test_tle_ephemeris: Ephemeris,
+        sky_coord: SkyCoord,
+        roll_angle_constraint: RollAngleConstraint,
+    ) -> None:
+        """Test that a multi-timestep call returns one boolean per timestep."""
+        result = roll_angle_constraint(test_tle_ephemeris.timestamp, test_tle_ephemeris, sky_coord)
+        assert result.shape == (len(test_tle_ephemeris.timestamp),)
+
     def test_constraint_saves_optimal_roll_angle(
         self,
         begin_time_array: Time,

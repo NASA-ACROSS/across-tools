@@ -8,7 +8,7 @@ from astropy.time import Time  # type: ignore[import-untyped]
 from pydantic import Field, model_validator
 
 from ...core.enums import ComponentConstraintMode, ConstraintType
-from ...core.schemas import RollAngleAllowedRange, SpacecraftComponentVector
+from ...core.schemas import RollAngleAllowedRange, RollAngleConstrainingObject, SpacecraftComponentVector
 from ...ephemeris import Ephemeris
 from .base import ConstraintABC
 
@@ -141,75 +141,162 @@ class RollAngleConstraint(ConstraintABC):
         tuple[np.ndarray, np.ndarray]
             The computed x- and y-axes of the spacecraft payload in spacecraft coordinates.
         """
-        north = np.zeros(z_ref.T.shape) + np.asarray([0.0, 0.0, 1.0])
-        north_proj = north - (np.dot(north, z_ref) @ z_ref.T)
-        north_norm = np.linalg.norm(north_proj)
+        z_axis = z_ref.T
+        north = np.asarray([0.0, 0.0, 1.0])
+        # Project north onto the plane perpendicular to the boresight, per timestep
+        north_proj = north - (z_axis @ north)[:, np.newaxis] * z_axis
         # Reference x axis
-        x_ref = north_proj / north_norm
+        x_ref = north_proj / np.linalg.norm(north_proj, axis=1, keepdims=True)
         # Reference y axis
-        y_ref = np.cross(z_ref.T, x_ref)
-        y_ref /= np.linalg.norm(y_ref)
+        y_ref = np.cross(z_axis, x_ref)
+        y_ref /= np.linalg.norm(y_ref, axis=1, keepdims=True)
 
         return x_ref, y_ref
 
-    def _compute_constraint_per_roll(
+    def _compute_constraint(
         self,
         ephemeris: Ephemeris,
-        component_vector_separations: dict[str, dict[str, SkyCoord]],
+        design: npt.NDArray[np.float64],
+        axes: npt.NDArray[np.float64],
         i: npt.NDArray[np.int_],
-        roll_ind: int,
     ) -> npt.NDArray[np.bool_]:
         """
-        Compute the constraint per timestep for a given roll index.
-        For each constraining body, compare the component separation vector
-        with the min and max angles for that body. If any body is outside of the
-        allowed range, the constraint is violated.
+        Compute the constraint for every roll angle and timestep at once.
+        A component is constrained if any of its bodies is outside the allowed separation range.
+        Components are then combined according to the component constraint mode.
 
         Parameters
         ----------
         ephemeris : Ephemeris
             The spacecraft ephemeris.
-        component_vector_separations : dict[str, dict[str, SkyCoord]]
-            Dictionary containing the angular separations between spacecraft component vectors
-            and constraining bodies for each roll angle.
-        i : slice
-            Slice of ephemeris data to consider.
-        roll_ind : int
-            Index of the roll angle to consider.
+        design : np.ndarray
+            Design matrix with shape (n_roll, 3) with columns [cos(roll), sin(roll), 1].
+        axes : np.ndarray
+            Payload x, y and z axes stacked with shape (3, 3, n_time), indexed [axis, xyz, time].
+        i : np.ndarray
+            Indices of ephemeris data to consider.
 
         Returns
         -------
         np.ndarray
-            Boolean array where True indicates the roll angle violates one or more constraints.
+            Boolean array with shape (n_roll, n_time), where True indicates the roll angle
+            violates one or more constraints.
         """
-        # Master in_constraint to track whether all or any of the components are in constraint
-        if self.component_constraint_mode == "all":
-            in_constraint = np.ones(len(ephemeris.gcrs[i]), dtype=bool)
-        else:
-            in_constraint = np.zeros(len(ephemeris.gcrs[i]), dtype=bool)
-        for component_name, body_separation_angles in component_vector_separations.items():
-            component = next(comp for comp in self.constrained_components if comp.name == component_name)
-            in_constraint_per_component = np.zeros(len(ephemeris.gcrs[i]), dtype=bool)
-            for body in component.constraining_bodies:
-                # Check if body separation violates the constraint constraint
-                if body.name == "earth":
-                    in_constraint_per_component |= np.logical_or(
-                        body_separation_angles[body.name][roll_ind, :]
-                        > ephemeris.earth_radius_angle[i] + body.max_angle * u.deg,
-                        body_separation_angles[body.name][roll_ind, :]
-                        < ephemeris.earth_radius_angle[i] + body.min_angle * u.deg,
-                    )
-                else:
-                    in_constraint_per_component |= np.logical_or(
-                        body_separation_angles[body.name][roll_ind, :] > body.max_angle * u.deg,
-                        body_separation_angles[body.name][roll_ind, :] < body.min_angle * u.deg,
-                    )
-            if self.component_constraint_mode == "all":
-                in_constraint &= in_constraint_per_component
-            else:
-                in_constraint |= in_constraint_per_component
+        # Flatten the (component, body) pairs; component_index maps each pair to its component
+        pairs = [
+            (index, component, body)
+            for index, component in enumerate(self.constrained_components)
+            for body in component.constraining_bodies
+        ]
+        component_index = np.array([index for index, _, _ in pairs], dtype=int)
+        violation = self._pair_violations(
+            [component for _, component, _ in pairs],
+            [body for _, _, body in pairs],
+            design,
+            axes,
+            ephemeris,
+            i,
+        )
 
-        return in_constraint
+        # A component is constrained if any of its bodies is violated. Membership is a
+        # (n_component, n_pair) indicator matrix, which also handles components without bodies.
+        component_ids = np.arange(len(self.constrained_components))
+        membership = (component_ids[:, None] == component_index).astype(np.float32)
+        per_component = (membership @ violation.astype(np.float32)) > 0
+
+        if self.component_constraint_mode == "all":
+            return np.asarray(per_component.all(axis=1))
+        return np.asarray(per_component.any(axis=1))
+
+    def _pair_violations(
+        self,
+        components: list[SpacecraftComponentVector],
+        bodies: list[RollAngleConstrainingObject],
+        design: npt.NDArray[np.float64],
+        axes: npt.NDArray[np.float64],
+        ephemeris: Ephemeris,
+        i: npt.NDArray[np.int_],
+    ) -> npt.NDArray[np.bool_]:
+        """
+        Compute whether each (component, body) pair is outside the allowed separation range,
+        for every roll angle and timestep. `components[p]` and `bodies[p]` describe pair `p`.
+
+        With the payload axes (x, y, z) at a given timestep, a component vector (cx, cy, cz)
+        rotated by roll angle phi is
+        v(phi) = cx*(cos(phi)*x + sin(phi)*y) + cy*(-sin(phi)*x + cos(phi)*y) + cz*z.
+        Its dot product with the unit vector b towards a body is therefore linear in
+        [cos(phi), sin(phi), 1]:
+
+            v . b = [cos(phi), sin(phi), 1] @ M @ (bx, by, bz)
+
+        where (bx, by, bz) are b's components along the payload axes and
+        M = [[cx, cy, 0], [-cy, cx, 0], [0, 0, cz]] / |c|. Every pair is stacked along one axis,
+        so batched products give the separation for all pairs, rolls and timesteps at once.
+
+        Parameters
+        ----------
+        components : list[SpacecraftComponentVector]
+            The component vector of each pair.
+        bodies : list[RollAngleConstrainingObject]
+            The constraining body of each pair.
+        design : np.ndarray
+            Design matrix with shape (n_roll, 3) with columns [cos(roll), sin(roll), 1].
+        axes : np.ndarray
+            Payload axes with shape (3, 3, n_time), indexed [axis, xyz, time].
+        ephemeris : Ephemeris
+            The spacecraft ephemeris.
+        i : np.ndarray
+            Indices of ephemeris data to consider.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array with shape (n_roll, n_pair, n_time), True where the separation is
+            outside the allowed range.
+        """
+        n_pair, n_time = len(bodies), len(i)
+        if n_pair == 0:
+            return np.zeros((len(design), 0, n_time), dtype=bool)
+
+        # Unit vectors towards each body, shape (n_pair, 3, n_time)
+        unit_by_name = {}
+        for name in {body.name for body in bodies}:
+            coords = getattr(ephemeris, name)[i]
+            ra, dec = coords.ra.rad, coords.dec.rad
+            unit_by_name[name] = np.stack([np.cos(dec) * np.cos(ra), np.cos(dec) * np.sin(ra), np.sin(dec)])
+        body_unit = np.stack([unit_by_name[body.name] for body in bodies])
+
+        # Body components along the payload axes, shape (n_pair, 3, n_time)
+        body_payload = np.einsum("axn,pxn->pan", axes, body_unit)
+
+        # Normalized component vectors as a map onto the roll basis, shape (n_pair, 3, 3)
+        cx = np.array([component.x for component in components])
+        cy = np.array([component.y for component in components])
+        cz = np.array([component.z for component in components])
+        zero = np.zeros(n_pair)
+        mapping = np.stack(
+            [
+                np.stack([cx, cy, zero], axis=-1),
+                np.stack([-cy, cx, zero], axis=-1),
+                np.stack([zero, zero, cz], axis=-1),
+            ],
+            axis=1,
+        ) / np.sqrt(cx**2 + cy**2 + cz**2).reshape(-1, 1, 1)
+
+        # Separation for every (roll, pair, time), shape (n_roll, n_pair, n_time)
+        coefficients = np.einsum("pab,pbn->pan", mapping, body_payload)
+        separation = np.arccos(np.clip(np.einsum("ra,pan->rpn", design, coefficients), -1.0, 1.0))
+
+        # Allowed range per pair in radians, shape (n_pair, n_time); Earth's limits include its limb
+        min_angle = np.deg2rad([body.min_angle for body in bodies])[:, np.newaxis] + np.zeros(n_time)
+        max_angle = np.deg2rad([body.max_angle for body in bodies])[:, np.newaxis] + np.zeros(n_time)
+        is_earth = np.array([body.name == "earth" for body in bodies], dtype=bool)
+        if is_earth.any():
+            earth_radius = ephemeris.earth_radius_angle[i].to_value(u.rad)
+            min_angle[is_earth] += earth_radius
+            max_angle[is_earth] += earth_radius
+
+        return np.asarray((separation > max_angle) | (separation < min_angle))
 
     def __call__(self, time: Time, ephemeris: Ephemeris, coordinate: SkyCoord) -> npt.NDArray[np.bool_]:
         """
@@ -241,7 +328,7 @@ class RollAngleConstraint(ConstraintABC):
         # Assume the target coordinate is the boresight pointing direction,
         # and calculate its vector in cartesian coordinates
         z_ref = target_gcrs.cartesian.xyz.value
-        z_ref /= np.linalg.norm(z_ref)
+        z_ref /= np.linalg.norm(z_ref, axis=0)
         # Compute payload x and y axes from boresight z
         x_ref, y_ref = self._compute_payload_axes(z_ref)
 
@@ -260,60 +347,17 @@ class RollAngleConstraint(ConstraintABC):
         elif self.optimal_roll_angle is not None:
             roll = np.asarray(np.deg2rad(self.optimal_roll_angle))
 
-        # Compute rotation of x- and y-axes about z-axis by roll angle to get payload vectors
-        x_payload = (np.cos(roll).reshape(-1, 1, 1) * x_ref.T.reshape(1, 3, -1)) + (
-            np.sin(roll).reshape(-1, 1, 1) * y_ref.T.reshape(1, 3, -1)
-        )
-        y_payload = (-np.sin(roll).reshape(-1, 1, 1) * x_ref.T.reshape(1, 3, -1)) + (
-            np.cos(roll).reshape(-1, 1, 1) * y_ref.T.reshape(1, 3, -1)
-        )
-        z_payload = np.zeros(x_payload.shape) + z_ref
+        # Rolling the payload about its z-axis makes every separation a linear function of
+        # [cos(roll), sin(roll), 1], so all rolls and timesteps are evaluated in one shot.
+        design = np.stack([np.cos(roll), np.sin(roll), np.ones_like(roll)], axis=1)
+        in_constraint = self._compute_constraint(ephemeris, design, np.stack([x_ref.T, y_ref.T, z_ref]), i)
 
-        # Compute separation between the spacecraft component vectors and the constraining bodies
-        # for each roll angle
-        component_vector_separations: dict[str, dict[str, SkyCoord]] = {}
-        for component in self.constrained_components:
-            component_vector_position = (
-                x_payload * component.x + y_payload * component.y + z_payload * component.z
-            )
-            component_vector_position /= np.linalg.norm(component_vector_position, axis=1, keepdims=True)
-
-            # Transform from cartesian to SkyCoord component representation
-            component_coords = SkyCoord(
-                x=component_vector_position[:, 0, :],
-                y=component_vector_position[:, 1, :],
-                z=component_vector_position[:, 2, :],
-                representation_type="cartesian",
-            )
-            # Get angular separations between the spacecraft component vector and each body
-            body_separation_angles: dict[str, SkyCoord] = {}
-            for body in component.constraining_bodies:
-                body_coords = getattr(ephemeris, body.name)[i]
-                body_separation_angles[body.name] = SkyCoord(body_coords.ra, body_coords.dec).separation(
-                    component_coords
-                )
-
-            component_vector_separations[component.name] = body_separation_angles
-
-        # Find optimal roll angle that maximizes the visibility window
-        optimal_roll_angle_inds = []
-        optimal_window = np.asarray([0])
-        # Iterate over range of allowed roll angles and compute in_constraint for each one
-        for roll_ind in range(len(roll)):
-            in_constraint = self._compute_constraint_per_roll(
-                ephemeris, component_vector_separations, i, roll_ind
-            )
-
-            # Compare length with stored optimal window, replace it and optimal roll angle index
-            # if the new window is longer
-            if np.sum(~in_constraint) > np.sum(optimal_window):
-                optimal_window = ~in_constraint
-                optimal_roll_angle_inds = [roll_ind]
-
-            # Save all roll angles that yield the same optimal window length
-            elif np.sum(~in_constraint) == np.sum(optimal_window):
-                optimal_window = ~in_constraint
-                optimal_roll_angle_inds.append(roll_ind)
+        # Find the roll angle(s) that maximize the visibility window. The returned window is
+        # that of the last roll angle yielding the maximum number of visible timesteps.
+        visible = ~in_constraint
+        visible_counts = visible.sum(axis=1)
+        optimal_roll_angle_inds = np.flatnonzero(visible_counts == visible_counts.max())
+        optimal_window: npt.NDArray[np.bool_] = visible[optimal_roll_angle_inds[-1]]
 
         self.optimal_roll_angle = np.rad2deg(roll[optimal_roll_angle_inds])
 
