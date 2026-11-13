@@ -21,14 +21,26 @@ class TestRollAngleConstraintAttributes:
 class TestRollAngleConstraintInitialization:
     """Test construction of the constraint."""
 
+    def test_constraint_initialization_default_allowed_roll_not_none(
+        self,
+        roll_angle_constraint: RollAngleConstraint,
+    ) -> None:
+        """Test constraint initialization should default to allowed roll that is not None."""
+        assert roll_angle_constraint.allowed_roll is not None
+
+    @pytest.mark.parametrize(
+        "attr, expected_value",
+        [
+            ("min_roll", 0.0),
+            ("max_roll", 360.0),
+            ("step_size", 2.0),
+        ],
+    )
     def test_constraint_initialization_default_allowed_roll(
-        self, roll_angle_constraint: RollAngleConstraint
+        self, roll_angle_constraint: RollAngleConstraint, attr: str, expected_value: float
     ) -> None:
         """Test constraint initialization should handle default allowed roll."""
-        assert roll_angle_constraint.allowed_roll is not None
-        assert roll_angle_constraint.allowed_roll.min_roll == 0.0
-        assert roll_angle_constraint.allowed_roll.max_roll == 360.0
-        assert roll_angle_constraint.allowed_roll.step_size == 2.0
+        assert getattr(roll_angle_constraint.allowed_roll, attr) == expected_value
 
     def test_constraint_initialization_custom_optimal_roll(
         self, roll_angle_constraint_optimal_roll: RollAngleConstraint
