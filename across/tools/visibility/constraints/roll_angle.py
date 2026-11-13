@@ -1,4 +1,4 @@
-from typing import Literal, Self
+from typing import Literal
 
 import astropy.units as u  # type: ignore[import-untyped]
 import numpy as np
@@ -114,7 +114,7 @@ class RollAngleConstraint(ConstraintABC):
         return values
 
     @model_validator(mode="after")
-    def validate_provided_roll_info(self) -> Self:
+    def validate_provided_roll_info(self) -> "RollAngleConstraint":
         """
         Validate that either allowed_roll or optimal_roll_angle is provided, but not both.
         """
