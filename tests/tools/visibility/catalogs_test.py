@@ -100,6 +100,13 @@ class TestFallbackBrightStars:
         stars = _get_fallback_bright_stars()
         assert all(mag < 2.0 for _, mag in stars)  # All should be brighter than magnitude 2
 
+    def test_get_fallback_bright_stars_max_stars(
+        self, fallback_bright_stars: list[tuple[SkyCoord, float]]
+    ) -> None:
+        """Test that fallback function respects max_stars parameter."""
+        stars = _get_fallback_bright_stars(max_stars=5)
+        assert len(stars) == 5
+
 
 @pytest.mark.usefixtures("isolated_star_cache")
 class TestGetBrightStars:
@@ -110,27 +117,27 @@ class TestGetBrightStars:
         stars = get_bright_stars(magnitude_limit=3.0)
         assert isinstance(stars, list)
 
-    def test_get_bright_stars_not_empty(self) -> None:
+    def test_get_bright_stars_not_empty(self, mock_vizier_patch: MagicMock) -> None:
         """Test that get_bright_stars returns at least one star."""
         stars = get_bright_stars(magnitude_limit=3.0)
         assert len(stars) > 0
 
-    def test_get_bright_stars_items_are_tuples(self) -> None:
+    def test_get_bright_stars_items_are_tuples(self, mock_vizier_patch: MagicMock) -> None:
         """Test that get_bright_stars returns tuple items."""
         stars = get_bright_stars(magnitude_limit=3.0)
         assert all(isinstance(item, tuple) for item in stars)
 
-    def test_get_bright_stars_tuples_have_two_items(self) -> None:
+    def test_get_bright_stars_tuples_have_two_items(self, mock_vizier_patch: MagicMock) -> None:
         """Test that each returned star tuple has two items."""
         stars = get_bright_stars(magnitude_limit=3.0)
         assert all(len(item) == 2 for item in stars)
 
-    def test_get_bright_stars_coords_are_skycoord(self) -> None:
+    def test_get_bright_stars_coords_are_skycoord(self, mock_vizier_patch: MagicMock) -> None:
         """Test that returned star coordinates are SkyCoord instances."""
         stars = get_bright_stars(magnitude_limit=3.0)
         assert all(isinstance(coord, SkyCoord) for coord, _ in stars)
 
-    def test_get_bright_stars_magnitudes_are_numeric(self) -> None:
+    def test_get_bright_stars_magnitudes_are_numeric(self, mock_vizier_patch: MagicMock) -> None:
         """Test that returned star magnitudes are numeric."""
         stars = get_bright_stars(magnitude_limit=3.0)
         assert all(isinstance(mag, (float, int)) for _, mag in stars)
@@ -241,12 +248,14 @@ class TestGetBrightStars:
         stars = get_bright_stars(magnitude_limit=magnitude_limit)
         assert all(mag < magnitude_limit for _, mag in stars)
 
-    def test_get_bright_stars_default_parameters(self) -> None:
+    def test_get_bright_stars_default_parameters(self, mock_vizier_patch: MagicMock) -> None:
         """Test get_bright_stars default call returns stars."""
         stars = get_bright_stars()
         assert len(stars) > 0
 
-    def test_get_bright_stars_default_parameters_within_default_limit(self) -> None:
+    def test_get_bright_stars_default_parameters_within_default_limit(
+        self, mock_vizier_patch: MagicMock
+    ) -> None:
         """Test get_bright_stars default call returns stars within default limit."""
         stars = get_bright_stars()
         assert all(mag < 6.0 for _, mag in stars)
@@ -256,13 +265,27 @@ class TestGetBrightStars:
 class TestGetBrightStarsEdgeCases:
     """Test suite for edge cases in get_bright_stars."""
 
-    def test_get_bright_stars_very_low_magnitude_limit(self) -> None:
+    def test_get_fallback_bright_stars_very_low_magnitude_limit(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test with very low magnitude limit returns few stars."""
+        # Mock Vizier to return None to force fallback
+        mock_instance = MagicMock()
+        mock_instance.query_constraints.return_value = None
+        mock_vizier = MagicMock(return_value=mock_instance)
+        monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
         stars = get_bright_stars(magnitude_limit=0.0)
         assert len(stars) < 20
 
-    def test_get_bright_stars_very_low_magnitude_limit_all_bright(self) -> None:
+    def test_get_fallback_bright_stars_very_low_magnitude_limit_all_bright(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test with very low magnitude limit returns only very bright stars."""
+        # Mock Vizier to return None to force fallback
+        mock_instance = MagicMock()
+        mock_instance.query_constraints.return_value = None
+        mock_vizier = MagicMock(return_value=mock_instance)
+        monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
         stars = get_bright_stars(magnitude_limit=0.0)
         assert all(mag < 0.0 for _, mag in stars)
 
