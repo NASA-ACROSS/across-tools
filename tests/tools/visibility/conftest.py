@@ -15,6 +15,8 @@ from astropy.time import Time, TimeDelta  # type: ignore[import-untyped]
 
 import across.tools.visibility.catalogs as catalogs
 from across.tools.core.enums.constraint_type import ConstraintType
+from across.tools.core.schemas.roll_angle_constraining_object import RollAngleConstrainingObject
+from across.tools.core.schemas.spacecraft_component_vector import SpacecraftComponentVector
 from across.tools.core.schemas.tle import TLE
 from across.tools.core.schemas.visibility import VisibilityComputedValues
 from across.tools.ephemeris import Ephemeris, compute_tle_ephemeris
@@ -27,7 +29,12 @@ from across.tools.visibility import (
 )
 from across.tools.visibility.base import Visibility
 from across.tools.visibility.catalogs import cache_clear
-from across.tools.visibility.constraints import AllConstraint, EarthLimbConstraint, SunAngleConstraint
+from across.tools.visibility.constraints import (
+    AllConstraint,
+    EarthLimbConstraint,
+    RollAngleConstraint,
+    SunAngleConstraint,
+)
 from across.tools.visibility.constraints.base import ConstraintABC
 
 
@@ -573,6 +580,27 @@ def sun_constraint_45() -> SunAngleConstraint:
 def earth_constraint_33() -> EarthLimbConstraint:
     """Fixture for an EarthLimbConstraint with min_angle=33."""
     return EarthLimbConstraint(min_angle=33)
+
+
+@pytest.fixture
+def test_roll_angle_constraint() -> RollAngleConstraint:
+    """Fixture for a RollAngleConstraint with default values"""
+    return RollAngleConstraint(
+        constrained_components=[
+            SpacecraftComponentVector(
+                name="Test Vector",
+                x=1.0,
+                y=0.0,
+                z=0.0,
+                constraining_bodies=[
+                    RollAngleConstrainingObject(
+                        name="sun",
+                        min_angle=90.0,
+                    )
+                ],
+            )
+        ]
+    )
 
 
 @pytest.fixture
