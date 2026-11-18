@@ -120,14 +120,14 @@ def get_bright_stars(
 
     # Fallback if query fails (not cached to allow retries)
     if star_table is None:
-        return _get_fallback_bright_stars()
+        return _get_fallback_bright_stars(magnitude_limit=magnitude_limit, max_stars=max_stars)
 
     # Find RA, dec and magnitude column
     ra_col = next((col for col in _RA_COLUMNS if col in star_table.colnames), None)
     dec_col = next((col for col in _DEC_COLUMNS if col in star_table.colnames), None)
     mag_col = next((col for col in _MAG_COLUMNS if col in star_table.colnames), None)
     if ra_col is None or dec_col is None or mag_col is None:
-        return _get_fallback_bright_stars()
+        return _get_fallback_bright_stars(magnitude_limit=magnitude_limit, max_stars=max_stars)
 
     # Get RA/Dec with proper units
     ra_data = star_table[ra_col]
@@ -153,19 +153,31 @@ def get_bright_stars(
     return star_data
 
 
-def _get_fallback_bright_stars() -> list[tuple[SkyCoord, float]]:
+def _get_fallback_bright_stars(
+    magnitude_limit: float | None = None,
+    max_stars: int | None = None,
+) -> list[tuple[SkyCoord, float]]:
     """
     Provide a fallback list of very bright stars if catalog query fails.
 
     This includes the 20 brightest stars in the sky, suitable for
     basic bright star avoidance when network access is unavailable.
 
+    Parameters
+    ----------
+    magnitude_limit : float, optional
+        Magnitude limit for stars to retrieve. Stars brighter (lower magnitude) than this value
+        will be returned. If None, retrieves all stars regardless of magnitude. Default is None.
+    max_stars : int, optional
+        Maximum number of stars to retrieve. If None, retrieves all stars
+        brighter than magnitude_limit. Default is None.
+
     Returns
     -------
     list[tuple[SkyCoord, float]]
         List of tuples containing (sky coordinate, magnitude) for the brightest stars (magnitude < ~1.5).
     """
-    return [
+    fallback_bright_stars = [
         (SkyCoord(ra="06h45m08.9s", dec="-16d42m58.0s", frame="icrs"), -1.46),  # Sirius
         (SkyCoord(ra="06h23m57.1s", dec="-52d41m44.4s", frame="icrs"), -0.74),  # Canopus
         (SkyCoord(ra="14h39m36.5s", dec="-60d50m02.3s", frame="icrs"), -0.27),  # Alpha Centauri
@@ -187,3 +199,13 @@ def _get_fallback_bright_stars() -> list[tuple[SkyCoord, float]]:
         (SkyCoord(ra="08h44m42.2s", dec="-59d30m34.1s", frame="icrs"), 1.25),  # Deneb
         (SkyCoord(ra="12h15m08.7s", dec="-17d32m30.9s", frame="icrs"), 1.25),  # Mimosa
     ]
+
+    if magnitude_limit is not None:
+        fallback_bright_stars = [
+            (coord, mag) for coord, mag in fallback_bright_stars if mag < magnitude_limit
+        ]
+
+    if max_stars is not None:
+        fallback_bright_stars = fallback_bright_stars[:max_stars]
+
+    return fallback_bright_stars
