@@ -101,11 +101,20 @@ class TestFallbackBrightStars:
         assert all(mag < 2.0 for _, mag in stars)  # All should be brighter than magnitude 2
 
     def test_get_fallback_bright_stars_max_stars(
-        self, fallback_bright_stars: list[tuple[SkyCoord, float]]
+        self,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test that fallback function respects max_stars parameter."""
-        stars = _get_fallback_bright_stars(max_stars=5)
-        assert len(stars) == 5
+        mock_instance = MagicMock()
+        mock_instance.query_constraints.return_value = None
+        mock_vizier = MagicMock(return_value=mock_instance)
+        monkeypatch.setattr("across.tools.visibility.catalogs.Vizier", mock_vizier)
+        mock_get_fallback_bright_stars = MagicMock()
+        monkeypatch.setattr(
+            "across.tools.visibility.catalogs._get_fallback_bright_stars", mock_get_fallback_bright_stars
+        )
+        get_bright_stars(max_stars=5)
+        mock_get_fallback_bright_stars.assert_called_with(magnitude_limit=6.0, max_stars=5)
 
 
 @pytest.mark.usefixtures("isolated_star_cache")
